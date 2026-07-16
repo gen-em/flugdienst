@@ -1,0 +1,155 @@
+// Einsatzdoku — app-weiter Zustand + Persistenz.
+// Alles Wichtige liegt in einem Dictionary, das nach jeder Aenderung in den
+// persistenten Storage geschrieben wird -> uebersteht App-/Uhren-Neustart.
+using Toybox.Application.Storage;
+using Toybox.Lang;
+
+module Model {
+
+    var serviceActive as Lang.Boolean = false;
+    var day as Lang.String or Null = null;        // Betriebstag "YYYY-MM-DD"
+    var phase as Lang.Number = 1;
+
+    // Aktiver Einsatz: null oder Dictionary
+    // { "ref", "startedAt", "endedAt", "phases" => [[p, iso, lat, lon], ...],
+    //   "resusStart" => iso|null, "resusEvents" => [[type, iso], ...],
+    //   "final" => Boolean }
+    var mission as Lang.Dictionary or Null = null;
+
+    // Abgeschlossene, aber noch nicht (fertig) hochgeladene Einsaetze
+    var pendingMissions as Lang.Array = [];
+
+    // Aktives Ruhe-Segment: null oder { "ref", "startedAt", "endedAt", "final" }
+    var restSegment as Lang.Dictionary or Null = null;
+    var pendingRest as Lang.Array = [];
+
+    function load() as Void {
+        var s = Storage.getValue(Const.K_STATE);
+        if (s instanceof Lang.Dictionary) {
+            serviceActive   = s["svc"]  == true;
+            day             = s["day"];
+            phase           = s["ph"]   != null ? s["ph"] : 1;
+            mission         = s["mis"];
+            restSegment     = s["rest"];
+            pendingMissions = s["pm"] != null ? s["pm"] : [];
+            pendingRest     = s["pr"] != null ? s["pr"] : [];
+        }
+    }
+
+    function save() as Void {
+        Storage.setValue(Const.K_STATE, {
+            "svc" => serviceActive, "day" => day, "ph" => phase,
+            "mis" => mission, "rest" => restSegment,
+            "pm" => pendingMissions, "pr" => pendingRest
+        });
+    }
+
+    // ---- Dienst-Klammer (Anforderungen 1.1) --------------------------------
+
+    function beginService() as Void {
+        serviceActive = true;
+        day = Util.localDay();
+        phase = 1;
+        _startRestSegment();
+        save();
+        Track.startPositioning();
+    }
+
+    function endService() as Void {
+        _closeRestSegment();
+        if (mission != null) { _finishMission(); }   // Sicherheitsnetz
+        serviceActive = false;
+        save();
+        Track.stopPositioning();
+        Uploader.syncAll();
+    }
+
+    // ---- Phasen (Anforderungen 1.2) ----------------------------------------
+
+    function missionActive() as Lang.Boolean { return mission != null; }
+
+    // kurz START auf Oberflaeche 1: naechste Phase
+    function nextPhase() as Void {
+        if (phase >= 10 || phase < 1) { phase = 1; }
+        setPhase(phase + 1);
+    }
+
+    // Direktes Setzen (auch Schnellmenue): erneutes Setzen frueherer Phasen
+    // erzeugt schlicht einen weiteren Zeitstempel (keine Korrektur).
+    function setPhase(p as Lang.Number) as Void {
+        if (p < 2 || p > 10) { return; }
+        if (mission == null) { _startMission(); }    // Phase 2..10 ohne Einsatz -> Einsatz beginnt
+
+        var pos = Track.lastLatLon();
+        // [phase, isoUTC, lat, lon, lokaleAnzeige]
+        (mission["phases"] as Lang.Array).add([p, Util.isoNow(), pos[0], pos[1], Util.localHHMM()]);
+        phase = p;
+        Util.vibrateShort();
+
+        if (p == 10) { _finishMission(); }
+        save();
+    }
+
+    function _startMission() as Void {
+        _closeRestSegment();
+        mission = {
+            "ref" => "m-" + Util.epochNow().toString(),
+            "startedAt" => Util.isoNow(), "endedAt" => null,
+            "phases" => [], "resusStart" => null, "resusEvents" => [],
+            "final" => false
+        };
+        Track.beginMissionTrack(mission["ref"] as Lang.String);
+    }
+
+    function _finishMission() as Void {
+        mission["endedAt"] = Util.isoNow();
+        mission["final"] = true;
+        Track.endMissionTrack();
+        pendingMissions.add(mission);
+        mission = null;
+        phase = 1;
+        _startRestSegment();
+        save();
+        Uploader.syncAll();
+    }
+
+    // ---- Ruhe-Segmente (Anforderungen 1.3) ---------------------------------
+
+    function _startRestSegment() as Void {
+        restSegment = {
+            "ref" => "r-" + Util.epochNow().toString(),
+            "startedAt" => Util.isoNow(), "endedAt" => null, "final" => false
+        };
+        Track.beginRestTrack(restSegment["ref"] as Lang.String);
+    }
+
+    function _closeRestSegment() as Void {
+        if (restSegment == null) { return; }
+        restSegment["endedAt"] = Util.isoNow();
+        restSegment["final"] = true;
+        Track.endRestTrack();
+        pendingRest.add(restSegment);
+        restSegment = null;
+    }
+
+    // ---- Reanimation (Anforderungen 1.4) -----------------------------------
+    // Zeitstempel liegen beim Einsatz; laeuft ausnahmsweise keiner, wird
+    // implizit einer gestartet (Rea ohne Einsatz waere sonst verloren).
+
+    function resusStart() as Void {
+        if (mission == null) { _startMission(); }
+        if (mission["resusStart"] == null) {
+            mission["resusStart"] = Util.isoNow();
+            mission["resusStartLocal"] = Util.localHHMM();
+        }
+        save();
+    }
+
+    function resusEvent(type as Lang.String) as Void {
+        if (mission == null || mission["resusStart"] == null) { resusStart(); }
+        // [typ, isoUTC, lokaleAnzeige]
+        (mission["resusEvents"] as Lang.Array).add([type, Util.isoNow(), Util.localHHMM()]);
+        Util.vibrateShort();
+        save();
+    }
+}

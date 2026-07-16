@@ -1,0 +1,5 @@
+<properties>
+    <property id="serverUrl" type="string">https://einsatz.example.de/ingest.php</property>
+    <property id="deviceId"  type="string"></property>
+    <property id="apiKey"    type="string"></property>
+</properties>

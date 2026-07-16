@@ -1,0 +1,89 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__ . '/auth_guard.php';
+$id = (int)($_GET['id'] ?? 0);
+?><!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Einsatz — Einsatzdoku</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <span class="brand">Einsatzdoku</span>
+  <nav><a href="index.php">Übersicht</a> <a href="logout.php">Abmelden</a></nav>
+</header>
+
+<main class="page">
+  <h1 id="title">Einsatz</h1>
+  <p id="meta" class="muted"></p>
+  <div id="map" class="map map-tall"></div>
+
+  <section>
+    <h2>Phasen</h2>
+    <table class="data" id="phases">
+      <thead><tr><th>Nr.</th><th>Phase</th><th>Uhrzeit</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="resus-section" hidden>
+    <h2>Reanimation</h2>
+    <table class="data" id="resus">
+      <thead><tr><th>Ereignis</th><th>Uhrzeit</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map');
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+map.setView([48.5, 10.5], 7);
+
+function fmtKm(m){ return m==null ? '–' : (m/1000).toFixed(1).replace('.',',')+' km'; }
+function fmtDay(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y}`; }
+
+async function init(){
+  const res = await fetch('api/mission.php?id=<?= $id ?>');
+  if (!res.ok) { document.getElementById('title').textContent = 'Einsatz nicht gefunden'; return; }
+  const m = await res.json();
+
+  document.getElementById('title').textContent = `Einsatz ${m.start_hhmm} Uhr`;
+  document.getElementById('meta').textContent =
+    `${fmtDay(m.day)} · ${m.start_hhmm}–${m.end_hhmm} Uhr · ${fmtKm(m.distance_m)}`
+    + (m.ascent_m != null ? ` · ${m.ascent_m} Hm` : '');
+
+  if (m.track.length > 1) {
+    const line = L.polyline(m.track, { color:'#E8590C', weight:4 }).addTo(map);
+    const px = map.getSize();
+    map.fitBounds(line.getBounds(), { padding: [px.y*0.125, px.x*0.125] });
+    L.circleMarker(m.track[0], {radius:6, color:'#2F9E44', fillOpacity:1}).addTo(map).bindTooltip('Start');
+    L.circleMarker(m.track[m.track.length-1], {radius:6, color:'#E03131', fillOpacity:1}).addTo(map).bindTooltip('Ende');
+  }
+
+  const pb = document.querySelector('#phases tbody');
+  m.phases.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="chip">${p.phase}</span></td><td>${p.label}</td><td class="mono">${p.time}</td>`;
+    pb.appendChild(tr);
+  });
+
+  if (m.resus) {
+    document.getElementById('resus-section').hidden = false;
+    const rb = document.querySelector('#resus tbody');
+    m.resus.forEach(e => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${e.label}</td><td class="mono">${e.time}</td>`;
+      rb.appendChild(tr);
+    });
+  }
+}
+init();
+</script>
+</body>
+</html>

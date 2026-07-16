@@ -1,0 +1,11 @@
+<settings>
+    <setting propertyKey="@Properties.serverUrl" title="Server-URL (ingest.php)">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+    <setting propertyKey="@Properties.deviceId" title="Geräte-ID">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+    <setting propertyKey="@Properties.apiKey" title="API-Schlüssel">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+</settings>
