@@ -95,13 +95,14 @@ module Model {
         mission = {
             "ref" => "m-" + Util.epochNow().toString(),
             "startedAt" => Util.isoNow(), "endedAt" => null,
-            "phases" => [], "resusStart" => null, "resusEvents" => [],
+            "phases" => [], "resus" => [],
             "final" => false
         };
         Track.beginMissionTrack(mission["ref"] as Lang.String);
     }
 
     function _finishMission() as Void {
+        Cpr.stopRecording();                 // laufende Rea sauber schliessen
         mission["endedAt"] = Util.isoNow();
         mission["final"] = true;
         Track.endMissionTrack();
@@ -132,24 +133,36 @@ module Model {
         restSegment = null;
     }
 
-    // ---- Reanimation (Anforderungen 1.4) -----------------------------------
-    // Zeitstempel liegen beim Einsatz; laeuft ausnahmsweise keiner, wird
-    // implizit einer gestartet (Rea ohne Einsatz waere sonst verloren).
+    // ---- Reanimation (Anforderungen 1.4, mehrere pro Einsatz moeglich) -----
+    // Jeder Rea-Start legt eine NEUE Sitzung an; "Aufzeichnung beenden"
+    // schliesst sie. Zeitstempel liegen beim Einsatz; laeuft ausnahmsweise
+    // keiner, wird implizit einer gestartet.
 
     function resusStart() as Void {
         if (mission == null) { _startMission(); }
-        if (mission["resusStart"] == null) {
-            mission["resusStart"] = Util.isoNow();
-            mission["resusStartLocal"] = Util.localHHMM();
-        }
+        (mission["resus"] as Lang.Array).add({
+            "start" => Util.isoNow(), "startLocal" => Util.localHHMM(),
+            "events" => []
+        });
         save();
     }
 
     function resusEvent(type as Lang.String) as Void {
-        if (mission == null || mission["resusStart"] == null) { resusStart(); }
+        if (mission == null || (mission["resus"] as Lang.Array).size() == 0) {
+            resusStart();
+        }
+        var sessions = mission["resus"] as Lang.Array;
+        var cur = sessions[sessions.size() - 1] as Lang.Dictionary;
         // [typ, isoUTC, lokaleAnzeige]
-        (mission["resusEvents"] as Lang.Array).add([type, Util.isoNow(), Util.localHHMM()]);
+        (cur["events"] as Lang.Array).add([type, Util.isoNow(), Util.localHHMM()]);
         Util.vibrateShort();
         save();
+    }
+
+    // Letzte (= aktuelle) Rea-Sitzung, fuer die Uebersicht auf der Uhr
+    function currentResus() as Lang.Dictionary or Null {
+        if (mission == null) { return null; }
+        var sessions = mission["resus"] as Lang.Array;
+        return sessions.size() > 0 ? sessions[sessions.size() - 1] : null;
     }
 }

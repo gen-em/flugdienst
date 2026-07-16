@@ -1,6 +1,6 @@
 # JSON-Vertrag Uhr → Server
 
-**Version:** 1.0 — gehört zu Anforderungen v1.0
+**Version:** 1.1 — mehrere Reanimationen pro Einsatz (resus_sessions)
 **Endpunkt:** `POST https://<host>/ingest.php`
 **Content-Type:** `application/json`
 
@@ -40,15 +40,17 @@ Gesendet bei Phase 10 (`final: true`) sowie optional zwischendurch als Teil-Uplo
     { "phase": 3, "at": "2026-07-16T08:36:22Z", "lat": 47.7259, "lon": 10.3190 },
     { "phase": 4, "at": "2026-07-16T08:51:02Z", "lat": 47.5601, "lon": 10.7002 }
   ],
-  "resus": {
-    "started_at": "2026-07-16T08:55:10Z",
-    "events": [
-      { "type": "rhythmuskontrolle", "at": "2026-07-16T08:57:10Z" },
-      { "type": "adrenalin",         "at": "2026-07-16T08:58:02Z" },
-      { "type": "defibrillation",    "at": "2026-07-16T08:59:15Z" },
-      { "type": "rosc",              "at": "2026-07-16T09:06:40Z" }
-    ]
-  },
+  "resus_sessions": [
+    {
+      "started_at": "2026-07-16T08:55:10Z",
+      "events": [
+        { "type": "rhythmuskontrolle", "at": "2026-07-16T08:57:10Z" },
+        { "type": "adrenalin",         "at": "2026-07-16T08:58:02Z" },
+        { "type": "defibrillation",    "at": "2026-07-16T08:59:15Z" },
+        { "type": "rosc",              "at": "2026-07-16T09:06:40Z" }
+      ]
+    }
+  ],
   "track": {
     "seq_from": 0,
     "points": [
@@ -63,8 +65,8 @@ Regeln:
 
 - `ended_at` ist `null`, solange `final: false`.
 - `phases[]` enthält **alle bisher gesetzten** Phasen-Zeitstempel (vollständige Liste, kein Delta) — der Server ersetzt die Phasenliste des Einsatzes bei jedem Upload. Mehrfache Einträge derselben Phasennummer sind erlaubt (erneutes Setzen einer früheren Phase, siehe Anforderungen 1.2).
-- `resus` ist `null` oder fehlt, wenn keine Reanimation stattfand. Auch hier: vollständige Liste, Server ersetzt.
-- `resus.events[].type` ∈ `adrenalin`, `rhythmuskontrolle`, `defibrillation`, `intubation`, `amiodaron`, `sonographie`, `rosc`, `tod`.
+- `resus_sessions` ist eine **Liste** — jede Reanimation des Einsatzes ist ein Eintrag (mehrere pro Einsatz möglich; „Aufzeichnung beenden" auf der Uhr schließt eine Sitzung, ein erneuter Start eröffnet die nächste). Fehlt oder leer = keine Reanimation. Vollständige Liste, Server ersetzt. Das ältere Einzelobjekt `resus` wird aus Kompatibilität weiterhin akzeptiert.
+- `events[].type` ∈ `adrenalin`, `rhythmuskontrolle`, `defibrillation`, `intubation`, `amiodaron`, `sonographie`, `rosc`, `tod`.
 - `track.points`: Array aus `[lat, lon, ele_m, epoch_s]`. `ele_m` darf `null` sein. Die Sequenznummer des i-ten Punkts ist `seq_from + i`.
 - `distance_m` / `ascent_m` werden von der Uhr fortlaufend berechnet und beim `final`-Upload als verbindlich übernommen.
 

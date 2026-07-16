@@ -25,11 +25,21 @@ module Cpr {
         if (active) { restartCycle(); return; }  // kurz START = manueller Neustart
         active = true;
         startEpoch = Util.epochNow();
-        Model.resusStart();
+        Model.resusStart();                      // legt eine NEUE Sitzung an
         restartCycle();
         if (_timer == null) { _timer = new Timer.Timer(); }
         if (_cb == null) { _cb = new CprCb(); }
         _timer.start(_cb.method(:tick), 1000, true);
+    }
+
+    // "Aufzeichnung beenden" (Untermenue): schliesst die laufende Sitzung.
+    // Ein erneuter Start beginnt danach eine neue Reanimation.
+    function stopRecording() as Void {
+        if (!active) { return; }
+        active = false;
+        cycleEndEpoch = 0;
+        if (_timer != null) { _timer.stop(); }
+        WatchUi.requestUpdate();
     }
 
     function restartCycle() as Void {
@@ -37,10 +47,8 @@ module Cpr {
         _alarmFired = false;
     }
 
-    function stop() as Void {                  // bei Einsatzende/Dienstende
-        active = false;
-        cycleEndEpoch = 0;
-        if (_timer != null) { _timer.stop(); }
+    function stop() as Void {                  // bei Dienstende
+        stopRecording();
     }
 
     function tick() as Void {

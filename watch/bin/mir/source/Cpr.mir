@@ -1,0 +1,441 @@
+[ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 4; @symbol_usingdef<0> = [Toybox,4,6,12]; @symbol_usingdef<1> = [Timer,4,13,18]; ]
+using Toybox.Timer;
+[ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 5; @symbol_usingdef<0> = [Toybox,5,6,12]; @symbol_usingdef<1> = [Lang,5,13,17]; ]
+using Toybox.Lang;
+[ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 6; @symbol_usingdef<0> = [Toybox,6,6,12]; @symbol_usingdef<1> = [WatchUi,6,13,20]; ]
+using Toybox.WatchUi;
+[ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 10; @symbol_classdef = [CprCb,10,6,11]; ]
+class CprCb {
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 10; ]
+    <init> {
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 10; ]
+    static
+    <init> {
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 11; @symbol_functiondef = [initialize,11,13,23]; ]
+    function initialize() as Void {
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 12; @symbol_functiondef = [tick,12,13,17]; ]
+    function tick() as Void {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_12_28_12_42_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 12 30 ]
+        symbol [ Cpr %tmp.2 12 30 33 ];
+        %tmp.2 = getv ? :Cpr;
+        symbol [ tick %tmp.3 12 34 38 ];
+        %tmp.3 = getv function %tmp.2 :tick;
+        invoke %tmp.2 %tmp.3();
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_12_28_12_42_stop:
+    }
+}
+[ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 15; @symbol_moduledef = [Cpr,15,7,10]; ]
+module Cpr {
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 15; ]
+    <init> {
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 17; @position = 8; @symbol_vardef = [active,17,8,14]; @symbol_type<0> = [Lang,17,18,22]; @symbol_type<1> = [Boolean,17,23,30]; ]
+    var active as Lang.Boolean = false;
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 18; @position = 8; @symbol_vardef = [startEpoch,18,8,18]; @symbol_type<0> = [Lang,18,22,26]; @symbol_type<1> = [Number,18,27,33]; ]
+    var startEpoch as Lang.Number = 0;
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 19; @position = 8; @symbol_vardef = [cycleEndEpoch,19,8,21]; @symbol_type<0> = [Lang,19,25,29]; @symbol_type<1> = [Number,19,30,36]; ]
+    var cycleEndEpoch as Lang.Number = 0;
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 20; @position = 8; @symbol_vardef = [_timer,20,8,14]; @symbol_type<0> = [Timer,20,18,23]; @symbol_type<1> = [Timer,20,24,29]; ]
+    var _timer as Timer.Timer or Null = null;
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 21; @position = 8; @symbol_vardef = [_cb,21,8,11]; @symbol_type<0> = [CprCb,21,15,20]; ]
+    var _cb as CprCb or Null = null;
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 22; @position = 8; @symbol_vardef = [_alarmFired,22,8,19]; @symbol_type<0> = [Lang,22,23,27]; @symbol_type<1> = [Boolean,22,28,35]; ]
+    var _alarmFired as Lang.Boolean = false;
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 24; @symbol_functiondef = [start,24,13,18]; ]
+    function start() as Void {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_24_29_33_4_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 25 8 ]
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_25_8_25_46_if_stmt:
+        symbol [ active %tmp.2 25 12 18 ];
+        %tmp.2 = getv ? :active;
+        bf %tmp.2 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_25_8_25_46_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_25_8_25_46_if_true:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_25_20_25_46_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 25 22 ]
+        %tmp.3 = self;
+        symbol [ restartCycle %tmp.4 25 22 34 ];
+        %tmp.4 = getv function %tmp.3 :restartCycle;
+        invoke %tmp.3 %tmp.4();
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 25 38 ]
+        ret ?;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_25_20_25_46_stop:
+        goto @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_25_8_25_46_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_25_8_25_46_if_end:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 26 8 ]
+        %tmp.5 = true;
+        symbol [ active ? 26 8 14 ];
+        putv self :active %tmp.5;
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 27 8 ]
+        symbol [ Util %tmp.7 27 21 25 ];
+        %tmp.7 = getv ? :Util;
+        symbol [ epochNow %tmp.8 27 26 34 ];
+        %tmp.8 = getv function %tmp.7 :epochNow;
+        %tmp.9 = invoke %tmp.7 %tmp.8();
+        symbol [ startEpoch ? 27 8 18 ];
+        putv self :startEpoch %tmp.9;
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 28 8 ]
+        symbol [ Model %tmp.11 28 8 13 ];
+        %tmp.11 = getv ? :Model;
+        symbol [ resusStart %tmp.12 28 14 24 ];
+        %tmp.12 = getv function %tmp.11 :resusStart;
+        invoke %tmp.11 %tmp.12();
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 29 8 ]
+        %tmp.13 = self;
+        symbol [ restartCycle %tmp.14 29 8 20 ];
+        %tmp.14 = getv function %tmp.13 :restartCycle;
+        invoke %tmp.13 %tmp.14();
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 30 8 ]
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_30_8_30_58_if_stmt:
+        symbol [ _timer %tmp.16 30 12 18 ];
+        %tmp.16 = getv ? :_timer;
+        %tmp.17 = null;
+        %tmp.18 = eq %tmp.16 %tmp.17;
+        bf %tmp.18 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_30_8_30_58_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_30_8_30_58_if_true:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_30_28_30_58_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 30 30 ]
+        symbol [ Timer %tmp.21 30 43 48 ];
+        %tmp.21 = getm $.Toybox.Timer;
+        symbol [ Timer %tmp.22 30 49 54 ];
+        %tmp.22 = getv function ? %tmp.21 :Timer;
+        %tmp.19 = newc %tmp.22 ();
+        symbol [ _timer ? 30 30 36 ];
+        putv self :_timer %tmp.19;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_30_28_30_58_stop:
+        goto @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_30_8_30_58_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_30_8_30_58_if_end:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 31 8 ]
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_31_8_31_46_if_stmt:
+        symbol [ _cb %tmp.24 31 12 15 ];
+        %tmp.24 = getv ? :_cb;
+        %tmp.25 = null;
+        %tmp.26 = eq %tmp.24 %tmp.25;
+        bf %tmp.26 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_31_8_31_46_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_31_8_31_46_if_true:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_31_25_31_46_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 31 27 ]
+        symbol [ CprCb %tmp.30 31 37 42 ];
+        %tmp.30 = getv ? :CprCb;
+        %tmp.27 = newc %tmp.30 ();
+        symbol [ _cb ? 31 27 30 ];
+        putv self :_cb %tmp.27;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_31_25_31_46_stop:
+        goto @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_31_8_31_46_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_31_8_31_46_if_end:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 32 8 ]
+        symbol [ _timer %tmp.32 32 8 14 ];
+        %tmp.32 = getv ? :_timer;
+        symbol [ start %tmp.33 32 15 20 ];
+        %tmp.33 = getv function %tmp.32 :start;
+        symbol [ _cb %tmp.35 32 21 24 ];
+        %tmp.35 = getv ? :_cb;
+        symbol [ method %tmp.36 32 25 31 ];
+        %tmp.36 = getv function %tmp.35 :method;
+        %tmp.38 = const :tick;
+        symbol [ tick %tmp.38 32 33 37 const ];
+        %tmp.39 = invoke %tmp.35 %tmp.36(%tmp.38);
+        %tmp.40 = 1000;
+        %tmp.41 = true;
+        invoke %tmp.32 %tmp.33(%tmp.39, %tmp.40, %tmp.41);
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_24_29_33_4_stop:
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 37; @symbol_functiondef = [stopRecording,37,13,26]; ]
+    function stopRecording() as Void {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_37_37_43_4_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 38 8 ]
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_38_8_38_31_if_stmt:
+        symbol [ active %tmp.2 38 13 19 ];
+        %tmp.2 = getv ? :active;
+        %tmp.3 = not %tmp.2;
+        bf %tmp.3 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_38_8_38_31_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_38_8_38_31_if_true:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_38_21_38_31_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 38 23 ]
+        ret ?;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_38_21_38_31_stop:
+        goto @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_38_8_38_31_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_38_8_38_31_if_end:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 39 8 ]
+        %tmp.4 = false;
+        symbol [ active ? 39 8 14 ];
+        putv self :active %tmp.4;
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 40 8 ]
+        %tmp.5 = 0;
+        symbol [ cycleEndEpoch ? 40 8 21 ];
+        putv self :cycleEndEpoch %tmp.5;
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 41 8 ]
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_41_8_41_45_if_stmt:
+        symbol [ _timer %tmp.7 41 12 18 ];
+        %tmp.7 = getv ? :_timer;
+        %tmp.8 = null;
+        %tmp.9 = ne %tmp.7 %tmp.8;
+        bf %tmp.9 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_41_8_41_45_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_41_8_41_45_if_true:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_41_28_41_45_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 41 30 ]
+        symbol [ _timer %tmp.11 41 30 36 ];
+        %tmp.11 = getv ? :_timer;
+        %tmp.12 = as %tmp.11 { (!Null) };
+        symbol [ stop %tmp.13 41 37 41 ];
+        %tmp.13 = getv function %tmp.12 :stop;
+        invoke %tmp.12 %tmp.13();
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_41_28_41_45_stop:
+        goto @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_41_8_41_45_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_41_8_41_45_if_end:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 42 8 ]
+        symbol [ WatchUi %tmp.14 42 8 15 ];
+        %tmp.14 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.15 42 16 29 ];
+        %tmp.15 = getv function %tmp.14 :requestUpdate;
+        invoke %tmp.14 %tmp.15();
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_37_37_43_4_stop:
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 45; @symbol_functiondef = [restartCycle,45,13,25]; ]
+    function restartCycle() as Void {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_45_36_48_4_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 46 8 ]
+        symbol [ Util %tmp.2 46 24 28 ];
+        %tmp.2 = getv ? :Util;
+        symbol [ epochNow %tmp.3 46 29 37 ];
+        %tmp.3 = getv function %tmp.2 :epochNow;
+        %tmp.4 = invoke %tmp.2 %tmp.3();
+        symbol [ Const %tmp.6 46 42 47 ];
+        %tmp.6 = getv ? :Const;
+        symbol [ CPR_CYCLE_S %tmp.7 46 48 59 ];
+        %tmp.7 = getv %tmp.6 :CPR_CYCLE_S;
+        %tmp.8 = add %tmp.4 %tmp.7;
+        symbol [ cycleEndEpoch ? 46 8 21 ];
+        putv self :cycleEndEpoch %tmp.8;
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 47 8 ]
+        %tmp.9 = false;
+        symbol [ _alarmFired ? 47 8 19 ];
+        putv self :_alarmFired %tmp.9;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_45_36_48_4_stop:
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 50; @symbol_functiondef = [stop,50,13,17]; ]
+    function stop() as Void {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_50_28_52_4_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 51 8 ]
+        %tmp.1 = self;
+        symbol [ stopRecording %tmp.2 51 8 21 ];
+        %tmp.2 = getv function %tmp.1 :stopRecording;
+        invoke %tmp.1 %tmp.2();
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_50_28_52_4_stop:
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 54; @symbol_functiondef = [tick,54,13,17]; ]
+    function tick() as Void {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_54_28_62_4_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 55 8 ]
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_55_8_55_31_if_stmt:
+        symbol [ active %tmp.2 55 13 19 ];
+        %tmp.2 = getv ? :active;
+        %tmp.3 = not %tmp.2;
+        bf %tmp.3 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_55_8_55_31_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_55_8_55_31_if_true:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_55_21_55_31_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 55 23 ]
+        ret ?;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_55_21_55_31_stop:
+        goto @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_55_8_55_31_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_55_8_55_31_if_end:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 56 8 ]
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_8_60_8_if_stmt:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_12_56_70_begin:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_12_56_52_begin:
+        symbol [ cycleEndEpoch %tmp.5 56 12 25 ];
+        %tmp.5 = getv ? :cycleEndEpoch;
+        %tmp.6 = 0;
+        %tmp.7 = gt %tmp.5 %tmp.6;
+        bf %tmp.7 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_8_60_8_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_33_56_52_true:
+        symbol [ Util %tmp.9 56 33 37 ];
+        %tmp.9 = getv ? :Util;
+        symbol [ epochNow %tmp.10 56 38 46 ];
+        %tmp.10 = getv function %tmp.9 :epochNow;
+        %tmp.11 = invoke %tmp.9 %tmp.10();
+        symbol [ cycleEndEpoch %tmp.13 56 52 65 ];
+        %tmp.13 = getv ? :cycleEndEpoch;
+        %tmp.14 = gte %tmp.11 %tmp.13;
+        push %tmp.14;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_33_56_52_end:
+        %tmp.15 = phi [%tmp.7 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_12_56_52_begin] [%tmp.14 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_33_56_52_true] [%tmp.15 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_33_56_52_end];
+        bf %tmp.15 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_8_60_8_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_69_56_70_true:
+        symbol [ _alarmFired %tmp.17 56 70 81 ];
+        %tmp.17 = getv ? :_alarmFired;
+        %tmp.18 = not %tmp.17;
+        push %tmp.18;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_69_56_70_end:
+        %tmp.19 = phi [%tmp.15 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_12_56_70_begin] [%tmp.18 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_69_56_70_true] [%tmp.19 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_69_56_70_end];
+        bf %tmp.19 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_8_60_8_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_8_60_8_if_true:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_83_60_8_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 57 12 ]
+        %tmp.20 = true;
+        symbol [ _alarmFired ? 57 12 23 ];
+        putv self :_alarmFired %tmp.20;
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 58 12 ]
+        %tmp.21 = 0;
+        symbol [ cycleEndEpoch ? 58 12 25 ];
+        putv self :cycleEndEpoch %tmp.21;
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 59 12 ]
+        symbol [ Util %tmp.23 59 12 16 ];
+        %tmp.23 = getv ? :Util;
+        symbol [ vibrateTwice %tmp.24 59 17 29 ];
+        %tmp.24 = getv function %tmp.23 :vibrateTwice;
+        invoke %tmp.23 %tmp.24();
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_83_60_8_stop:
+        goto @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_8_60_8_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_56_8_60_8_if_end:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 61 8 ]
+        symbol [ WatchUi %tmp.25 61 8 15 ];
+        %tmp.25 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.26 61 16 29 ];
+        %tmp.26 = getv function %tmp.25 :requestUpdate;
+        invoke %tmp.25 %tmp.26();
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_54_28_62_4_stop:
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 65; @symbol_functiondef = [elapsedS,65,13,21]; @symbol_return<0> = [Lang,65,27,31]; @symbol_return<1> = [Number,65,32,38]; ]
+    function elapsedS() as Lang.Number {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_65_39_67_4_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 66 8 ]
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_66_15_66_57_begin:
+        symbol [ active %tmp.2 66 15 21 ];
+        %tmp.2 = getv ? :active;
+        bf %tmp.2 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_66_15_66_57_else_false;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_66_15_66_57_true:
+        symbol [ Util %tmp.4 66 25 29 ];
+        %tmp.4 = getv ? :Util;
+        symbol [ epochNow %tmp.5 66 30 38 ];
+        %tmp.5 = getv function %tmp.4 :epochNow;
+        %tmp.6 = invoke %tmp.4 %tmp.5();
+        symbol [ startEpoch %tmp.8 66 43 53 ];
+        %tmp.8 = getv ? :startEpoch;
+        %tmp.9 = sub %tmp.6 %tmp.8;
+        push %tmp.9;
+        goto @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_66_15_66_57_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_66_15_66_57_else_false:
+        %tmp.10 = 0;
+        push %tmp.10;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_66_15_66_57_end:
+        %tmp.11 = phi [%tmp.2 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_66_15_66_57_begin] [%tmp.9 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_66_15_66_57_true] [%tmp.10 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_66_15_66_57_else_false] [%tmp.11 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_66_15_66_57_end];
+        ret %tmp.11;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_65_39_67_4_stop:
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 70; @symbol_functiondef = [cycleRemainingS,70,13,28]; @symbol_return<0> = [Lang,70,34,38]; @symbol_return<1> = [Number,70,39,45]; ]
+    function cycleRemainingS() as Lang.Number {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_70_46_74_4_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 71 8 ]
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_8_71_55_if_stmt:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_12_71_40_begin:
+        symbol [ active %tmp.2 71 13 19 ];
+        %tmp.2 = getv ? :active;
+        %tmp.3 = not %tmp.2;
+        bt %tmp.3 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_8_71_55_if_true;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_23_71_40_false:
+        symbol [ cycleEndEpoch %tmp.5 71 23 36 ];
+        %tmp.5 = getv ? :cycleEndEpoch;
+        %tmp.6 = 0;
+        %tmp.7 = eq %tmp.5 %tmp.6;
+        push %tmp.7;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_23_71_40_end:
+        %tmp.8 = phi [%tmp.3 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_12_71_40_begin] [%tmp.7 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_23_71_40_false] [%tmp.8 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_23_71_40_end];
+        bf %tmp.8 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_8_71_55_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_8_71_55_if_true:
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_43_71_55_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 71 45 ]
+        %tmp.9 = 0;
+        ret %tmp.9;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_43_71_55_stop:
+        goto @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_8_71_55_if_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_71_8_71_55_if_end:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 72 8 ]
+        [ "C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_70_46_74_4_start" "C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_70_46_74_4_stop" ]
+        %r.1 = local;
+        symbol [ r %r.1 72 12 13 ];
+        symbol [ cycleEndEpoch %tmp.11 72 16 29 ];
+        %tmp.11 = getv ? :cycleEndEpoch;
+        symbol [ Util %tmp.13 72 32 36 ];
+        %tmp.13 = getv ? :Util;
+        symbol [ epochNow %tmp.14 72 37 45 ];
+        %tmp.14 = getv function %tmp.13 :epochNow;
+        %tmp.15 = invoke %tmp.13 %tmp.14();
+        %tmp.16 = sub %tmp.11 %tmp.15;
+        lputv %r.1 %tmp.16;
+        symbol [ r %r.1 72 12 13 ];
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 73 8 ]
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_73_15_73_27_begin:
+        %tmp.17 = lgetv %r.1;
+        symbol [ r %tmp.17 73 15 16 ];
+        %tmp.18 = 0;
+        %tmp.19 = gt %tmp.17 %tmp.18;
+        bf %tmp.19 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_73_15_73_27_else_false;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_73_15_73_27_true:
+        %tmp.20 = lgetv %r.1;
+        symbol [ r %tmp.20 73 23 24 ];
+        push %tmp.20;
+        goto @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_73_15_73_27_end;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_73_15_73_27_else_false:
+        %tmp.21 = 0;
+        push %tmp.21;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_73_15_73_27_end:
+        %tmp.22 = phi [%tmp.19 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_73_15_73_27_begin] [%tmp.20 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_73_15_73_27_true] [%tmp.21 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_73_15_73_27_else_false] [%tmp.22 @C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_73_15_73_27_end];
+        ret %tmp.22;
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_70_46_74_4_stop:
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 76; @symbol_functiondef = [markAdrenalin,76,13,26]; ]
+    function markAdrenalin() as Void {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_76_37_76_76_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 76 39 ]
+        symbol [ Model %tmp.2 76 39 44 ];
+        %tmp.2 = getv ? :Model;
+        symbol [ resusEvent %tmp.3 76 45 55 ];
+        %tmp.3 = getv function %tmp.2 :resusEvent;
+        symbol [ Const %tmp.5 76 56 61 ];
+        %tmp.5 = getv ? :Const;
+        symbol [ R_ADRENALIN %tmp.6 76 62 73 ];
+        %tmp.6 = getv %tmp.5 :R_ADRENALIN;
+        invoke %tmp.2 %tmp.3(%tmp.6);
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_76_37_76_76_stop:
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 78; @symbol_functiondef = [markRhythmus,78,13,25]; ]
+    function markRhythmus() as Void {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_78_36_81_4_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 79 8 ]
+        symbol [ Model %tmp.2 79 8 13 ];
+        %tmp.2 = getv ? :Model;
+        symbol [ resusEvent %tmp.3 79 14 24 ];
+        %tmp.3 = getv function %tmp.2 :resusEvent;
+        symbol [ Const %tmp.5 79 25 30 ];
+        %tmp.5 = getv ? :Const;
+        symbol [ R_RHYTHMUS %tmp.6 79 31 41 ];
+        %tmp.6 = getv %tmp.5 :R_RHYTHMUS;
+        invoke %tmp.2 %tmp.3(%tmp.6);
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 80 8 ]
+        %tmp.7 = self;
+        symbol [ restartCycle %tmp.8 80 8 20 ];
+        %tmp.8 = getv function %tmp.7 :restartCycle;
+        invoke %tmp.7 %tmp.8();
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_78_36_81_4_stop:
+    }
+    [ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 83; @symbol_functiondef = [markEvent,83,13,22]; @symbol_param<0> = [type,83,23,27]; @symbol_param<0>_type<0> = [Lang,83,31,35]; @symbol_param<0>_type<1> = [String,83,36,42]; ]
+    function markEvent(type as Lang.String) as Void {
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_83_52_83_78_start:
+[ "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc" 83 54 ]
+        symbol [ Model %tmp.2 83 54 59 ];
+        %tmp.2 = getv ? :Model;
+        symbol [ resusEvent %tmp.3 83 60 70 ];
+        %tmp.3 = getv function %tmp.2 :resusEvent;
+        %tmp.4 = lgetv %type;
+        symbol [ type %tmp.4 83 71 75 ];
+        invoke %tmp.2 %tmp.3(%tmp.4);
+C__Daten_Dokumente_Projekte_Flugdienst_App_GitHub_watch_source_Cpr_mc_83_52_83_78_stop:
+    }
+}
+[ @file = "C:\Daten\Dokumente\Projekte\Flugdienst-App\GitHub\watch\source\Cpr.mc"; @line = 4; ]
+<init> {
+}

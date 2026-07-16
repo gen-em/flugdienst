@@ -30,11 +30,7 @@ $id = (int)($_GET['id'] ?? 0);
   </section>
 
   <section id="resus-section" hidden>
-    <h2>Reanimation</h2>
-    <table class="data" id="resus">
-      <thead><tr><th>Ereignis</th><th>Uhrzeit</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div id="resus-tables"></div>
   </section>
 </main>
 
@@ -73,13 +69,23 @@ async function init(){
     pb.appendChild(tr);
   });
 
-  if (m.resus) {
+  if (m.resus && m.resus.length) {
     document.getElementById('resus-section').hidden = false;
-    const rb = document.querySelector('#resus tbody');
-    m.resus.forEach(e => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${e.label}</td><td class="mono">${e.time}</td>`;
-      rb.appendChild(tr);
+    const wrap = document.getElementById('resus-tables');
+    m.resus.forEach((session, idx) => {
+      const h = document.createElement('h2');
+      h.textContent = m.resus.length > 1 ? `Reanimation ${idx + 1}` : 'Reanimation';
+      wrap.appendChild(h);
+      const table = document.createElement('table');
+      table.className = 'data';
+      table.innerHTML = '<thead><tr><th>Ereignis</th><th>Uhrzeit</th></tr></thead><tbody></tbody>';
+      const tb = table.querySelector('tbody');
+      session.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${e.label}</td><td class="mono">${e.time}</td>`;
+        tb.appendChild(tr);
+      });
+      wrap.appendChild(table);
     });
   }
 }

@@ -91,13 +91,19 @@ module Uploader {
                 phases.add({ "phase" => p[0], "at" => p[1], "lat" => p[2], "lon" => p[3] });
             }
             body["phases"] = phases;
-            if (d["resusStart"] != null) {
-                var evs = [];
-                var rraw = d["resusEvents"] as Lang.Array;
-                for (var i = 0; i < rraw.size(); i++) {
-                    evs.add({ "type" => rraw[i][0], "at" => rraw[i][1] });
+            var sessions = d["resus"] as Lang.Array;
+            if (sessions != null && sessions.size() > 0) {
+                var out = [];
+                for (var s = 0; s < sessions.size(); s++) {
+                    var sess = sessions[s] as Lang.Dictionary;
+                    var evs = [];
+                    var rraw = sess["events"] as Lang.Array;
+                    for (var i = 0; i < rraw.size(); i++) {
+                        evs.add({ "type" => rraw[i][0], "at" => rraw[i][1] });
+                    }
+                    out.add({ "started_at" => sess["start"], "events" => evs });
                 }
-                body["resus"] = { "started_at" => d["resusStart"], "events" => evs };
+                body["resus_sessions"] = out;
             }
         }
 

@@ -25,18 +25,23 @@ $phases = array_map(fn($p) => [
 ], $ph->fetchAll());
 
 $resus = null;
-$rs = db()->prepare('SELECT id, started_at FROM resus_sessions WHERE mission_id = ?');
+$rs = db()->prepare('SELECT id, started_at FROM resus_sessions
+                     WHERE mission_id = ? ORDER BY started_at');
 $rs->execute([$id]);
-if ($sess = $rs->fetch()) {
+$sessions = $rs->fetchAll();
+if ($sessions) {
     $ev = db()->prepare('SELECT type, occurred_at FROM resus_events
                          WHERE session_id = ? ORDER BY occurred_at');
-    $ev->execute([(int)$sess['id']]);
-    $events = [['label' => RESUS_LABELS['beginn'], 'time' => fmt_local($sess['started_at'])]];
-    foreach ($ev->fetchAll() as $e2) {
-        $events[] = ['label' => RESUS_LABELS[$e2['type']] ?? $e2['type'],
-                     'time'  => fmt_local($e2['occurred_at'])];
+    $resus = [];
+    foreach ($sessions as $sess) {
+        $ev->execute([(int)$sess['id']]);
+        $events = [['label' => RESUS_LABELS['beginn'], 'time' => fmt_local($sess['started_at'])]];
+        foreach ($ev->fetchAll() as $e2) {
+            $events[] = ['label' => RESUS_LABELS[$e2['type']] ?? $e2['type'],
+                         'time'  => fmt_local($e2['occurred_at'])];
+        }
+        $resus[] = $events;   // eine Tabelle je Reanimation
     }
-    $resus = $events;
 }
 
 json_out([

@@ -63,21 +63,29 @@ try {
             }
         }
 
-        // Reanimation vollstaendig ersetzen
-        if (!empty($b['resus']) && is_array($b['resus'])) {
-            $rStart = iso_to_sql($b['resus']['started_at'] ?? null);
-            if ($rStart !== null) {
-                $pdo->prepare('INSERT INTO resus_sessions (mission_id, started_at) VALUES (?,?)
-                               ON DUPLICATE KEY UPDATE started_at = VALUES(started_at), id = LAST_INSERT_ID(id)')
-                    ->execute([$ownerId, $rStart]);
+        // Reanimationen vollstaendig ersetzen (mehrere Sitzungen moeglich).
+        // "resus_sessions" (Liste) ist aktuell; ein altes "resus"-Objekt wird
+        // als Liste mit einem Eintrag behandelt.
+        $sessions = null;
+        if (isset($b['resus_sessions']) && is_array($b['resus_sessions'])) {
+            $sessions = $b['resus_sessions'];
+        } elseif (!empty($b['resus']) && is_array($b['resus'])) {
+            $sessions = [$b['resus']];
+        }
+        if ($sessions !== null) {
+            $pdo->prepare('DELETE FROM resus_sessions WHERE mission_id = ?')->execute([$ownerId]);
+            $insS = $pdo->prepare('INSERT INTO resus_sessions (mission_id, started_at) VALUES (?,?)');
+            $insE = $pdo->prepare('INSERT INTO resus_events (session_id, type, occurred_at) VALUES (?,?,?)');
+            foreach ($sessions as $sess) {
+                $rStart = iso_to_sql($sess['started_at'] ?? null);
+                if ($rStart === null) continue;
+                $insS->execute([$ownerId, $rStart]);
                 $sid = (int)$pdo->lastInsertId();
-                $pdo->prepare('DELETE FROM resus_events WHERE session_id = ?')->execute([$sid]);
-                $ins = $pdo->prepare('INSERT INTO resus_events (session_id, type, occurred_at) VALUES (?,?,?)');
-                foreach (($b['resus']['events'] ?? []) as $ev) {
+                foreach (($sess['events'] ?? []) as $ev) {
                     $at = iso_to_sql($ev['at'] ?? null);
                     $ty = (string)($ev['type'] ?? '');
                     if ($at !== null && isset(RESUS_LABELS[$ty]) && $ty !== 'beginn') {
-                        $ins->execute([$sid, $ty, $at]);
+                        $insE->execute([$sid, $ty, $at]);
                     }
                 }
             }

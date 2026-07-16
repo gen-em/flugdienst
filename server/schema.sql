@@ -63,7 +63,7 @@ CREATE TABLE resus_sessions (
   mission_id INT UNSIGNED NOT NULL,
   started_at DATETIME NOT NULL,                      -- UTC = "Reanimationsbeginn"
   FOREIGN KEY (mission_id) REFERENCES missions(id) ON DELETE CASCADE,
-  UNIQUE KEY uq_mission (mission_id)                 -- vorerst max. 1 Rea pro Einsatz
+  INDEX idx_mission (mission_id, started_at)         -- mehrere Reas pro Einsatz
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE resus_events (
