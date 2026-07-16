@@ -115,14 +115,14 @@ class CprMenuView extends WatchUi.View {
 
     // [Label, Farbe, ID]
     static const ITEMS = [
-        ["Defibrillation",       0xFFAA00, Const.R_DEFI],        // bernstein (Strom)
-        ["Intubation",           0x00AAFF, Const.R_INTUBATION],  // blau (Atemweg)
-        ["Amiodaron",            0xAA00FF, Const.R_AMIODARON],   // violett (Pharma)
-        ["Sonographie",          0x00FFAA, Const.R_SONO],        // tuerkis (Bild)
-        ["ROSC",                 0x00FF00, Const.R_ROSC],        // gruen (Erfolg)
-        ["Tod",                  0xAAAAAA, Const.R_TOD],         // grau
-        ["Übersicht",            0xFFFFFF, :overview],           // weiss
-        ["Aufzeichnung beenden", 0xFF0000, :stopRec]             // rot
+        ["Defibrillation", 0xFFAA00, Const.R_DEFI],        // bernstein (Strom)
+        ["Intubation",     0x00AAFF, Const.R_INTUBATION],  // blau (Atemweg)
+        ["Amiodaron",      0xAA00FF, Const.R_AMIODARON],   // violett (Pharma)
+        ["Sonographie",    0x00FFAA, Const.R_SONO],        // tuerkis (Bild)
+        ["ROSC",           0x00FF00, Const.R_ROSC],        // gruen (Erfolg)
+        ["Tod",            0xAAAAAA, Const.R_TOD],         // grau
+        ["Übersicht",      0xFFFFFF, :overview],           // weiss
+        ["Rea beenden",    0xFF0000, :stopRec]             // rot
     ];
 
     var index as Lang.Number = 0;
@@ -135,28 +135,38 @@ class CprMenuView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var rowH = 38;
+        var n = ITEMS.size();
 
-        // 5 Zeilen: 2 davor, Auswahl mittig, 2 danach
+        // 5 Zeilen: 2 davor, Auswahl mittig, 2 danach — endlos (Modulo)
         for (var off = -2; off <= 2; off++) {
-            var i = index + off;
-            if (i < 0 || i >= ITEMS.size()) { continue; }
+            var i = ((index + off) % n + n) % n;
             var item = ITEMS[i];
-            var y = cy + off * rowH;
+            var y = cy + off * rowH;   // y = vertikale Mitte der Zeile
             if (off == 0) {
-                // Auswahl: farbige Kachel mit schwarzem Text
+                // Auswahl: farbige Kachel, Text exakt vertikal zentriert
                 dc.setColor(item[1] as Lang.Number, Graphics.COLOR_TRANSPARENT);
                 dc.fillRoundedRectangle(14, y - rowH / 2 + 2,
                     dc.getWidth() - 28, rowH - 4, 8);
                 dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(cx, y - 14, Graphics.FONT_SMALL,
-                    item[0] as Lang.String, Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(cx, y, Graphics.FONT_SMALL,
+                    item[0] as Lang.String,
+                    Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
             } else {
-                // Nachbarn: farbiger Text auf schwarz
+                // Nachbarn: farbiger Text auf schwarz, ebenfalls zentriert
                 dc.setColor(item[1] as Lang.Number, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(cx, y - 12, Graphics.FONT_TINY,
-                    item[0] as Lang.String, Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(cx, y, Graphics.FONT_TINY,
+                    item[0] as Lang.String,
+                    Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
             }
         }
+    }
+}
+
+class StopRecConfirmDelegate extends WatchUi.ConfirmationDelegate {
+    function initialize() { ConfirmationDelegate.initialize(); }
+    function onResponse(response) as Lang.Boolean {
+        if (response == WatchUi.CONFIRM_YES) { Cpr.stopRecording(); }
+        return true;
     }
 }
 
@@ -169,15 +179,16 @@ class CprMenuDelegate extends WatchUi.BehaviorDelegate {
         _v = v;
     }
 
-    function onPreviousPage() as Lang.Boolean {           // UP
-        if (_v.index > 0) { _v.index -= 1; WatchUi.requestUpdate(); }
+    function onPreviousPage() as Lang.Boolean {           // UP: endlos
+        var n = CprMenuView.ITEMS.size();
+        _v.index = (_v.index - 1 + n) % n;
+        WatchUi.requestUpdate();
         return true;
     }
 
-    function onNextPage() as Lang.Boolean {               // DOWN
-        if (_v.index < CprMenuView.ITEMS.size() - 1) {
-            _v.index += 1; WatchUi.requestUpdate();
-        }
+    function onNextPage() as Lang.Boolean {               // DOWN: endlos
+        _v.index = (_v.index + 1) % CprMenuView.ITEMS.size();
+        WatchUi.requestUpdate();
         return true;
     }
 
@@ -187,7 +198,9 @@ class CprMenuDelegate extends WatchUi.BehaviorDelegate {
         if (id == :overview) {
             _pushOverview();
         } else if (id == :stopRec) {
-            Cpr.stopRecording();
+            // Sicherheitsabfrage vor dem Beenden der Rea-Aufzeichnung
+            var dlg = new WatchUi.Confirmation("Rea beenden?");
+            WatchUi.pushView(dlg, new StopRecConfirmDelegate(), WatchUi.SLIDE_LEFT);
         } else {
             Cpr.markEvent(id as Lang.String);
         }

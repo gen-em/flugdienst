@@ -57,15 +57,39 @@ class ClockView extends WatchUi.View {
 
 class ClockDelegate extends WatchUi.BehaviorDelegate {
 
+    var _pressStart as Lang.Dictionary = {};   // key -> System.getTimer()
+
     function initialize() { BehaviorDelegate.initialize(); }
 
-    function onSelect() as Lang.Boolean {          // kurz START: naechste Phase
-        Model.nextPhase();
-        WatchUi.requestUpdate();
+    // START manuell vermessen: kurz = naechste Phase, lang = Schnellmenue
+    function onKeyPressed(evt as WatchUi.KeyEvent) as Lang.Boolean {
+        if (evt.getKey() == WatchUi.KEY_ENTER) {
+            _pressStart[WatchUi.KEY_ENTER] = System.getTimer();
+            return true;
+        }
+        return false;
+    }
+
+    function onKeyReleased(evt as WatchUi.KeyEvent) as Lang.Boolean {
+        if (evt.getKey() != WatchUi.KEY_ENTER) { return false; }
+        var t0 = _pressStart[WatchUi.KEY_ENTER];
+        if (t0 == null) { return false; }
+        _pressStart.remove(WatchUi.KEY_ENTER);
+        if ((System.getTimer() - t0) >= Const.LONG_PRESS_MS) {
+            _pushQuickMenu();
+        } else {
+            Model.nextPhase();
+            WatchUi.requestUpdate();
+        }
         return true;
     }
 
-    function onMenu() as Lang.Boolean {            // lang UP: Schnellmenue
+    function onKey(evt as WatchUi.KeyEvent) as Lang.Boolean {
+        // ENTER selbst verarbeiten (verhindert doppeltes onSelect)
+        return evt.getKey() == WatchUi.KEY_ENTER;
+    }
+
+    function _pushQuickMenu() as Void {
         var menu = new WatchUi.Menu2({ :title => "Schnellmenü" });
         for (var p = 2; p <= 10; p++) {
             menu.addItem(new WatchUi.MenuItem(
@@ -74,7 +98,6 @@ class ClockDelegate extends WatchUi.BehaviorDelegate {
         menu.addItem(new WatchUi.MenuItem("Einsatzübersicht Zeiten", null, :overview, null));
         menu.addItem(new WatchUi.MenuItem("Einsatztag beenden", null, :endDay, null));
         WatchUi.pushView(menu, new QuickMenuDelegate(), WatchUi.SLIDE_LEFT);
-        return true;
     }
 
     function onNextPage() as Lang.Boolean { Nav.go(1); return true; }       // kurz DOWN

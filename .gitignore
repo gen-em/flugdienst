@@ -1,0 +1,13 @@
+# Build-Ausgaben der Uhr-App (werden bei jedem Kompilieren neu erzeugt)
+watch/bin/
+*.prg
+*.prg.debug.xml
+*.iq
+
+# Lokale Server-Konfiguration (enthält Zugangsdaten — niemals ins Repo!)
+server/config.php
+server/install.lock
+
+# Betriebssystem-Kram
+.DS_Store
+Thumbs.db
