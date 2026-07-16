@@ -6,10 +6,23 @@ using Toybox.Application.Properties;
 using Toybox.Application.Storage;
 using Toybox.Lang;
 
+// Traeger fuer den Web-Antwort-Rueckruf (method() gibt es nur auf Objekten).
+// Die Signatur muss exakt der von makeWebRequest erwarteten entsprechen.
+class UploaderCb {
+    function initialize() {}
+    function onResponse(code as Lang.Number,
+                        data as Null or Lang.Dictionary or Lang.String
+                                or Toybox.PersistedContent.Iterator) as Void {
+        Uploader.onResponse(code, data);
+    }
+}
+
 module Uploader {
 
     var _busy as Lang.Boolean = false;
     var lastError as Lang.String or Null = null;
+    var _cb as UploaderCb or Null = null;
+    var _inflight as Lang.Dictionary or Null = null;  // Kontext der laufenden Anfrage
 
     // Von ueberall aufrufbar: arbeitet die Warteschlange sequenziell ab.
     function syncAll() as Void {
@@ -95,17 +108,25 @@ module Uploader {
                 "X-Device-Id" => Properties.getValue("deviceId"),
                 "X-Api-Key"   => Properties.getValue("apiKey")
             },
-            :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON,
-            :context => { "ref" => ref, "kind" => job["kind"],
-                          "pendingIdx" => job["pendingIdx"],
-                          "final" => d["final"] == true }
+            :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
         };
 
+        // Kontext der laufenden Anfrage merken (Uploads laufen sequenziell,
+        // daher genuegt eine einzelne Variable).
+        _inflight = { "ref" => ref, "kind" => job["kind"],
+                      "pendingIdx" => job["pendingIdx"],
+                      "final" => d["final"] == true };
+
+        if (_cb == null) { _cb = new UploaderCb(); }
         Communications.makeWebRequest(
-            Properties.getValue("serverUrl"), body, opts, method(:onResponse));
+            Properties.getValue("serverUrl"), body, opts, _cb.method(:onResponse));
     }
 
-    function onResponse(code as Lang.Number, data, ctx as Lang.Dictionary) as Void {
+    function onResponse(code as Lang.Number,
+                        data as Null or Lang.Dictionary or Lang.String
+                                or Toybox.PersistedContent.Iterator) as Void {
+        var ctx = _inflight;
+        if (ctx == null) { _busy = false; return; }
         var ref = ctx["ref"] as Lang.String;
         if (code == 200 && data instanceof Lang.Dictionary && data["ok"] == true) {
             lastError = null;

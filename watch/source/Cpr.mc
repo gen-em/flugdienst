@@ -5,12 +5,20 @@ using Toybox.Timer;
 using Toybox.Lang;
 using Toybox.WatchUi;
 
+// Rueckrufe brauchen eine Klasse als Traeger (method() gibt es nur auf Objekten,
+// nicht auf Modulen). Diese Huelle reicht den Timer-Tick ans Modul weiter.
+class CprCb {
+    function initialize() {}
+    function tick() as Void { Cpr.tick(); }
+}
+
 module Cpr {
 
     var active as Lang.Boolean = false;
     var startEpoch as Lang.Number = 0;        // Reanimationsbeginn
     var cycleEndEpoch as Lang.Number = 0;     // 0 = Countdown steht bei 0:00
     var _timer as Timer.Timer or Null = null;
+    var _cb as CprCb or Null = null;
     var _alarmFired as Lang.Boolean = false;
 
     function start() as Void {
@@ -20,7 +28,8 @@ module Cpr {
         Model.resusStart();
         restartCycle();
         if (_timer == null) { _timer = new Timer.Timer(); }
-        _timer.start(method(:tick), 1000, true);
+        if (_cb == null) { _cb = new CprCb(); }
+        _timer.start(_cb.method(:tick), 1000, true);
     }
 
     function restartCycle() as Void {

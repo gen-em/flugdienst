@@ -5,12 +5,26 @@
 using Toybox.WatchUi;
 using Toybox.Position;
 using Toybox.Lang;
+using Toybox.System;
 
 class MapPageView extends WatchUi.MapView {
 
     function initialize() {
         MapView.initialize();
         setMapMode(WatchUi.MAP_MODE_PREVIEW);
+        // Pflicht vor der ersten Anzeige: welcher Bildschirmbereich gehoert
+        // der Karte? Hier: der komplette Bildschirm.
+        var s = System.getDeviceSettings();
+        setScreenVisibleArea(0, 0, s.screenWidth, s.screenHeight);
+        // Ebenfalls Pflicht: eine initiale Kartenflaeche. Ohne bekannte
+        // Position starten wir ueber Sueddeutschland; sobald GPS-Punkte da
+        // sind, uebernimmt _refreshTrack() die echte Ausrichtung.
+        var ll = Track.lastLatLon();
+        var lat = (ll[0] != null) ? ll[0] : 48.5d;
+        var lon = (ll[1] != null) ? ll[1] : 10.5d;
+        setMapVisibleArea(
+            new Position.Location({ :latitude => lat + 0.02d, :longitude => lon - 0.03d, :format => :degrees }),
+            new Position.Location({ :latitude => lat - 0.02d, :longitude => lon + 0.03d, :format => :degrees }));
     }
 
     function onShow() as Void {
@@ -41,8 +55,11 @@ class MapPageView extends WatchUi.MapView {
             var marker = new WatchUi.MapMarker(loc);
             setMapMarker([marker]);
             if (d.size() < 4) {
-                // Noch kein Track: Karte auf Position zentrieren
-                setMapVisibleArea(loc, loc);
+                // Noch kein Track: kleiner Rahmen um die Position
+                // (identische Ecken = Flaeche der Groesse 0 -> vermeiden)
+                setMapVisibleArea(
+                    new Position.Location({ :latitude => ll[0] + 0.01d, :longitude => ll[1] - 0.015d, :format => :degrees }),
+                    new Position.Location({ :latitude => ll[0] - 0.01d, :longitude => ll[1] + 0.015d, :format => :degrees }));
             } else {
                 _fitToTrack(d);
             }

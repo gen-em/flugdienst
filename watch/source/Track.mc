@@ -10,9 +10,17 @@ using Toybox.Lang;
 using Toybox.Math;
 using Toybox.WatchUi;
 
+// Traeger fuer den Positions-Rueckruf (method() gibt es nur auf Objekten).
+class TrackCb {
+    function initialize() {}
+    function onPosition(info as Position.Info) as Void { Track.onPosition(info); }
+}
+
 module Track {
 
     const CHUNK_POINTS = 200;
+
+    var _cb as TrackCb or Null = null;
 
     // aktiver Puffer (Einsatz ODER Ruhe-Segment — nie beides)
     var _ref as Lang.String or Null = null;   // client_ref des aktiven Tracks
@@ -36,11 +44,13 @@ module Track {
     // ---- Lebenszyklus -------------------------------------------------------
 
     function startPositioning() as Void {
-        Position.enableLocationEvents(Position.LOCATION_CONTINUOUS, method(:onPosition));
+        if (_cb == null) { _cb = new TrackCb(); }
+        Position.enableLocationEvents(Position.LOCATION_CONTINUOUS, _cb.method(:onPosition));
     }
 
     function stopPositioning() as Void {
-        Position.enableLocationEvents(Position.LOCATION_DISABLE, method(:onPosition));
+        if (_cb == null) { _cb = new TrackCb(); }
+        Position.enableLocationEvents(Position.LOCATION_DISABLE, _cb.method(:onPosition));
     }
 
     function beginMissionTrack(ref as Lang.String) as Void {
