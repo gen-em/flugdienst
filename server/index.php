@@ -1,5 +1,7 @@
 <?php
 declare(strict_types=1);
+// Noch nicht eingerichtet? -> Installer starten (erledigt sich nach 1x selbst).
+if (!file_exists(__DIR__ . '/config.php')) { header('Location: install.php'); exit; }
 require_once __DIR__ . '/auth_guard.php';
 ?><!doctype html>
 <html lang="de">

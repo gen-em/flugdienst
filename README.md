@@ -19,20 +19,25 @@ wird erfahrungsgemäß eine Handvoll API-Korrekturen verlangen (siehe unten).
 
 ## Server in Betrieb nehmen
 
-1. `server/` auf den Webspace legen (DocumentRoot oder Unterverzeichnis).
-2. Datenbank anlegen und `server/schema.sql` einspielen.
-3. `config.example.php` nach `config.php` kopieren und ausfüllen
-   (DB-Zugang, `base_url`, SMTP-Zugang zum Stalwart). `config.php` nie committen.
-4. Ersten Admin anlegen (einmalig per SQL):
-   ```sql
-   INSERT INTO users (email, role) VALUES ('deine@adresse.de', 'admin');
-   ```
-   Dann auf der Loginseite „Passwort vergessen oder erstmalig setzen" nutzen —
-   der Setz-Link kommt per Mail.
-5. Als Admin unter **Verwaltung** ein Gerät anlegen. Geräte-ID und API-Schlüssel
+1. `server/` auf den Webspace legen (DocumentRoot oder Unterverzeichnis) und eine
+   leere MySQL-/MariaDB-Datenbank bereitstellen. Sicherstellen, dass das
+   Verzeichnis für PHP schreibbar ist (der Installer legt dort `config.php` an).
+2. Im Browser `index.php` (oder direkt `install.php`) aufrufen. Fehlt die
+   `config.php`, startet automatisch der **Einrichtungs-Assistent**. Dort
+   eintragen: DB-Zugang, Admin-E-Mail + Passwort, Basis-URL, optional SMTP
+   (für Passwort-Reset-Mails). Der Installer testet die Verbindung, legt die
+   Tabellen an, erstellt den Admin und schreibt `config.php`.
+3. Nach Erfolg sperrt sich der Installer selbst (`install.lock`) und `index.php`
+   nimmt den normalen Betrieb auf. Empfehlung: `install.php` anschließend vom
+   Server löschen.
+4. Als Admin unter **Verwaltung** ein Gerät anlegen. Geräte-ID und API-Schlüssel
    werden **einmalig** angezeigt → in die Uhr-App-Einstellungen übertragen.
-6. Apache: `.htaccess` erzwingt HTTPS und schützt `config.php`. Bei nginx die
-   äquivalenten Regeln setzen (deny für `config.php`, `schema.sql` usw.).
+5. Apache: `.htaccess` erzwingt HTTPS und schützt `config.php`, `schema.sql`,
+   `install.lock` usw. Bei nginx die äquivalenten Deny-Regeln setzen.
+
+Alternativ ist weiterhin manuelles Setup möglich (`config.example.php` nach
+`config.php` kopieren, `schema.sql` einspielen, Admin per SQL anlegen), falls
+der Installer in einer bestimmten Umgebung nicht genutzt werden soll.
 
 ## Uhr-App bauen
 

@@ -1,0 +1,15 @@
+# HTTPS erzwingen
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# Sensible Dateien niemals ausliefern
+<FilesMatch "^(config\.php|config\.example\.php|schema\.sql|db\.php|smtp\.php|auth_guard\.php|install\.lock)$">
+  Require all denied
+</FilesMatch>
+
+# Security-Header
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-Frame-Options "DENY"
+Header always set Referrer-Policy "same-origin"
+Header always set Strict-Transport-Security "max-age=31536000"
