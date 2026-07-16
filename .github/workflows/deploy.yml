@@ -1,0 +1,37 @@
+name: Server per FTP hochladen
+
+# Läuft automatisch bei jedem Push, aber nur wenn sich etwas unter server/
+# geändert hat. Manuelles Auslösen ist über den Actions-Tab ebenfalls möglich.
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  ftp-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: server/ per FTP synchronisieren
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server:   ${{ secrets.FTP_SERVER }}     # z. B. ftp.dein-webspace.de
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps            # verschlüsselt; auf "ftp" ändern, falls dein Host kein FTPS kann
+          port:     21              # explizites FTPS = 21; bei implizitem FTPS ggf. 990
+          local-dir: ./server/      # NUR dieses Verzeichnis wird hochgeladen (Slash am Ende wichtig)
+          server-dir: ./httpdocs/            # Zielpfad auf dem Webspace anpassen, z. B. ./public_html/
+          # Diese Dateien nie anfassen: liegen nur auf dem Server, dürfen nicht
+          # überschrieben oder gelöscht werden. Die Git-Defaults erneut mit angeben.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            config.php
+            install.lock
