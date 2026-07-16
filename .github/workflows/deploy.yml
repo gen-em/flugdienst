@@ -26,7 +26,7 @@ jobs:
           protocol: ftps            # verschlüsselt; auf "ftp" ändern, falls dein Host kein FTPS kann
           port:     21              # explizites FTPS = 21; bei implizitem FTPS ggf. 990
           local-dir: ./server/      # NUR dieses Verzeichnis wird hochgeladen (Slash am Ende wichtig)
-          server-dir: ./            # Zielpfad auf dem Webspace anpassen, z. B. ./public_html/
+          server-dir: ./httpdocs/            # Zielpfad auf dem Webspace anpassen, z. B. ./public_html/
           # Diese Dateien nie anfassen: liegen nur auf dem Server, dürfen nicht
           # überschrieben oder gelöscht werden. Die Git-Defaults erneut mit angeben.
           exclude: |
