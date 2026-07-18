@@ -41,8 +41,8 @@ $devices = $st->fetchAll();
   <a class="brand" href="index.php"><img src="assets/logo-weiss.png" alt="GenEM Einsatzdoku"></a>
   <nav>
     <a href="index.php">Übersicht</a>
-    <a class="active" href="geraete.php">Geräte</a>
     <?php if ($userRole === 'admin'): ?><a href="admin.php">Verwaltung</a><?php endif; ?>
+    <a class="active" href="geraete.php">Geräte</a>
     <a href="logout.php">Abmelden</a>
   </nav>
 </header>
@@ -92,5 +92,6 @@ $devices = $st->fetchAll();
     <button class="btn-primary">Gerät anlegen</button>
   </form>
 </main>
+<footer class="sitefooter">© Gen-EM · <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a></footer>
 </body>
 </html>

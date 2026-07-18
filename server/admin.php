@@ -144,5 +144,6 @@ $devices = db()->query('SELECT d.id, d.device_id, d.label, d.active, d.last_seen
     </form>
   </section>
 </main>
+<footer class="sitefooter">© Gen-EM · <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a></footer>
 </body>
 </html>

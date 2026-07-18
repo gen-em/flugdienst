@@ -135,13 +135,30 @@ section{margin-bottom:1.8rem}
   padding:.05em .45em;font-size:.8rem;font-weight:600}
 .fieldlist{background:var(--schnee);border:1px solid var(--line);border-radius:6px;
   padding:.6rem .9rem;margin:0 0 1rem;display:grid;grid-template-columns:auto 1fr;
-  gap:.15rem .9rem}
+  gap:.15rem .9rem;align-items:center}
 .fieldlist dt{font-family:var(--head);font-weight:600;font-size:.85rem;
   color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .fieldlist dd{margin:0;white-space:pre-line}
-.page-narrow{max-width:560px}
+.page-narrow{max-width:560px;margin-inline:auto}
 .phase-row{display:flex;gap:.5rem;margin:.4rem 0;align-items:center}
 .phase-row select{flex:1;width:auto}
 .phase-row input[type=time]{width:110px}
 .phase-row .btn-danger{padding:.35rem .6rem}
 #meta a{color:var(--accent-dark)}
+
+/* Textareas ueberall im Eingabefeld-Stil (z. B. Notizen im Einsatzformular) */
+textarea{width:100%;padding:.5rem .6rem;border:1px solid var(--line);
+  border-radius:5px;font:inherit;background:var(--schnee);resize:vertical}
+
+/* "Bearbeiten" als Button */
+.btn-edit{display:inline-block;background:var(--accent);color:#fff !important;
+  font-family:var(--head);font-weight:600;font-size:.85rem;
+  padding:.25rem .7rem;border-radius:5px;text-decoration:none;vertical-align:1px}
+.btn-edit:hover{background:var(--accent-dark)}
+
+/* Fusszeile mit Copyright/Lizenz */
+.sitefooter{text-align:right;padding:.6rem 1.2rem 1rem;
+  color:var(--muted);font-size:.8rem}
+.sitefooter a{color:var(--muted)}
+.login-body .sitefooter{position:fixed;right:0;bottom:0;color:#8A96A8}
+.login-body .sitefooter a{color:#8A96A8}

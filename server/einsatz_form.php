@@ -219,6 +219,7 @@ function addRow(no, time) {
   rm.addEventListener('click', () => div.remove());
   div.append(sel, t, rm);
   document.getElementById('phaserows').appendChild(div);
+  return sel;
 }
 
 START_ROWS.forEach(r => addRow(r[0], r[1] === '–' ? '' : r[1]));
@@ -226,8 +227,9 @@ document.getElementById('addrow').addEventListener('click', ev => {
   ev.preventDefault();
   const rows = document.querySelectorAll('.phase-row select');
   const last = rows.length ? parseInt(rows[rows.length - 1].value) : 1;
-  addRow(Math.min(last + 1, 10), '');
+  addRow(Math.min(last + 1, 10), '').focus();   // direkt per Tastatur bedienbar
 });
 </script>
+<footer class="sitefooter">© Gen-EM · <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a></footer>
 </body>
 </html>

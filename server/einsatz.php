@@ -56,7 +56,7 @@ async function init(){
     `${fmtDay(m.day)} · ${m.start_hhmm}–${m.end_hhmm} Uhr · ${fmtKm(m.distance_m)}`
     + (m.ascent_m != null ? ` · ${m.ascent_m} Hm` : '')
     + (m.manual ? ' · <span class="badge-manual">manuell</span>' : '')
-    + ` · <a href="einsatz_form.php?id=${m.id}">Bearbeiten</a>`;
+    + ` &nbsp; <a class="btn-edit" href="einsatz_form.php?id=${m.id}">Bearbeiten</a>`;
 
   // Zusatzfelder generisch anzeigen (Definition: mission_fields.php)
   if (m.fields && m.fields.length) {
@@ -106,5 +106,6 @@ async function init(){
 }
 init();
 </script>
+<footer class="sitefooter">© Gen-EM · <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a></footer>
 </body>
 </html>
