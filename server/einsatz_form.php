@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $t = trim((string)($times[$i] ?? ''));
             if ($t === '') continue;
             $no = (int)$no;
-            if ($no < 2 || $no > 10) continue;
+            if ($no < 2 || $no > 9) continue;
             $ts = local_to_utc($day, $t, $dayOffset);
             if ($ts !== null && $prev !== null && $ts < $prev) {
                 $dayOffset += 1;                       // Mitternacht ueberschritten
@@ -206,7 +206,7 @@ function addRow(no, time) {
   div.className = 'phase-row';
   const sel = document.createElement('select');
   sel.name = 'ph_no[]';
-  for (let p = 2; p <= 10; p++) {
+  for (let p = 2; p <= 9; p++) {
     const o = document.createElement('option');
     o.value = p; o.textContent = p + ' ' + PHASE_LABELS[p];
     if (p === no) o.selected = true;

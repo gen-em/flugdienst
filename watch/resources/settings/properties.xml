@@ -1,5 +1,7 @@
 <properties>
-    <property id="serverUrl" type="string">https://einsatz.example.de/ingest.php</property>
+    <!-- Domain genuegt (z. B. "luftrettung.net") — Schema und /ingest.php
+         ergaenzt die App automatisch. Vollstaendige URLs bleiben gueltig. -->
+    <property id="serverUrl" type="string"></property>
     <property id="deviceId"  type="string"></property>
     <property id="apiKey"    type="string"></property>
 </properties>

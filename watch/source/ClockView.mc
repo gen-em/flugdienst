@@ -1,4 +1,9 @@
-// Einsatzdoku — Oberflaeche 1: Uhrzeit + Phase (Anforderungen 1.2)
+// Einsatzdoku — Oberflaeche 1: Uhrzeit + Phase
+//
+// kurz START: naechste Phase (2..9). Nach Phase 9 bleibt der Einsatz offen;
+// kurz START zeigt dann die Bestaetigung "Einsatz beenden & senden?".
+// lang START: farbcodiertes Schnellmenue (Phasen, Einsatzuebersicht gelb,
+// Einsatz abschliessen gruen, Einsatztag beenden rot — beide mit Bestaetigung).
 using Toybox.WatchUi;
 using Toybox.Graphics;
 using Toybox.System;
@@ -30,17 +35,25 @@ class ClockView extends WatchUi.View {
 
         var t = System.getClockTime();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy - 62, Graphics.FONT_NUMBER_MEDIUM,
+        dc.drawText(cx, cy - 52, Graphics.FONT_NUMBER_HOT,
             t.hour.format("%02d") + ":" + t.min.format("%02d"),
-            Graphics.TEXT_JUSTIFY_CENTER);
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-        // Phase gross: Zahl + Bezeichnung
+        // Phase: Zahl + Bezeichnung (bewusst kleiner als die Uhrzeit)
         dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 8, Graphics.FONT_NUMBER_MILD,
-            Model.phase.toString(), Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, cy + 26, Graphics.FONT_LARGE,
+            Model.phase.toString(),
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 52, Graphics.FONT_SMALL,
+        dc.drawText(cx, cy + 62, Graphics.FONT_SMALL,
             Const.PHASE_LABELS[Model.phase], Graphics.TEXT_JUSTIFY_CENTER);
+
+        // Haltezustand: Einsatz offen nach Phase 9
+        if (Model.missionActive() && Model.phase >= 9) {
+            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
+                "START = Einsatz abschließen", Graphics.TEXT_JUSTIFY_CENTER);
+        }
 
         // dezente Statuszeile: laufende Rea / Upload-Problem
         if (Cpr.active) {
@@ -61,7 +74,7 @@ class ClockDelegate extends WatchUi.BehaviorDelegate {
 
     function initialize() { BehaviorDelegate.initialize(); }
 
-    // START manuell vermessen: kurz = naechste Phase, lang = Schnellmenue
+    // START manuell vermessen: kurz = Phase/Abschluss, lang = Schnellmenue
     function onKeyPressed(evt as WatchUi.KeyEvent) as Lang.Boolean {
         if (evt.getKey() == WatchUi.KEY_ENTER) {
             _pressStart[WatchUi.KEY_ENTER] = System.getTimer();
@@ -77,6 +90,8 @@ class ClockDelegate extends WatchUi.BehaviorDelegate {
         _pressStart.remove(WatchUi.KEY_ENTER);
         if ((System.getTimer() - t0) >= Const.LONG_PRESS_MS) {
             _pushQuickMenu();
+        } else if (Model.missionActive() && Model.phase >= 9) {
+            pushFinishConfirm();               // Haltezustand: Abschluss bestaetigen
         } else {
             Model.nextPhase();
             WatchUi.requestUpdate();
@@ -90,14 +105,13 @@ class ClockDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function _pushQuickMenu() as Void {
-        var menu = new WatchUi.Menu2({ :title => "Schnellmenü" });
-        for (var p = 2; p <= 10; p++) {
-            menu.addItem(new WatchUi.MenuItem(
-                p.toString() + " " + Const.PHASE_LABELS[p], null, p, null));
-        }
-        menu.addItem(new WatchUi.MenuItem("Einsatzübersicht Zeiten", null, :overview, null));
-        menu.addItem(new WatchUi.MenuItem("Einsatztag beenden", null, :endDay, null));
-        WatchUi.pushView(menu, new QuickMenuDelegate(), WatchUi.SLIDE_LEFT);
+        var v = new QuickMenuView();
+        WatchUi.pushView(v, new QuickMenuDelegate(v), WatchUi.SLIDE_LEFT);
+    }
+
+    static function pushFinishConfirm() as Void {
+        var dlg = new WatchUi.Confirmation("Einsatz beenden & senden?");
+        WatchUi.pushView(dlg, new FinishConfirmDelegate(), WatchUi.SLIDE_LEFT);
     }
 
     function onNextPage() as Lang.Boolean { Nav.go(1); return true; }       // kurz DOWN
@@ -119,26 +133,124 @@ class ExitConfirmDelegate extends WatchUi.ConfirmationDelegate {
     }
 }
 
-class QuickMenuDelegate extends WatchUi.Menu2InputDelegate {
-
-    function initialize() { Menu2InputDelegate.initialize(); }
-
-    function onSelect(item as WatchUi.MenuItem) as Void {
-        var id = item.getId();
-        if (id == :endDay) {
-            WatchUi.popView(WatchUi.SLIDE_RIGHT);
-            var dlg = new WatchUi.Confirmation("Einsatztag beenden?");
-            WatchUi.pushView(dlg, new EndDayConfirmDelegate(), WatchUi.SLIDE_LEFT);
-        } else if (id == :overview) {
-            WatchUi.popView(WatchUi.SLIDE_RIGHT);
-            pushMissionOverview();
-        } else if (id instanceof Lang.Number) {
-            Model.setPhase(id as Lang.Number);      // Schnellauswahl: neuer Zeitstempel
-            WatchUi.popView(WatchUi.SLIDE_RIGHT);
+class FinishConfirmDelegate extends WatchUi.ConfirmationDelegate {
+    function initialize() { ConfirmationDelegate.initialize(); }
+    function onResponse(response) as Lang.Boolean {
+        if (response == WatchUi.CONFIRM_YES) {
+            Model.finishMission();
+            WatchUi.requestUpdate();
         }
+        return true;
+    }
+}
+
+class EndDayConfirmDelegate extends WatchUi.ConfirmationDelegate {
+    function initialize() { ConfirmationDelegate.initialize(); }
+    function onResponse(response) as Lang.Boolean {
+        if (response == WatchUi.CONFIRM_YES) {
+            Cpr.stop();
+            Model.endService();
+            WatchUi.switchToView(new StartView(), new StartDelegate(), WatchUi.SLIDE_DOWN);
+        }
+        return true;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Farbcodiertes Schnellmenue (Muster wie CprMenuView, Eintraege dynamisch)
+// ---------------------------------------------------------------------------
+
+class QuickMenuView extends WatchUi.View {
+
+    var items as Lang.Array = [];   // [Label, Farbe, ID]
+    var index as Lang.Number = 0;
+
+    function initialize() {
+        View.initialize();
+        for (var p = 2; p <= 9; p++) {
+            items.add([p.toString() + " " + Const.PHASE_LABELS[p], 0xFFFFFF, p]);
+        }
+        items.add(["Einsatzübersicht", 0xFFFF00, :overview]);          // gelb
+        if (Model.missionActive()) {
+            items.add(["Einsatz abschließen", 0x00FF00, :finish]);     // gruen
+        }
+        items.add(["Einsatztag beenden", 0xFF0000, :endDay]);          // rot
     }
 
-    // "Einsatzuebersicht Zeiten": scrollbare Liste der Phasen-Zeitstempel
+    function onUpdate(dc as Graphics.Dc) as Void {
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.clear();
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var rowH = 38;
+        var n = items.size();
+
+        for (var off = -2; off <= 2; off++) {
+            var i = ((index + off) % n + n) % n;
+            var item = items[i];
+            var y = cy + off * rowH;
+            if (off == 0) {
+                dc.setColor(item[1] as Lang.Number, Graphics.COLOR_TRANSPARENT);
+                dc.fillRoundedRectangle(14, y - rowH / 2 + 2,
+                    dc.getWidth() - 28, rowH - 4, 8);
+                dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(cx, y, Graphics.FONT_SMALL,
+                    item[0] as Lang.String,
+                    Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            } else {
+                dc.setColor(item[1] as Lang.Number, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(cx, y, Graphics.FONT_TINY,
+                    item[0] as Lang.String,
+                    Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            }
+        }
+    }
+}
+
+class QuickMenuDelegate extends WatchUi.BehaviorDelegate {
+
+    var _v as QuickMenuView;
+
+    function initialize(v as QuickMenuView) {
+        BehaviorDelegate.initialize();
+        _v = v;
+    }
+
+    function onPreviousPage() as Lang.Boolean {           // UP: endlos
+        var n = _v.items.size();
+        _v.index = (_v.index - 1 + n) % n;
+        WatchUi.requestUpdate();
+        return true;
+    }
+
+    function onNextPage() as Lang.Boolean {               // DOWN: endlos
+        _v.index = (_v.index + 1) % _v.items.size();
+        WatchUi.requestUpdate();
+        return true;
+    }
+
+    function onSelect() as Lang.Boolean {                 // START
+        var id = _v.items[_v.index][2];
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
+        if (id == :endDay) {
+            var dlg = new WatchUi.Confirmation("Einsatztag beenden?");
+            WatchUi.pushView(dlg, new EndDayConfirmDelegate(), WatchUi.SLIDE_LEFT);
+        } else if (id == :finish) {
+            ClockDelegate.pushFinishConfirm();
+        } else if (id == :overview) {
+            pushMissionOverview();
+        } else if (id instanceof Lang.Number) {
+            Model.setPhase(id as Lang.Number);            // neuer Zeitstempel
+        }
+        return true;
+    }
+
+    function onBack() as Lang.Boolean {
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
+        return true;
+    }
+
+    // "Einsatzuebersicht": scrollbare Liste der Phasen-Zeitstempel
     static function pushMissionOverview() as Void {
         var menu = new WatchUi.Menu2({ :title => "Zeiten" });
         var src = (Model.mission != null) ? Model.mission
@@ -156,18 +268,6 @@ class QuickMenuDelegate extends WatchUi.Menu2InputDelegate {
             }
         }
         WatchUi.pushView(menu, new ListCloseDelegate(), WatchUi.SLIDE_LEFT);
-    }
-}
-
-class EndDayConfirmDelegate extends WatchUi.ConfirmationDelegate {
-    function initialize() { ConfirmationDelegate.initialize(); }
-    function onResponse(response) as Lang.Boolean {
-        if (response == WatchUi.CONFIRM_YES) {
-            Cpr.stop();
-            Model.endService();
-            WatchUi.switchToView(new StartView(), new StartDelegate(), WatchUi.SLIDE_DOWN);
-        }
-        return true;
     }
 }
 

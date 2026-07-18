@@ -105,6 +105,17 @@ $MIGRATIONS = [
             "ALTER TABLE missions ADD COLUMN notes TEXT NULL AFTER mission_no",
         ],
     ],
+    [
+        'id'    => '2026_07_19_phase10_entfernen',
+        'label' => 'Phase 10 abgeschafft: alte Zeitstempel löschen, Einsatzende = Phase 9',
+        'sql'   => [
+            "UPDATE missions m
+               JOIN (SELECT mission_id, MAX(occurred_at) AS t FROM mission_phases
+                     WHERE phase = 9 GROUP BY mission_id) x ON x.mission_id = m.id
+               SET m.ended_at = x.t",
+            "DELETE FROM mission_phases WHERE phase = 10",
+        ],
+    ],
     // Naechste Migration hier anhaengen.
 ];
 

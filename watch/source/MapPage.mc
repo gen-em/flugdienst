@@ -9,6 +9,8 @@ using Toybox.System;
 
 class MapPageView extends WatchUi.MapView {
 
+    var browse as Lang.Boolean = false;   // false = Vorschau, true = interaktiv
+
     function initialize() {
         MapView.initialize();
         setMapMode(WatchUi.MAP_MODE_PREVIEW);
@@ -32,7 +34,7 @@ class MapPageView extends WatchUi.MapView {
     }
 
     function onUpdate(dc) as Void {
-        _refreshTrack();
+        if (!browse) { _refreshTrack(); }   // im Browse-Modus steuert das System den Ausschnitt
         MapView.onUpdate(dc);
     }
 
@@ -83,9 +85,39 @@ class MapPageView extends WatchUi.MapView {
 
 class MapPageDelegate extends WatchUi.BehaviorDelegate {
 
-    function initialize() { BehaviorDelegate.initialize(); }
+    var _v as MapPageView;
 
-    function onNextPage() as Lang.Boolean { Nav.go(1); return true; }
-    function onPreviousPage() as Lang.Boolean { Nav.go(-1); return true; }
-    function onBack() as Lang.Boolean { Nav.goTo(:clock); return true; }
+    function initialize(v as MapPageView) {
+        BehaviorDelegate.initialize();
+        _v = v;
+    }
+
+    // kurz START: in Garmins interaktiven Kartenmodus wechseln
+    // (native Zoom-/Verschiebe-Bedienung der Uhr); BACK kehrt zur Vorschau zurueck.
+    function onSelect() as Lang.Boolean {
+        if (!_v.browse) {
+            _v.browse = true;
+            _v.setMapMode(WatchUi.MAP_MODE_BROWSE);
+            WatchUi.requestUpdate();
+        }
+        return true;
+    }
+
+    function onNextPage() as Lang.Boolean {
+        if (_v.browse) { return false; }          // im Browse-Modus zoomt/schiebt das System
+        Nav.go(1); return true;
+    }
+    function onPreviousPage() as Lang.Boolean {
+        if (_v.browse) { return false; }
+        Nav.go(-1); return true;
+    }
+    function onBack() as Lang.Boolean {
+        if (_v.browse) {                          // erst Browse verlassen, dann Seite
+            _v.browse = false;
+            _v.setMapMode(WatchUi.MAP_MODE_PREVIEW);
+            WatchUi.requestUpdate();
+            return true;
+        }
+        Nav.goTo(:clock); return true;
+    }
 }

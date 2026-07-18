@@ -68,26 +68,33 @@ module Model {
 
     function missionActive() as Lang.Boolean { return mission != null; }
 
-    // kurz START auf Oberflaeche 1: naechste Phase
+    // kurz START auf Oberflaeche 1: naechste Phase.
+    // Nach Phase 9 bleibt der Einsatz OFFEN (Haltezustand) — der Abschluss
+    // erfolgt nur ueber die Bestaetigung (finishMission), nie automatisch.
     function nextPhase() as Void {
-        if (phase >= 10 || phase < 1) { phase = 1; }
+        if (mission != null && phase >= 9) { return; }
+        if (phase < 1 || phase >= 9) { phase = 1; }
         setPhase(phase + 1);
     }
 
     // Direktes Setzen (auch Schnellmenue): erneutes Setzen frueherer Phasen
     // erzeugt schlicht einen weiteren Zeitstempel (keine Korrektur).
     function setPhase(p as Lang.Number) as Void {
-        if (p < 2 || p > 10) { return; }
-        if (mission == null) { _startMission(); }    // Phase 2..10 ohne Einsatz -> Einsatz beginnt
+        if (p < 2 || p > 9) { return; }
+        if (mission == null) { _startMission(); }    // Phase 2..9 ohne Einsatz -> Einsatz beginnt
 
         var pos = Track.lastLatLon();
         // [phase, isoUTC, lat, lon, lokaleAnzeige]
         (mission["phases"] as Lang.Array).add([p, Util.isoNow(), pos[0], pos[1], Util.localHHMM()]);
         phase = p;
         Util.vibrateShort();
-
-        if (p == 10) { _finishMission(); }
         save();
+    }
+
+    // Bestaetigter Einsatz-Abschluss ("Einsatz beenden & senden?")
+    function finishMission() as Void {
+        if (mission == null) { return; }
+        _finishMission();
     }
 
     function _startMission() as Void {
@@ -103,7 +110,14 @@ module Model {
 
     function _finishMission() as Void {
         Cpr.stopRecording();                 // laufende Rea sauber schliessen
-        mission["endedAt"] = Util.isoNow();
+        // Einsatzende = Zeit der (letzten) Phase 9; ohne Phase 9 der
+        // Abschluss-Zeitpunkt als Rueckfall.
+        var end = Util.isoNow();
+        var ph = mission["phases"] as Lang.Array;
+        for (var i = 0; i < ph.size(); i++) {
+            if ((ph[i] as Lang.Array)[0] == 9) { end = (ph[i] as Lang.Array)[1]; }
+        }
+        mission["endedAt"] = end;
         // Kilometer/Anstieg einfrieren: gehoeren zu DIESEM Einsatz, auch wenn
         // der Upload erst spaeter (waehrend eines neuen Einsatzes) gelingt
         mission["dist"] = Track.distanceM.toNumber();

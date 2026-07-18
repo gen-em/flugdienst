@@ -33,6 +33,13 @@ class SpeedView extends WatchUi.View {
             dc.drawText(cx, cy + 52, Graphics.FONT_TINY, "kein Einsatz",
                 Graphics.TEXT_JUSTIFY_CENTER);
         }
+
+        // laufende Reanimation auch hier anzeigen
+        if (Cpr.active) {
+            dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, dc.getHeight() - 32, Graphics.FONT_XTINY,
+                "REA läuft", Graphics.TEXT_JUSTIFY_CENTER);
+        }
     }
 }
 

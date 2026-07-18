@@ -32,11 +32,11 @@ class CprView extends WatchUi.View {
             return;
         }
 
-        // kleiner Timer: Gesamtdauer vorwaerts (LILA)
+        // kleiner Timer: Gesamtdauer vorwaerts (LILA, gut ablesbar)
         var e = Cpr.elapsedS();
         dc.setColor(Graphics.COLOR_PURPLE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 28, Graphics.FONT_SMALL,
-            _mmss(e), Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, 34, Graphics.FONT_MEDIUM,
+            _mmss(e), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         // grosser Timer: 2:00-Countdown (steht bei 0:00, dann rot)
         var r = Cpr.cycleRemainingS();
@@ -113,16 +113,18 @@ class CprDelegate extends WatchUi.BehaviorDelegate {
 
 class CprMenuView extends WatchUi.View {
 
-    // [Label, Farbe, ID]
+    // [Label, Farbe, ID] — Reihenfolge und Farben lt. Vorgabe
     static const ITEMS = [
-        ["Defibrillation", 0xFFAA00, Const.R_DEFI],        // bernstein (Strom)
-        ["Intubation",     0x00AAFF, Const.R_INTUBATION],  // blau (Atemweg)
-        ["Amiodaron",      0xAA00FF, Const.R_AMIODARON],   // violett (Pharma)
-        ["Sonographie",    0x00FFAA, Const.R_SONO],        // tuerkis (Bild)
-        ["ROSC",           0x00FF00, Const.R_ROSC],        // gruen (Erfolg)
-        ["Tod",            0xAAAAAA, Const.R_TOD],         // grau
-        ["Übersicht",      0xFFFFFF, :overview],           // weiss
-        ["Rea beenden",    0xFF0000, :stopRec]             // rot
+        ["Rhythmuskontrolle", 0xFFFF00, Const.R_RHYTHMUS],    // gelb
+        ["Defibrillation",    0xFFAA00, Const.R_DEFI],        // bernstein
+        ["Adrenalin",         0xFF55AA, Const.R_ADRENALIN],   // pink
+        ["Amiodaron",         0xAA00FF, Const.R_AMIODARON],   // violett
+        ["Intubation",        0x00AAFF, Const.R_INTUBATION],  // blau
+        ["Sonographie",       0x00FFAA, Const.R_SONO],        // tuerkis
+        ["ROSC",              0x00FF00, Const.R_ROSC],        // gruen
+        ["Tod",               0xAAAAAA, Const.R_TOD],         // grau
+        ["Übersicht",         0xFFFFFF, :overview],           // weiss
+        ["ENDE",              0xFF0000, :stopRec]             // rot
     ];
 
     var index as Lang.Number = 0;
@@ -201,6 +203,10 @@ class CprMenuDelegate extends WatchUi.BehaviorDelegate {
             // Sicherheitsabfrage vor dem Beenden der Rea-Aufzeichnung
             var dlg = new WatchUi.Confirmation("Rea beenden?");
             WatchUi.pushView(dlg, new StopRecConfirmDelegate(), WatchUi.SLIDE_LEFT);
+        } else if (Const.R_RHYTHMUS.equals(id)) {
+            Cpr.markRhythmus();                           // inkl. Countdown-Reset
+        } else if (Const.R_ADRENALIN.equals(id)) {
+            Cpr.markAdrenalin();
         } else {
             Cpr.markEvent(id as Lang.String);
         }

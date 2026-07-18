@@ -62,6 +62,12 @@ module Uploader {
     }
 
     function _send(job as Lang.Dictionary) as Void {
+        var url = _serverUrl();
+        if (url.length() == 0) {                 // Einstellungen noch leer
+            lastError = "Keine Server-URL";
+            _busy = false;
+            return;
+        }
         var d = job["data"] as Lang.Dictionary;
         var ref = d["ref"] as Lang.String;
         var seqFrom = _ackedSeq(ref);
@@ -124,8 +130,22 @@ module Uploader {
                       "final" => d["final"] == true };
 
         if (_cb == null) { _cb = new UploaderCb(); }
-        Communications.makeWebRequest(
-            Properties.getValue("serverUrl"), body, opts, _cb.method(:onResponse));
+        Communications.makeWebRequest(url, body, opts, _cb.method(:onResponse));
+    }
+
+    // Toleranz bei der Server-URL: "luftrettung.net" genuegt in den
+    // Einstellungen — Schema und /ingest.php werden ergaenzt.
+    function _serverUrl() as Lang.String {
+        var u = Properties.getValue("serverUrl");
+        if (!(u instanceof Lang.String) || u.length() == 0) { return ""; }
+        if (u.find("http") != 0) { u = "https://" + u; }
+        var len = u.length();
+        var endsPhp = (len >= 4) && (u.substring(len - 4, len) as Lang.String).equals(".php");
+        if (!endsPhp) {
+            if (!(u.substring(len - 1, len) as Lang.String).equals("/")) { u = u + "/"; }
+            u = u + "ingest.php";
+        }
+        return u;
     }
 
     function onResponse(code as Lang.Number,

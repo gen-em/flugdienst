@@ -1,5 +1,5 @@
 <settings>
-    <setting propertyKey="@Properties.serverUrl" title="Server-URL (ingest.php)">
+    <setting propertyKey="@Properties.serverUrl" title="Server (Domain genügt, z. B. luftrettung.net)">
         <settingConfig type="alphaNumeric"/>
     </setting>
     <setting propertyKey="@Properties.deviceId" title="Geräte-ID">

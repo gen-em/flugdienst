@@ -68,7 +68,7 @@ try {
             foreach ($b['phases'] as $p) {
                 $at = iso_to_sql($p['at'] ?? null);
                 $ph = (int)($p['phase'] ?? 0);
-                if ($at === null || $ph < 2 || $ph > 10) continue;
+                if ($at === null || $ph < 2 || $ph > 9) continue;
                 $ins->execute([$ownerId, $ph, $at,
                     isset($p['lat']) ? (float)$p['lat'] : null,
                     isset($p['lon']) ? (float)$p['lon'] : null]);

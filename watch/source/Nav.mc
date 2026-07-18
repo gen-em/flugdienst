@@ -22,7 +22,7 @@ module Nav {
     }
 
     function build(page as Lang.Symbol) as Lang.Array {
-        if (page == :map)   { return [new MapPageView(), new MapPageDelegate()]; }
+        if (page == :map)   { var mv = new MapPageView(); return [mv, new MapPageDelegate(mv)]; }
         if (page == :speed) { return [new SpeedView(), new SpeedDelegate()]; }
         if (page == :cpr)   { return [new CprView(), new CprDelegate()]; }
         return [new ClockView(), new ClockDelegate()];

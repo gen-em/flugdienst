@@ -3,11 +3,12 @@ using Toybox.Lang;
 
 module Const {
 
-    // Phasen 1..10 (Index 0 unbenutzt)
+    // Phasen 1..9 (Index 0 unbenutzt). Der Einsatz-Abschluss ist KEIN
+    // Zeitstempel mehr, sondern eine bestaetigte Aktion (Phase 10 entfaellt).
     const PHASE_LABELS = [
         "", "Frei", "Alarmierung", "Abflug", "Ankunft Einsatzort",
-        "Ankunft PatientIn", "Transportbeginn", "Landung Krankenhaus",
-        "Übergabezeit", "Endzeit Einsatz", "Beendigung Einsatz"
+        "Ankunft PatientIn", "Transportbeginn", "Landung KKH",
+        "Übergabe", "Einsatzende"
     ];
 
     // Reanimations-Ereignistypen (Server-Vertrag, Abschnitt 3)
