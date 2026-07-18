@@ -37,7 +37,7 @@ module Util {
         return g.hour.format("%02d") + ":" + g.min.format("%02d");
     }
 
-    // Zwei kurze Vibrationen (Reanimations-Zyklusende)
+    // Zwei kurze Vibrationen (Rea-Beginn)
     function vibrateTwice() as Void {
         if (Attention has :vibrate) {
             Attention.vibrate([
@@ -48,10 +48,22 @@ module Util {
         }
     }
 
-    // Kurzer Bestaetigungs-Puls (Phase/Marker gesetzt)
+    // Fuenf Vibrationen (Ablauf des 2:00-Zyklus — unuebersehbar)
+    function vibrateCycleEnd() as Void {
+        if (Attention has :vibrate) {
+            var p = [];
+            for (var i = 0; i < 5; i++) {
+                if (i > 0) { p.add(new Attention.VibeProfile(0, 200)); }
+                p.add(new Attention.VibeProfile(90, 300));
+            }
+            Attention.vibrate(p);
+        }
+    }
+
+    // Kraeftiger Bestaetigungs-Puls (Phase/Ereignis dokumentiert)
     function vibrateShort() as Void {
         if (Attention has :vibrate) {
-            Attention.vibrate([new Attention.VibeProfile(50, 150)]);
+            Attention.vibrate([new Attention.VibeProfile(80, 200)]);
         }
     }
 }

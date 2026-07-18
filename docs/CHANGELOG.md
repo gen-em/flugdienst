@@ -4,6 +4,41 @@ Format nach [Keep a Changelog](https://keepachangelog.com/de/); Versionen
 entsprechen den ehemaligen Spezifikations-Ständen. Neue Einträge kommen bei
 jedem Änderungspaket oben dazu.
 
+## [Unveröffentlicht]
+
+### Geändert
+- Reanimation: Display bleibt während laufender Rea dauerhaft hell;
+  Rea-Start vibriert 2×, Zyklusende 5× (statt 2×), Ereignis-Bestätigung
+  kräftiger.
+- Long-Press-Aktionen (Menüs, Adrenalin, Rhythmuskontrolle) feuern nach 1 s
+  Halten sofort — nicht mehr erst beim Loslassen.
+- **Einsatz-Abschluss statt Phase 10:** Nach Phase 9 „Einsatzende" bleibt der
+  Einsatz offen; kurz START (oder grüner Menüpunkt) fragt „Einsatz beenden &
+  senden?" — erst dann wird geschlossen und hochgeladen. Einsatzende/Dauer =
+  Zeit der Phase 9. Migration löscht alte Phase-10-Zeitstempel und korrigiert
+  Einsatzenden; Ingest und Formular akzeptieren nur noch Phasen 2–9.
+- Uhr-Schnellmenü farbcodiert mit Endlos-Scrollen: Phasen 2–9,
+  Einsatzübersicht (gelb), Einsatz abschließen (grün), Einsatztag beenden
+  (rot); kurze Phasennamen auf der Uhr (Landung KKH, Übergabe, Einsatzende).
+- Rea-Menü: neue Reihenfolge mit Rhythmuskontrolle (gelb, inkl.
+  Countdown-Reset) und Adrenalin (pink) als Menüpunkte, „ENDE" statt „Rea
+  beenden"; Direktkürzel lang UP/DOWN bleiben. „REA läuft" zusätzlich auf der
+  Tempo-Seite.
+- Server-URL in den Uhr-Einstellungen tolerant: „luftrettung.net" genügt.
+- Uhr: Uhrzeit auf der Hauptanzeige deutlich größer, Phasenanzeige kleiner;
+  Rea-Gesamtdauer größer; Kartenseite mit interaktivem Modus (kurz START =
+  Garmins Zoom/Verschieben, BACK zurück zur Vorschau).
+- Kosmetik-Paket Web: Einsatzformular mittig; Notizfeld im Eingabefeld-Stil;
+  „Bearbeiten" als Button; Feldliste vertikal zentriert; „+ Phase hinzufügen"
+  fokussiert das neue Dropdown; Fußzeile mit © Gen-EM und AGPL-3.0 auf allen
+  Seiten.
+
+### Behoben
+- Navigation: Auf der Geräte-Seite tauschten „Geräte" und „Verwaltung" beim
+  Klick die Plätze (abweichende Link-Reihenfolge).
+- Migration „Mehrere Reanimationen": Ersatzindex vor dem Entfernen des
+  UNIQUE (MySQL 1553); Runner überspringt bereits erledigte Einzelschritte.
+
 ## [1.2] — 2026-07-18
 
 ### Hinzugefügt

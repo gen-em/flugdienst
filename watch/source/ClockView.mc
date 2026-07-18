@@ -70,27 +70,37 @@ class ClockView extends WatchUi.View {
 
 class ClockDelegate extends WatchUi.BehaviorDelegate {
 
-    var _pressStart as Lang.Dictionary = {};   // key -> System.getTimer()
+    var _timer as Timer.Timer or Null = null;
+    var _holding as Lang.Boolean = false;
+    var _longFired as Lang.Boolean = false;
 
     function initialize() { BehaviorDelegate.initialize(); }
 
-    // START manuell vermessen: kurz = Phase/Abschluss, lang = Schnellmenue
     function onKeyPressed(evt as WatchUi.KeyEvent) as Lang.Boolean {
         if (evt.getKey() == WatchUi.KEY_ENTER) {
-            _pressStart[WatchUi.KEY_ENTER] = System.getTimer();
+            _holding = true;
+            _longFired = false;
+            if (_timer == null) { _timer = new Timer.Timer(); }
+            _timer.start(method(:onHoldTimeout), Const.LONG_PRESS_MS, false);
             return true;
         }
         return false;
     }
 
+    // Nach 1 s Halten: Schnellmenue oeffnet sofort (nicht erst beim Loslassen)
+    function onHoldTimeout() as Void {
+        if (!_holding) { return; }
+        _longFired = true;
+        _pushQuickMenu();
+    }
+
     function onKeyReleased(evt as WatchUi.KeyEvent) as Lang.Boolean {
         if (evt.getKey() != WatchUi.KEY_ENTER) { return false; }
-        var t0 = _pressStart[WatchUi.KEY_ENTER];
-        if (t0 == null) { return false; }
-        _pressStart.remove(WatchUi.KEY_ENTER);
-        if ((System.getTimer() - t0) >= Const.LONG_PRESS_MS) {
-            _pushQuickMenu();
-        } else if (Model.missionActive() && Model.phase >= 9) {
+        if (!_holding) { return false; }
+        _holding = false;
+        if (_timer != null) { _timer.stop(); }
+        if (_longFired) { _longFired = false; return true; }   // lang: schon offen
+        if (Model.missionActive() && Model.phase >= 9) {
             pushFinishConfirm();               // Haltezustand: Abschluss bestaetigen
         } else {
             Model.nextPhase();

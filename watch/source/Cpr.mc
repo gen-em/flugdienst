@@ -27,6 +27,7 @@ module Cpr {
         active = true;
         startEpoch = Util.epochNow();
         Model.resusStart();                      // legt eine NEUE Sitzung an
+        Util.vibrateTwice();                     // fühlbare Startbestätigung
         restartCycle();
         _startTimer();
         _persist();
@@ -84,10 +85,15 @@ module Cpr {
 
     function tick() as Void {
         if (!active) { return; }
+        // Display waehrend der Rea dauerhaft hell: das Backlight wird jede
+        // Sekunde neu angestossen, bevor der System-Timeout dimmen kann.
+        if (Toybox.Attention has :backlight) {
+            try { Toybox.Attention.backlight(true); } catch (ex) { }
+        }
         if (cycleEndEpoch > 0 && Util.epochNow() >= cycleEndEpoch && !_alarmFired) {
             _alarmFired = true;
             cycleEndEpoch = 0;                 // steht bei 0:00 bis Neustart
-            Util.vibrateTwice();
+            Util.vibrateCycleEnd();            // 5x — unuebersehbar
         }
         WatchUi.requestUpdate();               // Timeranzeige aktualisieren
     }

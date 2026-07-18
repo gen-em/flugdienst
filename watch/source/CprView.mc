@@ -10,6 +10,7 @@
 using Toybox.WatchUi;
 using Toybox.Graphics;
 using Toybox.System;
+using Toybox.Timer;
 using Toybox.Lang;
 
 class CprView extends WatchUi.View {
@@ -53,44 +54,52 @@ class CprView extends WatchUi.View {
 
 class CprDelegate extends WatchUi.BehaviorDelegate {
 
-    var _pressStart as Lang.Dictionary = {};   // key -> System.getTimer()
+    var _timer as Timer.Timer or Null = null;
+    var _heldKey = null;                       // gerade gehaltene Taste
+    var _longFired as Lang.Boolean = false;    // lange Aktion schon ausgeloest?
 
     function initialize() { BehaviorDelegate.initialize(); }
 
     function onKeyPressed(evt as WatchUi.KeyEvent) as Lang.Boolean {
         var k = evt.getKey();
         if (k == WatchUi.KEY_UP || k == WatchUi.KEY_DOWN || k == WatchUi.KEY_ENTER) {
-            _pressStart[k] = System.getTimer();
+            _heldKey = k;
+            _longFired = false;
+            if (_timer == null) { _timer = new Timer.Timer(); }
+            _timer.start(method(:onHoldTimeout), Const.LONG_PRESS_MS, false);
             return true;
         }
         return false;
+    }
+
+    // Feuert nach 1 s Halten — waehrend die Taste noch gedrueckt ist
+    function onHoldTimeout() as Void {
+        _longFired = true;
+        if (_heldKey == WatchUi.KEY_UP)         { Cpr.markAdrenalin(); }
+        else if (_heldKey == WatchUi.KEY_DOWN)  { Cpr.markRhythmus(); }
+        else if (_heldKey == WatchUi.KEY_ENTER) { _pushMenu(); }
+        WatchUi.requestUpdate();
     }
 
     function onKeyReleased(evt as WatchUi.KeyEvent) as Lang.Boolean {
         var k = evt.getKey();
-        var t0 = _pressStart[k];
-        if (t0 == null) { return false; }
-        _pressStart.remove(k);
-        var isLong = (System.getTimer() - t0) >= Const.LONG_PRESS_MS;
-
-        if (k == WatchUi.KEY_UP) {
-            if (isLong) { Cpr.markAdrenalin(); } else { Nav.go(-1); }
-            return true;
-        }
-        if (k == WatchUi.KEY_DOWN) {
-            if (isLong) { Cpr.markRhythmus(); } else { Nav.go(1); }
-            return true;
-        }
-        if (k == WatchUi.KEY_ENTER) {
-            if (isLong) { _pushMenu(); } else { Cpr.start(); }
-            return true;
-        }
-        return false;
+        if (k != _heldKey) { return false; }
+        if (_timer != null) { _timer.stop(); }
+        _heldKey = null;
+        if (_longFired) { _longFired = false; return true; }   // lang: schon erledigt
+        // kurz:
+        if (k == WatchUi.KEY_UP)        { Nav.go(-1); }
+        else if (k == WatchUi.KEY_DOWN) { Nav.go(1); }
+        else                            { Cpr.start(); }
+        return true;
     }
 
-    // Falls das System lang-UP dennoch als onMenu meldet: gleiche Bedeutung.
+    // Falls das System lang-UP zusaetzlich als onMenu meldet: nicht doppeln
     function onMenu() as Lang.Boolean {
-        if (Cpr.active) { Cpr.markAdrenalin(); }
+        if (!_longFired && Cpr.active) {
+            _longFired = true;
+            Cpr.markAdrenalin();
+        }
         return true;
     }
 
