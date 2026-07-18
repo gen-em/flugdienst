@@ -13,6 +13,7 @@ class HemsApp extends Application.AppBase {
         if (Model.serviceActive) {
             // Uhr-/App-Neustart mitten im Dienst: nahtlos weiter
             Track.startPositioning();
+            Cpr.restore();       // laufende Reanimation wiederaufnehmen
             Uploader.syncAll();
         }
     }

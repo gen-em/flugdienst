@@ -82,8 +82,8 @@ module Uploader {
         };
 
         if ("mission".equals(job["kind"])) {
-            body["distance_m"] = Track.distanceM.toNumber();
-            body["ascent_m"]   = Track.ascentM.toNumber();
+            body["distance_m"] = (d["dist"] != null) ? d["dist"] : Track.distanceM.toNumber();
+            body["ascent_m"]   = (d["asc"]  != null) ? d["asc"]  : Track.ascentM.toNumber();
             var phases = [];
             var raw = d["phases"] as Lang.Array;
             for (var i = 0; i < raw.size(); i++) {
@@ -142,6 +142,8 @@ module Uploader {
             // final + alle Punkte bestaetigt -> lokal aufraeumen
             if (ctx["final"] == true && nextSeq >= Track.pointCount(ref)) {
                 Track.purge(ref);
+                Storage.deleteValue("ack_" + ref);    // Marken mit entsorgen
+                Storage.deleteValue("meta_" + ref);
                 var idx = ctx["pendingIdx"] as Lang.Number;
                 if (idx >= 0) {
                     if ("mission".equals(ctx["kind"])) { Model.pendingMissions.remove(Model.pendingMissions[idx]); }

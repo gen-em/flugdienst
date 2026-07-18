@@ -10,14 +10,15 @@ require_once __DIR__ . '/auth_guard.php';
 <title>Tagesübersicht — Einsatzdoku</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
 <header class="topbar">
-  <span class="brand">Einsatzdoku</span>
+  <a class="brand" href="index.php"><img src="assets/logo-weiss.png" alt="GenEM Einsatzdoku"></a>
   <nav>
     <a class="active" href="index.php">Übersicht</a>
     <?php if ($userRole === 'admin'): ?><a href="admin.php">Verwaltung</a><?php endif; ?>
-    <a href="logout.php">Abmelden</a>
+    <a href="geraete.php">Geräte</a> <a href="logout.php">Abmelden</a>
   </nav>
 </header>
 
@@ -29,18 +30,32 @@ require_once __DIR__ . '/auth_guard.php';
 
   <main class="page">
     <h1 id="daytitle">–</h1>
+    <details class="daymeta" id="daymeta">
+      <summary>Flugtag-Daten <span id="metahint" class="muted"></span></summary>
+      <form id="dayform" class="meta-form">
+        <label>Maschine <input name="aircraft" maxlength="64" placeholder="z. B. Christoph 17 / H145"></label>
+        <label>Basis / Standort <input name="base" maxlength="64" placeholder="z. B. Kempten"></label>
+        <label>Besatzung <input name="crew" maxlength="190" placeholder="z. B. Pilot, HEMS-TC, Notarzt"></label>
+        <label>Notizen <textarea name="notes" rows="3" maxlength="2000"></textarea></label>
+        <button type="submit" class="btn-primary">Speichern</button>
+        <span id="savestate" class="muted"></span>
+      </form>
+    </details>
     <div id="map" class="map"></div>
     <table class="data" id="missions">
       <thead><tr><th></th><th>Beginn</th><th>Dauer</th><th>Kilometer</th></tr></thead>
       <tbody></tbody>
     </table>
     <p id="empty" class="muted" hidden>Für diesen Tag sind keine Einsätze dokumentiert.</p>
+    <p><a href="einsatz_form.php" id="addmission" class="add-link">+ Einsatz nachtragen</a></p>
   </main>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const COLORS = ['#E8590C','#1971C2','#2F9E44','#9C36B5','#E03131','#F08C00','#0C8599','#6741D9'];
+const CSRF = '<?= e($_SESSION['csrf']) ?>';
+const COLORS = ['#FF8F1F','#4280E5','#D63338','#1A2E4D','#0C8599','#9C36B5','#2F9E44','#8A5A00'];
+let currentDay = null;
 
 const map = L.map('map');
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -57,7 +72,19 @@ function fmtKm(m){ return m==null ? '–' : (m/1000).toFixed(1).replace('.',',')
 async function loadDay(day){
   const res = await fetch('api/day.php?day='+encodeURIComponent(day));
   const d = await res.json();
+  currentDay = d.day;
   document.getElementById('daytitle').textContent = 'Betriebstag ' + fmtDay(d.day);
+
+  // Flugtag-Felder befuellen
+  const f = document.getElementById('dayform');
+  ['aircraft','base','crew','notes'].forEach(k => {
+    f.elements[k].value = (d.meta && d.meta[k]) ? d.meta[k] : '';
+  });
+  const filled = d.meta && [d.meta.aircraft, d.meta.base, d.meta.crew].filter(Boolean);
+  document.getElementById('metahint').textContent =
+    filled && filled.length ? '— ' + filled.join(' · ') : '';
+  document.getElementById('savestate').textContent = '';
+  document.getElementById('addmission').href = 'einsatz_form.php?day=' + d.day;
 
   layerGroup.clearLayers();
   const bounds = [];
@@ -65,7 +92,7 @@ async function loadDay(day){
   // Ruhe-Track: schwarz, dezent
   d.rest_segments.forEach(seg => {
     if (seg.length > 1) {
-      layerGroup.addLayer(L.polyline(seg, { color:'#111', weight:2, opacity:0.55 }));
+      layerGroup.addLayer(L.polyline(seg, { color:'#1A0500', weight:2, opacity:0.55 }));
       seg.forEach(p => bounds.push(p));
     }
   });
@@ -99,6 +126,22 @@ async function loadDay(day){
 }
 
 async function init(){
+  document.getElementById('dayform').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    if (!currentDay) return;
+    const f = ev.target;
+    const body = { day: currentDay };
+    ['aircraft','base','crew','notes'].forEach(k => body[k] = f.elements[k].value);
+    const state = document.getElementById('savestate');
+    state.textContent = 'Speichern…';
+    const res = await fetch('api/day.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF': CSRF },
+      body: JSON.stringify(body)
+    });
+    state.textContent = res.ok ? 'Gespeichert.' : 'Fehler beim Speichern.';
+    if (res.ok) loadDay(currentDay);
+  });
   const res = await fetch('api/day.php');
   const d = await res.json();
   const ul = document.getElementById('days');

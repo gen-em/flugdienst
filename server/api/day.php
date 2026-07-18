@@ -3,10 +3,32 @@ declare(strict_types=1);
 require_once __DIR__ . '/../auth_guard.php';   // liefert $userId
 
 /**
- * GET api/day.php            -> { days: ["2026-07-16", ...], latest: "..." }
- * GET api/day.php?day=Y-m-d  -> Tagesdaten: Einsaetze (inkl. Track, Phasenzeiten),
- *                               Ruhe-Segmente (Track), fuer Karte + Tabelle
+ * GET  api/day.php            -> { days: ["2026-07-16", ...], latest: "..." }
+ * GET  api/day.php?day=Y-m-d  -> Tagesdaten: Flugtag-Meta, Einsaetze (inkl.
+ *                                Track, Phasenzeiten), Ruhe-Segmente
+ * POST api/day.php            -> Flugtag-Felder speichern (Upsert)
+ *                                JSON-Body {day, aircraft, base, crew, notes},
+ *                                Header X-CSRF muss zum Session-Token passen
  */
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!hash_equals($_SESSION['csrf'] ?? '', $_SERVER['HTTP_X_CSRF'] ?? '')) {
+        json_out(['error' => 'csrf'], 403);
+    }
+    $b = json_decode(file_get_contents('php://input'), true);
+    $day = (string)($b['day'] ?? '');
+    if (!is_array($b) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) {
+        json_out(['error' => 'payload'], 400);
+    }
+    $trim = fn($k, $max) => mb_substr(trim((string)($b[$k] ?? '')), 0, $max) ?: null;
+    db()->prepare('INSERT INTO days (user_id, day, aircraft, base, crew, notes)
+                   VALUES (?,?,?,?,?,?)
+                   ON DUPLICATE KEY UPDATE aircraft = VALUES(aircraft),
+                     base = VALUES(base), crew = VALUES(crew), notes = VALUES(notes)')
+        ->execute([$userId, $day, $trim('aircraft', 64), $trim('base', 64),
+                   $trim('crew', 190), $trim('notes', 2000)]);
+    json_out(['ok' => true]);
+}
 
 $day = (string)($_GET['day'] ?? '');
 
@@ -21,6 +43,12 @@ if ($day === '') {
 }
 
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) json_out(['error' => 'payload'], 400);
+
+// Flugtag-Metadaten (null, wenn noch keine gespeichert)
+$mt = db()->prepare('SELECT aircraft, base, crew, notes FROM days
+                     WHERE user_id = ? AND day = ?');
+$mt->execute([$userId, $day]);
+$meta = $mt->fetch() ?: null;
 
 $pt = db()->prepare('SELECT lat, lon, ts FROM track_points
                      WHERE owner_type = ? AND owner_id = ? ORDER BY seq');
@@ -54,4 +82,4 @@ foreach ($st->fetchAll() as $r) {
     if ($track) $rest[] = $track;
 }
 
-json_out(['day' => $day, 'missions' => $missions, 'rest_segments' => $rest]);
+json_out(['day' => $day, 'meta' => $meta, 'missions' => $missions, 'rest_segments' => $rest]);

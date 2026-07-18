@@ -33,6 +33,7 @@ module Track {
 
     var distanceM as Lang.Float = 0.0;        // aktueller Einsatz
     var ascentM as Lang.Float = 0.0;
+    var speedMs as Lang.Float = 0.0;          // aktuelle Geschwindigkeit (m/s)
 
     // Anzeige-Polylinie (nur aktueller Einsatz), flach [lat,lon,...]
     var display as Lang.Array = [];
@@ -83,6 +84,9 @@ module Track {
         var lat = deg[0]; var lon = deg[1];
         var ele = info.altitude;
         var now = Util.epochNow();
+
+        // Geschwindigkeit immer uebernehmen (auch wenn der Punkt ausgeduennt wird)
+        if (info.speed != null) { speedMs = info.speed; }
 
         // Ausduennung: nie oefter als 1/s; dann >= 15 m ODER >= 10 s
         if (now - _lastTs < Const.THIN_MIN_GAP_S) { return; }
@@ -169,6 +173,18 @@ module Track {
             _count = m["count"] != null ? m["count"] : 0;
             distanceM = m["dist"] != null ? m["dist"] : 0.0;
             ascentM = m["asc"] != null ? m["asc"] : 0.0;
+
+            // WICHTIG: Ein beim Herunterfahren gesicherter TEIL-Chunk muss
+            // zurueck in den RAM-Puffer, damit die Chunk-Ausrichtung stimmt
+            // (Invariante: _count - _buf/4 ist immer ein Vielfaches von
+            // CHUNK_POINTS). Sonst wuerde der naechste volle Chunk den
+            // Teil-Chunk ueberschreiben -> Datenverlust.
+            _buf = [];
+            if (_count % CHUNK_POINTS != 0) {
+                var tail = Storage.getValue(_ref + "_" + (_count / CHUNK_POINTS).toString());
+                if (tail instanceof Lang.Array) { _buf = tail; }
+            }
+
             // Anzeige-Polylinie aus Chunks grob rekonstruieren
             display = []; _displayStride = 1; _sinceDisplay = 0;
             if (_isMission) {
@@ -180,24 +196,35 @@ module Track {
         }
     }
 
-    // Punkte [seqFrom, seqFrom+n) eines Tracks lesen (fuer Upload)
+    // Punkte [seqFrom, seqFrom+n) eines Tracks lesen (fuer Upload).
+    // Aktiver Track: alles ab Tail-Beginn kommt aus dem RAM-Puffer (der auch
+    // einen evtl. Teil-Chunk aus dem Flash enthaelt, siehe restore()).
     function readPoints(ref as Lang.String, seqFrom as Lang.Number, n as Lang.Number) as Lang.Array {
         var out = [];
         var seq = seqFrom;
+        var isActive = ref.equals(_ref);
+        var tailStart = isActive ? (_count - (_buf.size() / 4)) : -1;
         while (out.size() / 4 < n) {
-            var chunk = Storage.getValue(ref + "_" + (seq / CHUNK_POINTS).toString());
-            var isTail = false;
-            if (chunk == null) {
-                // Punkte koennen noch im RAM-Tail liegen
-                if (ref.equals(_ref)) { chunk = _buf; isTail = true; } else { break; }
-            }
-            var offs = (seq % CHUNK_POINTS) * 4;
-            if (isTail) {
-                var tailStart = _count - (_buf.size() / 4);
+            var chunk; var offs; var end;
+            if (isActive && seq >= tailStart) {
+                chunk = _buf;
                 offs = (seq - tailStart) * 4;
+                end = chunk.size();
+            } else {
+                chunk = Storage.getValue(ref + "_" + (seq / CHUNK_POINTS).toString());
+                if (chunk == null) { break; }
+                offs = (seq % CHUNK_POINTS) * 4;
+                end = chunk.size();
+                if (isActive) {
+                    // Flash nie ueber den Tail-Beginn hinaus lesen (Teil-Chunk
+                    // dort ist nur eine Kopie des Puffer-Anfangs)
+                    var chunkStart = (seq / CHUNK_POINTS) * CHUNK_POINTS;
+                    var maxInChunk = (tailStart - chunkStart) * 4;
+                    if (maxInChunk < end) { end = maxInChunk; }
+                }
             }
-            if (offs < 0 || offs >= chunk.size()) { break; }
-            while (offs < chunk.size() && out.size() / 4 < n) {
+            if (offs < 0 || offs >= end) { break; }
+            while (offs < end && out.size() / 4 < n) {
                 out.add(chunk[offs]); out.add(chunk[offs + 1]);
                 out.add(chunk[offs + 2]); out.add(chunk[offs + 3]);
                 offs += 4; seq += 1;

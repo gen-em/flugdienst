@@ -4,7 +4,7 @@ using Toybox.Lang;
 
 module Nav {
 
-    const PAGES = [:clock, :map, :cpr];
+    const PAGES = [:clock, :map, :speed, :cpr];
     var index as Lang.Number = 0;
 
     function go(delta as Lang.Number) as Void {
@@ -22,8 +22,9 @@ module Nav {
     }
 
     function build(page as Lang.Symbol) as Lang.Array {
-        if (page == :map) { return [new MapPageView(), new MapPageDelegate()]; }
-        if (page == :cpr) { return [new CprView(), new CprDelegate()]; }
+        if (page == :map)   { return [new MapPageView(), new MapPageDelegate()]; }
+        if (page == :speed) { return [new SpeedView(), new SpeedDelegate()]; }
+        if (page == :cpr)   { return [new CprView(), new CprDelegate()]; }
         return [new ClockView(), new ClockDelegate()];
     }
 }

@@ -9,16 +9,18 @@ $id = (int)($_GET['id'] ?? 0);
 <title>Einsatz — Einsatzdoku</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
 <header class="topbar">
-  <span class="brand">Einsatzdoku</span>
-  <nav><a href="index.php">Übersicht</a> <a href="logout.php">Abmelden</a></nav>
+  <a class="brand" href="index.php"><img src="assets/logo-weiss.png" alt="GenEM Einsatzdoku"></a>
+  <nav><a href="index.php">Übersicht</a> <a href="geraete.php">Geräte</a> <a href="logout.php">Abmelden</a></nav>
 </header>
 
 <main class="page">
   <h1 id="title">Einsatz</h1>
   <p id="meta" class="muted"></p>
+  <dl id="fieldlist" class="fieldlist" hidden></dl>
   <div id="map" class="map map-tall"></div>
 
   <section>
@@ -50,12 +52,25 @@ async function init(){
   const m = await res.json();
 
   document.getElementById('title').textContent = `Einsatz ${m.start_hhmm} Uhr`;
-  document.getElementById('meta').textContent =
+  document.getElementById('meta').innerHTML =
     `${fmtDay(m.day)} · ${m.start_hhmm}–${m.end_hhmm} Uhr · ${fmtKm(m.distance_m)}`
-    + (m.ascent_m != null ? ` · ${m.ascent_m} Hm` : '');
+    + (m.ascent_m != null ? ` · ${m.ascent_m} Hm` : '')
+    + (m.manual ? ' · <span class="badge-manual">manuell</span>' : '')
+    + ` · <a href="einsatz_form.php?id=${m.id}">Bearbeiten</a>`;
+
+  // Zusatzfelder generisch anzeigen (Definition: mission_fields.php)
+  if (m.fields && m.fields.length) {
+    const dl = document.getElementById('fieldlist');
+    dl.hidden = false;
+    m.fields.forEach(f => {
+      const dt = document.createElement('dt'); dt.textContent = f.label;
+      const dd = document.createElement('dd'); dd.textContent = f.value;
+      dl.append(dt, dd);
+    });
+  }
 
   if (m.track.length > 1) {
-    const line = L.polyline(m.track, { color:'#E8590C', weight:4 }).addTo(map);
+    const line = L.polyline(m.track, { color:'#FF8F1F', weight:4 }).addTo(map);
     const px = map.getSize();
     map.fitBounds(line.getBounds(), { padding: [px.y*0.125, px.x*0.125] });
     L.circleMarker(m.track[0], {radius:6, color:'#2F9E44', fillOpacity:1}).addTo(map).bindTooltip('Start');

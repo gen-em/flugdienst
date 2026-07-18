@@ -46,24 +46,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $notice = 'Gerät angelegt. Schlüssel unten JETZT notieren — er wird nur einmal angezeigt.';
     }
 
-    if ($action === 'device_del') {
-        db()->prepare('DELETE FROM devices WHERE id = ?')->execute([(int)($_POST['id'] ?? 0)]);
-        $notice = 'Gerät gelöscht.';
+    if ($action === 'device_toggle') {
+        db()->prepare('UPDATE devices SET active = 1 - active WHERE id = ?')
+            ->execute([(int)($_POST['id'] ?? 0)]);
+        $notice = 'Gerätestatus geändert.';
     }
 }
 
 $users   = db()->query('SELECT id, email, role, created_at FROM users ORDER BY email')->fetchAll();
-$devices = db()->query('SELECT d.id, d.device_id, d.label, d.last_seen, u.email
-                        FROM devices d JOIN users u ON u.id = d.user_id ORDER BY u.email')->fetchAll();
+$devices = db()->query('SELECT d.id, d.device_id, d.label, d.active, d.last_seen, u.email
+                        FROM devices d JOIN users u ON u.id = d.user_id WHERE d.device_id NOT LIKE \'manual-%\' ORDER BY u.email')->fetchAll();
 ?><!doctype html>
 <html lang="de">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Verwaltung — Einsatzdoku</title>
-<link rel="stylesheet" href="assets/style.css"></head>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" type="image/png" href="assets/favicon.png"></head>
 <body>
 <header class="topbar">
-  <span class="brand">Einsatzdoku</span>
-  <nav><a href="index.php">Übersicht</a> <a class="active" href="admin.php">Verwaltung</a> <a href="logout.php">Abmelden</a></nav>
+  <a class="brand" href="index.php"><img src="assets/logo-weiss.png" alt="GenEM Einsatzdoku"></a>
+  <nav><a href="index.php">Übersicht</a> <a class="active" href="admin.php">Verwaltung</a> <a href="geraete.php">Geräte</a> <a href="logout.php">Abmelden</a></nav>
 </header>
 <main class="page">
   <?php if ($notice): ?><p class="alert alert-info"><?= e($notice) ?></p><?php endif; ?>
@@ -110,19 +112,20 @@ $devices = db()->query('SELECT d.id, d.device_id, d.label, d.last_seen, u.email
   <section>
     <h2>Geräte (Uhren)</h2>
     <table class="data">
-      <thead><tr><th>Geräte-ID</th><th>Bezeichnung</th><th>NutzerIn</th><th>Zuletzt gesehen</th><th></th></tr></thead>
+      <thead><tr><th>Geräte-ID</th><th>Bezeichnung</th><th>NutzerIn</th><th>Status</th><th>Zuletzt gesehen</th><th></th></tr></thead>
       <tbody>
       <?php foreach ($devices as $d): ?>
         <tr>
           <td><code><?= e($d['device_id']) ?></code></td>
           <td><?= e($d['label'] ?? '–') ?></td>
           <td><?= e($d['email']) ?></td>
+          <td><?= (int)$d['active'] ? 'aktiv' : '<span class="muted">deaktiviert</span>' ?></td>
           <td><?= e($d['last_seen'] ? fmt_local($d['last_seen'], 'd.m.Y H:i') : 'nie') ?></td>
           <td>
-            <form method="post" onsubmit="return confirm('Gerät löschen? Bereits hochgeladene Daten bleiben nicht erhalten.')">
-              <?= csrf_field() ?><input type="hidden" name="action" value="device_del">
+            <form method="post">
+              <?= csrf_field() ?><input type="hidden" name="action" value="device_toggle">
               <input type="hidden" name="id" value="<?= (int)$d['id'] ?>">
-              <button class="btn-danger">Löschen</button>
+              <button class="btn-danger"><?= (int)$d['active'] ? 'Deaktivieren' : 'Aktivieren' ?></button>
             </form>
           </td>
         </tr>

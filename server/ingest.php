@@ -10,10 +10,11 @@ if (strlen($raw) > $CFG['app']['max_body_bytes']) json_out(['error' => 'too_larg
 // --- Geraet authentifizieren -------------------------------------------------
 $deviceId = $_SERVER['HTTP_X_DEVICE_ID'] ?? '';
 $apiKey   = $_SERVER['HTTP_X_API_KEY']   ?? '';
-$st = db()->prepare('SELECT id, user_id, api_key_hash FROM devices WHERE device_id = ?');
+$st = db()->prepare('SELECT id, user_id, api_key_hash, active FROM devices WHERE device_id = ?');
 $st->execute([$deviceId]);
 $dev = $st->fetch();
 if (!$dev || !password_verify($apiKey, $dev['api_key_hash'])) json_out(['error' => 'auth'], 401);
+if (!(int)$dev['active']) json_out(['error' => 'device_disabled'], 403);
 
 // --- Payload pruefen ----------------------------------------------------------
 $b = json_decode($raw, true);
@@ -30,12 +31,23 @@ $endedAt = iso_to_sql($b['ended_at'] ?? null);
 $final   = !empty($b['final']) ? 1 : 0;
 $points  = $b['track']['points'] ?? [];
 $seqFrom = (int)($b['track']['seq_from'] ?? 0);
+if ($seqFrom < 0) json_out(['error' => 'payload'], 400);
 if (!is_array($points) || count($points) > 2000) json_out(['error' => 'payload'], 400);
 
 $pdo = db();
 $pdo->beginTransaction();
 try {
     if ($kind === 'mission') {
+        // Manuell bearbeitete Einsaetze schuetzen: Uhr-Uploads duerfen
+        // Metadaten/Phasen/Rea nicht mehr ueberschreiben; Trackpunkte werden
+        // weiterhin ergaenzt (Append-only, unkritisch).
+        $chk = $pdo->prepare('SELECT id, manual FROM missions WHERE device_id = ? AND client_ref = ?');
+        $chk->execute([$dev['id'], $clientRef]);
+        $existing = $chk->fetch();
+        if ($existing && (int)$existing['manual'] === 1) {
+            $ownerId = (int)$existing['id'];
+            $ownerType = 'mission';
+        } else {
         // Upsert des Einsatzes (idempotent ueber device_id+client_ref)
         $pdo->prepare('INSERT INTO missions (user_id, device_id, client_ref, day, started_at, ended_at, distance_m, ascent_m, final)
                        VALUES (?,?,?,?,?,?,?,?,?)
@@ -90,6 +102,7 @@ try {
                 }
             }
         }
+        }   // Ende: nicht-manueller Einsatz
     } else { // rest_segment
         $pdo->prepare('INSERT INTO rest_segments (user_id, device_id, client_ref, day, started_at, ended_at, final)
                        VALUES (?,?,?,?,?,?,?)
@@ -121,6 +134,7 @@ try {
 
     $pdo->prepare('UPDATE devices SET last_seen = NOW() WHERE id = ?')->execute([$dev['id']]);
     $pdo->commit();
+    run_cleanup_if_due();   // taegliche Wartung, huckepack auf Uhr-Uploads
     json_out(['ok' => true, 'id' => $ownerId, 'stored_points' => $stored, 'next_seq' => $nextSeq]);
 } catch (Throwable $ex) {
     $pdo->rollBack();

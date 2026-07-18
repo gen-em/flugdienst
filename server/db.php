@@ -56,3 +56,37 @@ const RESUS_LABELS = [
     'intubation' => 'Intubation', 'amiodaron' => 'Amiodaron',
     'sonographie' => 'Sonographie', 'rosc' => 'ROSC', 'tod' => 'Tod',
 ];
+
+/**
+ * Automatischer Aufraeumjob — laeuft hoechstens einmal pro Tag, huckepack auf
+ * normalen Anfragen (Web-Login und Uhr-Uploads), daher kein Cronjob noetig.
+ * Entsorgt: verwaiste Trackpunkte (Einsatz/Segment geloescht) und alte
+ * Passwort-Reset-Tokens. Scheitert leise, falls die app_state-Tabelle noch
+ * nicht existiert (Migration noch nicht gelaufen).
+ */
+function run_cleanup_if_due(): void {
+    try {
+        $pdo = db();
+        $today = (new DateTime('now'))->format('Y-m-d');
+        $st = $pdo->prepare('SELECT v FROM app_state WHERE k = ?');
+        $st->execute(['last_cleanup']);
+        if ($st->fetchColumn() === $today) { return; }
+
+        // Marke zuerst setzen: verhindert Doppel-Laeufe paralleler Anfragen
+        $pdo->prepare('INSERT INTO app_state (k, v) VALUES (?, ?)
+                       ON DUPLICATE KEY UPDATE v = VALUES(v)')
+            ->execute(['last_cleanup', $today]);
+
+        $pdo->exec("DELETE tp FROM track_points tp
+                    LEFT JOIN missions m ON m.id = tp.owner_id
+                    WHERE tp.owner_type = 'mission' AND m.id IS NULL");
+        $pdo->exec("DELETE tp FROM track_points tp
+                    LEFT JOIN rest_segments r ON r.id = tp.owner_id
+                    WHERE tp.owner_type = 'rest' AND r.id IS NULL");
+        $pdo->exec("DELETE FROM password_resets
+                    WHERE used_at IS NOT NULL
+                       OR expires_at < DATE_SUB(NOW(), INTERVAL 7 DAY)");
+    } catch (Throwable $ex) {
+        // bewusst still: Wartung darf nie eine Anfrage kaputt machen
+    }
+}

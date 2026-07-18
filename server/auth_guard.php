@@ -32,3 +32,5 @@ function csrf_check(): void {
         http_response_code(403); exit('Ungültiges Formular-Token.');
     }
 }
+
+run_cleanup_if_due();   // taegliche Wartung, huckepack auf Web-Anfragen

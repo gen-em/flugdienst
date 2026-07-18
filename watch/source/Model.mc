@@ -11,9 +11,9 @@ module Model {
     var phase as Lang.Number = 1;
 
     // Aktiver Einsatz: null oder Dictionary
-    // { "ref", "startedAt", "endedAt", "phases" => [[p, iso, lat, lon], ...],
-    //   "resusStart" => iso|null, "resusEvents" => [[type, iso], ...],
-    //   "final" => Boolean }
+    // { "ref", "startedAt", "endedAt", "phases" => [[p, iso, lat, lon, hhmm], ...],
+    //   "resus" => [ { "start", "startLocal", "events" => [[type, iso, hhmm]] }, ... ],
+    //   "dist", "asc" (bei Einsatzende eingefroren), "final" => Boolean }
     var mission as Lang.Dictionary or Null = null;
 
     // Abgeschlossene, aber noch nicht (fertig) hochgeladene Einsaetze
@@ -104,6 +104,10 @@ module Model {
     function _finishMission() as Void {
         Cpr.stopRecording();                 // laufende Rea sauber schliessen
         mission["endedAt"] = Util.isoNow();
+        // Kilometer/Anstieg einfrieren: gehoeren zu DIESEM Einsatz, auch wenn
+        // der Upload erst spaeter (waehrend eines neuen Einsatzes) gelingt
+        mission["dist"] = Track.distanceM.toNumber();
+        mission["asc"]  = Track.ascentM.toNumber();
         mission["final"] = true;
         Track.endMissionTrack();
         pendingMissions.add(mission);

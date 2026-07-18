@@ -4,6 +4,7 @@
 using Toybox.Timer;
 using Toybox.Lang;
 using Toybox.WatchUi;
+using Toybox.Application.Storage;
 
 // Rueckrufe brauchen eine Klasse als Traeger (method() gibt es nur auf Objekten,
 // nicht auf Modulen). Diese Huelle reicht den Timer-Tick ans Modul weiter.
@@ -27,24 +28,54 @@ module Cpr {
         startEpoch = Util.epochNow();
         Model.resusStart();                      // legt eine NEUE Sitzung an
         restartCycle();
-        if (_timer == null) { _timer = new Timer.Timer(); }
-        if (_cb == null) { _cb = new CprCb(); }
-        _timer.start(_cb.method(:tick), 1000, true);
+        _startTimer();
+        _persist();
     }
 
-    // "Aufzeichnung beenden" (Untermenue): schliesst die laufende Sitzung.
+    // "Rea beenden" (Untermenue): schliesst die laufende Sitzung.
     // Ein erneuter Start beginnt danach eine neue Reanimation.
     function stopRecording() as Void {
         if (!active) { return; }
         active = false;
         cycleEndEpoch = 0;
         if (_timer != null) { _timer.stop(); }
+        _persist();
         WatchUi.requestUpdate();
+    }
+
+    function _startTimer() as Void {
+        if (_timer == null) { _timer = new Timer.Timer(); }
+        if (_cb == null) { _cb = new CprCb(); }
+        _timer.start(_cb.method(:tick), 1000, true);
+    }
+
+    function _persist() as Void {
+        Storage.setValue("cpr", {
+            "a" => active, "s" => startEpoch, "c" => cycleEndEpoch
+        });
+    }
+
+    // Nach App-/Uhren-Neustart: laufende Rea nahtlos wiederaufnehmen.
+    // Der Countdown laeuft anhand der Epochen korrekt weiter; ist sein Ende
+    // waehrend des Neustarts verstrichen, steht er wie vorgesehen auf 0:00.
+    function restore() as Void {
+        var s = Storage.getValue("cpr");
+        if (s instanceof Lang.Dictionary && s["a"] == true) {
+            active = true;
+            startEpoch = s["s"] != null ? s["s"] : Util.epochNow();
+            cycleEndEpoch = s["c"] != null ? s["c"] : 0;
+            if (cycleEndEpoch > 0 && Util.epochNow() >= cycleEndEpoch) {
+                cycleEndEpoch = 0;               // Ende verpasst -> steht bei 0:00
+                _alarmFired = true;              // nicht nachtraeglich vibrieren
+            }
+            _startTimer();
+        }
     }
 
     function restartCycle() as Void {
         cycleEndEpoch = Util.epochNow() + Const.CPR_CYCLE_S;
         _alarmFired = false;
+        if (active) { _persist(); }
     }
 
     function stop() as Void {                  // bei Dienstende

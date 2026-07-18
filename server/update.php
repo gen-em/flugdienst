@@ -36,6 +36,71 @@ $MIGRATIONS = [
             'ALTER TABLE resus_sessions ADD INDEX idx_mission (mission_id, started_at)',
         ],
     ],
+    [
+        'id'    => '2026_07_17_flugtage',
+        'label' => 'Flugtage mit editierbaren Feldern (Maschine, Basis, Besatzung, Notizen)',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.tables
+                              WHERE table_schema = DATABASE() AND table_name = 'days'");
+            return (int)$q->fetchColumn() > 0;
+        },
+        'sql'   => [
+            'CREATE TABLE days (
+               id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+               user_id  INT UNSIGNED NOT NULL,
+               day      DATE NOT NULL,
+               aircraft VARCHAR(64) NULL,
+               base     VARCHAR(64) NULL,
+               crew     VARCHAR(190) NULL,
+               notes    TEXT NULL,
+               UNIQUE KEY uq_user_day (user_id, day),
+               FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4',
+        ],
+    ],
+    [
+        'id'    => '2026_07_17_wartung',
+        'label' => 'Zustandsspeicher für automatische Wartung (Aufräumjob)',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.tables
+                              WHERE table_schema = DATABASE() AND table_name = 'app_state'");
+            return (int)$q->fetchColumn() > 0;
+        },
+        'sql'   => [
+            'CREATE TABLE app_state (
+               k VARCHAR(64) NOT NULL PRIMARY KEY,
+               v VARCHAR(190) NULL
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4',
+        ],
+    ],
+    [
+        'id'    => '2026_07_18_geraete_status',
+        'label' => 'Geräte deaktivieren statt löschen (active-Flag)',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.columns
+                              WHERE table_schema = DATABASE()
+                                AND table_name = 'devices' AND column_name = 'active'");
+            return (int)$q->fetchColumn() > 0;
+        },
+        'sql'   => [
+            "ALTER TABLE devices ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1 AFTER label",
+        ],
+    ],
+    [
+        'id'    => '2026_07_18_manuelle_einsaetze',
+        'label' => 'Manuelle Einsätze: Schutzmarker + Zusatzfelder (Einsatznummer, Notizen)',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.columns
+                              WHERE table_schema = DATABASE()
+                                AND table_name = 'missions' AND column_name = 'manual'");
+            return (int)$q->fetchColumn() > 0;
+        },
+        'sql'   => [
+            "ALTER TABLE missions ADD COLUMN manual TINYINT(1) NOT NULL DEFAULT 0 AFTER final",
+            "ALTER TABLE missions ADD COLUMN mission_no VARCHAR(64) NULL AFTER manual",
+            "ALTER TABLE missions ADD COLUMN notes TEXT NULL AFTER mission_no",
+        ],
+    ],
     // Naechste Migration hier anhaengen.
 ];
 
@@ -83,11 +148,12 @@ foreach ($MIGRATIONS as $m) {
 <html lang="de">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Datenbank-Update — Einsatzdoku</title>
-<link rel="stylesheet" href="assets/style.css"></head>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" type="image/png" href="assets/favicon.png"></head>
 <body>
 <header class="topbar">
-  <span class="brand">Einsatzdoku</span>
-  <nav><a href="index.php">Übersicht</a> <a href="admin.php">Verwaltung</a> <a href="logout.php">Abmelden</a></nav>
+  <a class="brand" href="index.php"><img src="assets/logo-weiss.png" alt="GenEM Einsatzdoku"></a>
+  <nav><a href="index.php">Übersicht</a> <a href="admin.php">Verwaltung</a> <a href="geraete.php">Geräte</a> <a href="logout.php">Abmelden</a></nav>
 </header>
 <main class="page">
   <h1>Datenbank-Update</h1>

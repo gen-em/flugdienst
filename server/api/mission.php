@@ -4,11 +4,19 @@ require_once __DIR__ . '/../auth_guard.php';
 
 $id = (int)($_GET['id'] ?? 0);
 
-$st = db()->prepare('SELECT id, day, started_at, ended_at, distance_m, ascent_m
-                     FROM missions WHERE id = ? AND user_id = ?');   // Datentrennung!
+$st = db()->prepare('SELECT * FROM missions WHERE id = ? AND user_id = ?');   // Datentrennung!
 $st->execute([$id, $userId]);
 $m = $st->fetch();
 if (!$m) json_out(['error' => 'not_found'], 404);
+
+// Zusatzfelder generisch aus der zentralen Definition (mission_fields.php)
+$FIELDS = require __DIR__ . '/../mission_fields.php';
+$fields = [];
+foreach ($FIELDS as $col => $f) {
+    if (isset($m[$col]) && $m[$col] !== null && $m[$col] !== '') {
+        $fields[] = ['label' => $f['label'], 'value' => (string)$m[$col]];
+    }
+}
 
 $pt = db()->prepare('SELECT lat, lon FROM track_points
                      WHERE owner_type = \'mission\' AND owner_id = ? ORDER BY seq');
@@ -50,5 +58,7 @@ json_out([
     'end_hhmm'   => fmt_local($m['ended_at']),
     'distance_m' => $m['distance_m'] !== null ? (int)$m['distance_m'] : null,
     'ascent_m'   => $m['ascent_m']   !== null ? (int)$m['ascent_m']   : null,
+    'manual'     => (int)($m['manual'] ?? 0) === 1,
+    'fields'     => $fields,
     'track' => $track, 'phases' => $phases, 'resus' => $resus,
 ]);

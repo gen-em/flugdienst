@@ -1,62 +1,91 @@
-/* Einsatzdoku — Flight-Log-Ästhetik
-   Palette: Cockpit-Navy #14273D · Papier #F7F8F9 · Signalorange #E8590C
-            Linie #D5DAE0 · Text #1B2733 · gedämpft #66707B                */
+/* Einsatzdoku — GenEM-Branding
+   Farben (Brand Guidelines):
+     Schnee #FFFCFA (Karten/Flaechen) · Rauch #F7F5ED (Seitengrund)
+     Sand #D4C7AD (Linien-Basis) · Asphalt #1A0500 (Text)
+     Dunkelblau #1A2E4D (markenuebergreifend) · Philipp Orange #FF8F1F (Akzent)
+     Max Blau #4280E5 · Newroz Rot #D63338 (+ helle Varianten)
+   Typografie: Bricolage Grotesque (Ueberschriften/Buttons), Open Sans (Fliesstext) */
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600&family=Open+Sans:wght@400;600;700&display=swap');
 
 :root{
-  --navy:#14273D; --paper:#F7F8F9; --accent:#E8590C;
-  --line:#D5DAE0; --ink:#1B2733; --muted:#66707B;
+  --schnee:#FFFCFA; --rauch:#F7F5ED; --sand:#D4C7AD;
+  --ink:#1A0500;                       /* Asphalt */
+  --navy:#1A2E4D;                      /* Dunkelblau */
+  --accent:#FF8F1F;                    /* Philipp Orange */
+  --accent-dark:#E67C0E;
+  --accent-light:#FFEBD6;              /* Philipp Hellorange */
+  --blau:#4280E5; --blau-light:#D9ECFD;
+  --rot:#D63338;  --rot-light:#FCE2D6;
+  --line:#E3DAC6;                      /* aufgehelltes Sand */
+  --muted:#6E6459;
   --mono:ui-monospace,'SF Mono','Cascadia Mono','JetBrains Mono',Consolas,monospace;
-  --cond:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --head:'Bricolage Grotesque','Arial Narrow',system-ui,sans-serif;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);
-  font:15px/1.55 system-ui,'Segoe UI',Roboto,sans-serif}
+body{margin:0;background:var(--rauch);color:var(--ink);
+  font:15px/1.55 'Open Sans',system-ui,'Segoe UI',Roboto,sans-serif}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-/* Kopfleiste */
+/* Kopfleiste (Dunkelblau, helle Logo-Variante) */
 .topbar{display:flex;justify-content:space-between;align-items:center;
-  background:var(--navy);color:#fff;padding:.55rem 1.2rem}
-.brand{font-family:var(--cond);font-size:1.25rem;font-weight:600;
-  letter-spacing:.14em;text-transform:uppercase}
-.topbar nav a{color:#C4CEDA;text-decoration:none;margin-left:1.1rem;
+  background:var(--navy);color:#fff;padding:.5rem 1.2rem}
+.brand{display:flex;align-items:center;text-decoration:none;color:#fff;
+  font-family:var(--head);font-size:1.15rem;font-weight:600;letter-spacing:.04em}
+.brand img{height:30px;display:block}
+.topbar nav a{color:#C6CEDB;text-decoration:none;margin-left:1.1rem;
+  font-family:var(--head);font-weight:500;
   padding-bottom:2px;border-bottom:2px solid transparent}
 .topbar nav a.active,.topbar nav a:hover{color:#fff;border-bottom-color:var(--accent)}
 
 /* Layout Tagesuebersicht */
-.layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 48px)}
-.daylist{border-right:1px solid var(--line);padding:1rem;background:#fff}
-.daylist h2{font-family:var(--cond);font-size:.85rem;letter-spacing:.14em;
+.layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 50px)}
+.daylist{border-right:1px solid var(--line);padding:1rem;background:var(--schnee)}
+.daylist h2{font-family:var(--head);font-size:.85rem;letter-spacing:.1em;
   text-transform:uppercase;color:var(--muted);margin:.2rem 0 .7rem}
 .daylist ul{list-style:none;margin:0;padding:0}
 .daylist a{display:block;padding:.35rem .5rem;color:var(--ink);text-decoration:none;
   border-radius:4px;font-variant-numeric:tabular-nums}
 .daylist a.active{background:var(--navy);color:#fff}
-.daylist a:hover:not(.active){background:#EDF0F3}
+.daylist a:hover:not(.active){background:var(--accent-light)}
 @media (max-width:720px){.layout{grid-template-columns:1fr}
   .daylist{border-right:0;border-bottom:1px solid var(--line)}
   .daylist ul{display:flex;flex-wrap:wrap;gap:.3rem}}
 
 .page{padding:1.2rem 1.6rem;max-width:1050px}
-h1{font-family:var(--cond);font-weight:600;font-size:1.7rem;
-  letter-spacing:.03em;margin:.2rem 0 1rem}
-h2{font-family:var(--cond);font-size:1.05rem;letter-spacing:.1em;
+h1{font-family:var(--head);font-weight:600;font-size:1.7rem;
+  letter-spacing:.01em;margin:.2rem 0 1rem;color:var(--navy)}
+h2{font-family:var(--head);font-weight:600;font-size:1rem;letter-spacing:.08em;
   text-transform:uppercase;color:var(--muted);margin:1.6rem 0 .5rem}
 .muted{color:var(--muted)}
+
+/* Flugtag-Daten (aufklappbar ueber der Karte) */
+.daymeta{background:var(--schnee);border:1px solid var(--line);border-radius:6px;
+  margin-bottom:1rem;padding:.15rem .8rem}
+.daymeta summary{cursor:pointer;font-family:var(--head);font-weight:600;
+  font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);
+  padding:.45rem 0;user-select:none}
+.daymeta summary .muted{text-transform:none;letter-spacing:0;
+  font-family:'Open Sans',sans-serif;font-weight:400;font-size:.85rem}
+.meta-form{padding:.2rem 0 .8rem}
+.meta-form textarea{width:100%;padding:.5rem .6rem;border:1px solid var(--line);
+  border-radius:5px;font:inherit;background:var(--schnee);resize:vertical}
+.meta-form .btn-primary{width:auto;margin-top:.6rem;margin-right:.6rem}
 
 /* Karte */
 .map{height:380px;border:1px solid var(--line);border-radius:6px;margin-bottom:1rem}
 .map-tall{height:460px}
 
 /* Tabellen — das Flight-Log */
-table.data{width:100%;border-collapse:collapse;background:#fff;
+table.data{width:100%;border-collapse:collapse;background:var(--schnee);
   border:1px solid var(--line);border-radius:6px;overflow:hidden}
-table.data th{font-family:var(--cond);font-size:.8rem;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--muted);text-align:left;
+table.data th{font-family:var(--head);font-weight:600;font-size:.8rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;
   padding:.5rem .8rem;border-bottom:2px solid var(--navy)}
 table.data td{padding:.5rem .8rem;border-bottom:1px solid var(--line)}
 table.data tbody tr:last-child td{border-bottom:0}
 #missions tbody tr{cursor:pointer}
-#missions tbody tr:hover{background:#FFF3EA}
+#missions tbody tr:hover{background:var(--accent-light)}
 .mono{font-family:var(--mono);font-size:.92rem;font-variant-numeric:tabular-nums}
 .swatch{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px}
 .chip{display:inline-block;min-width:1.7em;text-align:center;
@@ -66,30 +95,53 @@ table.data tbody tr:last-child td{border-bottom:0}
 /* Formulare / Buttons */
 label{display:block;margin:.7rem 0 .2rem;font-size:.92rem}
 input,select{width:100%;padding:.5rem .6rem;border:1px solid var(--line);
-  border-radius:5px;font:inherit;background:#fff}
-input:focus,select:focus,button:focus,a:focus{outline:2px solid var(--accent);outline-offset:1px}
-button{font:inherit;border:0;border-radius:5px;padding:.5rem .9rem;cursor:pointer}
-.btn-primary{background:var(--accent);color:#fff;font-weight:600;width:100%;margin-top:.9rem}
-.btn-primary:hover{background:#CF4D08}
-.btn-danger{background:#fff;color:#C92A2A;border:1px solid #E8B4B4;padding:.25rem .6rem;font-size:.85rem}
-.btn-danger:hover{background:#FFF0F0}
+  border-radius:5px;font:inherit;background:var(--schnee)}
+input:focus,select:focus,textarea:focus,button:focus,a:focus,summary:focus{
+  outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;font-family:var(--head);font-weight:600;border:0;
+  border-radius:5px;padding:.5rem .9rem;cursor:pointer}
+.btn-primary{background:var(--accent);color:#fff;width:100%;margin-top:.9rem}
+.btn-primary:hover{background:var(--accent-dark)}
+.btn-danger{background:var(--schnee);color:var(--rot);border:1px solid #EBC3C4;
+  padding:.25rem .6rem;font-size:.85rem}
+.btn-danger:hover{background:var(--rot-light)}
 .inline-form{display:flex;gap:.5rem;margin-top:.7rem;flex-wrap:wrap}
 .inline-form input,.inline-form select{width:auto;flex:1;min-width:160px}
 .inline-form .btn-primary{width:auto;margin-top:0}
 
-.alert{background:#FFF0F0;border:1px solid #E8B4B4;color:#B02525;
+.alert{background:var(--rot-light);border:1px solid #E5A9AB;color:#9E2226;
   padding:.55rem .8rem;border-radius:5px}
-.alert-info{background:#EDF5FF;border-color:#B6D4F2;color:#1B5E9E}
-.keybox{background:#FFF8F2;border:1px solid #F3C7A8;border-radius:6px;
+.alert-info{background:var(--blau-light);border-color:#A9C9EE;color:#255A9E}
+.alert-ok{background:#EBF7EC;border-color:#ABD8B0;color:#1E7A2E}
+.keybox{background:var(--accent-light);border:1px solid #EFC9A0;border-radius:6px;
   padding:.8rem 1rem;margin-bottom:1.2rem}
-.keybox code{font-family:var(--mono);background:#fff;border:1px solid var(--line);
-  padding:.1em .35em;border-radius:3px}
+.keybox code{font-family:var(--mono);background:var(--schnee);
+  border:1px solid var(--line);padding:.1em .35em;border-radius:3px}
 
 /* Login */
 .login-body{display:grid;place-items:center;min-height:100vh;background:var(--navy)}
-.login-card{background:#fff;border-radius:10px;padding:2rem 2.2rem;width:min(94vw,380px)}
-.login-card h1{font-size:1.5rem;text-align:center;letter-spacing:.1em;text-transform:uppercase}
-.login-logo{display:block;max-height:64px;margin:0 auto .6rem}
+.login-card{background:var(--schnee);border-radius:10px;padding:2rem 2.2rem;
+  width:min(94vw,400px)}
+.login-card h1{font-size:1.4rem;text-align:center;margin-top:.4rem}
+.login-logo{display:block;max-width:75%;height:auto;margin:0 auto .4rem}
 .login-aux{text-align:center;font-size:.9rem;margin-top:1rem}
-.login-aux a{color:var(--accent)}
+.login-aux a{color:var(--accent-dark)}
 section{margin-bottom:1.8rem}
+
+/* Manuelle Einsaetze */
+.add-link{color:var(--accent-dark);font-weight:600;text-decoration:none}
+.add-link:hover{text-decoration:underline}
+.badge-manual{background:var(--accent-light);color:#8A5A00;border-radius:4px;
+  padding:.05em .45em;font-size:.8rem;font-weight:600}
+.fieldlist{background:var(--schnee);border:1px solid var(--line);border-radius:6px;
+  padding:.6rem .9rem;margin:0 0 1rem;display:grid;grid-template-columns:auto 1fr;
+  gap:.15rem .9rem}
+.fieldlist dt{font-family:var(--head);font-weight:600;font-size:.85rem;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.fieldlist dd{margin:0;white-space:pre-line}
+.page-narrow{max-width:560px}
+.phase-row{display:flex;gap:.5rem;margin:.4rem 0;align-items:center}
+.phase-row select{flex:1;width:auto}
+.phase-row input[type=time]{width:110px}
+.phase-row .btn-danger{padding:.35rem .6rem}
+#meta a{color:var(--accent-dark)}

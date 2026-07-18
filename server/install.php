@@ -229,7 +229,7 @@ function render_page(string $title, string $body): void {
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title><?= h($title) ?> — Einsatzdoku</title>
 <style>
-  :root{--navy:#14273D;--paper:#F7F8F9;--accent:#E8590C;--line:#D5DAE0;--ink:#1B2733;--muted:#66707B}
+  :root{--navy:#1A2E4D;--paper:#F7F8F9;--accent:#FF8F1F;--line:#D5DAE0;--ink:#1B2733;--muted:#66707B}
   *{box-sizing:border-box}
   body{margin:0;background:var(--navy);color:var(--ink);
     font:15px/1.55 system-ui,'Segoe UI',Roboto,sans-serif;display:grid;place-items:start center;min-height:100vh;padding:2rem 1rem}
@@ -244,7 +244,7 @@ function render_page(string $title, string $body): void {
   input:focus{outline:2px solid var(--accent);outline-offset:1px}
   .btn-primary{background:var(--accent);color:#fff;font-weight:600;border:0;border-radius:6px;
     padding:.6rem 1rem;width:100%;cursor:pointer;font-size:1rem;margin-top:.4rem}
-  .btn-primary:hover{background:#CF4D08}
+  .btn-primary:hover{background:#E67C0E}
   .btn-link{display:inline-block;margin-top:.4rem;color:var(--accent);font-weight:600;text-decoration:none}
   .alert{background:#FFF0F0;border:1px solid #E8B4B4;color:#B02525;padding:.55rem .8rem;border-radius:5px;margin:.5rem 0}
   .alert-info{background:#EDF5FF;border-color:#B6D4F2;color:#1B5E9E}
