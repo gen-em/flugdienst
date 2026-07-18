@@ -32,8 +32,12 @@ $MIGRATIONS = [
             return (int)$q->fetchColumn() === 0;
         },
         'sql'   => [
-            'ALTER TABLE resus_sessions DROP INDEX uq_mission',
+            // Reihenfolge wichtig: Der Fremdschluessel braucht durchgehend
+            // einen Index auf mission_id. Erst den Ersatz anlegen (mission_id
+            // ist dort die fuehrende Spalte), dann den UNIQUE entfernen —
+            // sonst MySQL-Fehler 1553.
             'ALTER TABLE resus_sessions ADD INDEX idx_mission (mission_id, started_at)',
+            'ALTER TABLE resus_sessions DROP INDEX uq_mission',
         ],
     ],
     [
@@ -131,7 +135,16 @@ foreach ($MIGRATIONS as $m) {
 
     try {
         foreach ($m['sql'] as $stmt) {
-            $pdo->exec($stmt);
+            try {
+                $pdo->exec($stmt);
+            } catch (PDOException $inner) {
+                // Nach einem Teil-Lauf koennen einzelne Schritte schon
+                // erledigt sein: 1060 Spalte existiert, 1061 Index existiert,
+                // 1091 zu loeschendes Objekt fehlt, 1050 Tabelle existiert.
+                // Diese Faelle sind harmlos -> weitermachen.
+                $code = (int)($inner->errorInfo[1] ?? 0);
+                if (!in_array($code, [1050, 1060, 1061, 1091], true)) { throw $inner; }
+            }
         }
         $pdo->prepare('INSERT INTO schema_migrations (id, status) VALUES (?, "applied")')
             ->execute([$m['id']]);
