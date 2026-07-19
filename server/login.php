@@ -14,9 +14,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($fails >= 5 && time() - (int)($_SESSION['login_last'] ?? 0) < 30) {
         $error = 'Zu viele Versuche — bitte kurz warten.';
     } else {
-        $st = db()->prepare('SELECT id, password_hash, role, kdf_ver FROM users WHERE email = ?');
-        $st->execute([trim($_POST['email'] ?? '')]);
-        $u = $st->fetch();
+        // Migrationstolerant: Vor dem Lauf von update.php fehlen die
+        // kdf-Spalten noch — dann klassisch per Passwort anmelden.
+        try {
+            $st = db()->prepare('SELECT id, password_hash, role, kdf_ver FROM users WHERE email = ?');
+            $st->execute([trim($_POST['email'] ?? '')]);
+            $u = $st->fetch();
+        } catch (PDOException $ex) {
+            $st = db()->prepare('SELECT id, password_hash, role FROM users WHERE email = ?');
+            $st->execute([trim($_POST['email'] ?? '')]);
+            $u = $st->fetch();
+            if ($u) { $u['kdf_ver'] = 0; }
+        }
         $ok = false;
         if ($u && $u['password_hash'] !== null) {
             $token = (string)($_POST['token'] ?? '');
@@ -30,10 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($ok && $token !== ''
                     && preg_match('/^[0-9a-f]{64}$/', $token)
                     && preg_match('/^[0-9a-f]{32}$/', (string)($_POST['new_salt'] ?? ''))) {
-                    db()->prepare('UPDATE users SET password_hash = ?, kdf_salt = ?, kdf_ver = 1
-                                   WHERE id = ?')
-                        ->execute([password_hash($token, PASSWORD_DEFAULT),
-                                   $_POST['new_salt'], (int)$u['id']]);
+                    try {
+                        db()->prepare('UPDATE users SET password_hash = ?, kdf_salt = ?, kdf_ver = 1
+                                       WHERE id = ?')
+                            ->execute([password_hash($token, PASSWORD_DEFAULT),
+                                       $_POST['new_salt'], (int)$u['id']]);
+                    } catch (PDOException $ex) { /* Migration fehlt noch — Alt-Login bleibt */ }
                 }
             }
         }

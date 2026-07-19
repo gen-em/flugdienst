@@ -7,8 +7,15 @@ declare(strict_types=1);
  *   einmal. Mehrfaches Aufrufen dieser Seite ist ungefaehrlich.
  * - Neue Migrationen werden unten in $MIGRATIONS ergaenzt.
  */
-require_once __DIR__ . '/auth_guard.php';
-require_admin();
+// Notausgang: Aufruf per Kommandozeile (SSH) laeuft ohne Web-Session —
+// fuer den Fall, dass der Login selbst von einer Migration abhaengt.
+//   php update.php
+if (php_sapi_name() === 'cli') {
+    require_once __DIR__ . '/db.php';              // liefert auch e()
+} else {
+    require_once __DIR__ . '/auth_guard.php';
+    require_admin();
+}
 
 /* ---- Migrationsliste ------------------------------------------------------
  * 'id'    : eindeutiger, aufsteigender Name (Datum_stichwort)
