@@ -49,7 +49,7 @@ class ClockView extends WatchUi.View {
             Const.PHASE_LABELS[Model.phase], Graphics.TEXT_JUSTIFY_CENTER);
 
         // eine Statuszeile unten, nach Prioritaet:
-        // REA laeuft > Einsatz offen (Haltezustand) > Sync ausstehend
+        // REA laeuft > Einsatz offen (Haltezustand)
         if (Cpr.active) {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
@@ -58,10 +58,6 @@ class ClockView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
                 "START = Einsatz abschließen", Graphics.TEXT_JUSTIFY_CENTER);
-        } else if (Uploader.lastError != null) {
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
-                "Sync ausstehend", Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
 }
@@ -233,7 +229,7 @@ class QuitConfirmDelegate extends WatchUi.ConfirmationDelegate {
         if (response == WatchUi.CONFIRM_YES) {
             System.exit();                        // Daten bleiben gepuffert
         } else {
-            // Warten: zurueck zum Startbildschirm mit Live-Sync-Status
+            // Warten: zurueck zum Startbildschirm (Details: Sync-Seite, DOWN)
             WatchUi.switchToView(new StartView(), new StartDelegate(), WatchUi.SLIDE_DOWN);
         }
         return true;

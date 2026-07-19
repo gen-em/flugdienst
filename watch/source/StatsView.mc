@@ -27,12 +27,6 @@ class StatsView extends WatchUi.View {
         dc.drawText(cx, cy + 40, Graphics.FONT_MEDIUM, "Einsätze",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Diagnose: konkreter Sync-Status
-        if (Uploader.lastError != null) {
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
-                "Sync: " + Uploader.lastError, Graphics.TEXT_JUSTIFY_CENTER);
-        }
 
         if (Cpr.active) {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);

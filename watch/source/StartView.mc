@@ -56,14 +56,6 @@ class StartView extends WatchUi.View {
                 "UP halten: Gerät koppeln", Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        // Sync-Status vom letzten Dienst
-        if (!Uploader.allSynced() || Uploader.lastError != null) {
-            dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-            var msg = Uploader.lastError != null
-                ? "Sync: " + Uploader.lastError : "Sync ausstehend…";
-            dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
-                msg, Graphics.TEXT_JUSTIFY_CENTER);
-        }
     }
 }
 
@@ -74,6 +66,12 @@ class StartDelegate extends WatchUi.BehaviorDelegate {
     // lang UP: Geraet koppeln (Code-Eingabe)
     function onMenu() as Lang.Boolean {
         Pair.openInput();
+        return true;
+    }
+
+    // DOWN: Sync-Status & App-Version anzeigen
+    function onNextPage() as Lang.Boolean {
+        WatchUi.pushView(new SyncView(true), new SyncDelegate(true), WatchUi.SLIDE_UP);
         return true;
     }
 
