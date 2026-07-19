@@ -20,14 +20,14 @@ $id = (int)($_GET['id'] ?? 0);
 <main class="page page-center">
   <h1 id="title">Einsatz</h1>
   <p id="meta" class="muted"></p>
-  <p class="actionbar">
+  <div class="actionbar">
     <a class="btn-edit" href="einsatz_form.php?id=<?= $mid ?>">Bearbeiten</a>
     <form method="post" action="einsatz_loeschen.php" style="display:inline"
           onsubmit="return confirm('Diesen Einsatz endgültig löschen? Phasen, Reanimationen und Track werden mit entfernt.')">
       <?= csrf_field() ?><input type="hidden" name="id" value="<?= $mid ?>">
       <button class="btn-danger">Löschen</button>
     </form>
-  </p>
+  </div>
   <dl id="fieldlist" class="fieldlist" hidden></dl>
   <div id="map" class="map map-tall"></div>
   <p><button id="phasetoggle" class="btn-danger" hidden>Phasen ausblenden</button></p>
