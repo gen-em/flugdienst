@@ -3,10 +3,29 @@ using Toybox.WatchUi;
 using Toybox.Graphics;
 using Toybox.System;
 using Toybox.Lang;
+using Toybox.Timer;
 
 class StartView extends WatchUi.View {
 
+    var _timer as Timer.Timer or Null = null;
+
     function initialize() { View.initialize(); }
+
+    // Nach "Trotzdem beenden? -> Nein": im Hintergrund weiter senden und den
+    // Status live anzeigen, bis alles bestaetigt ist.
+    function onShow() as Void {
+        if (_timer == null) { _timer = new Timer.Timer(); }
+        _timer.start(method(:refresh), 2000, true);
+    }
+
+    function onHide() as Void {
+        if (_timer != null) { _timer.stop(); }
+    }
+
+    function refresh() as Void {
+        if (!Uploader.allSynced()) { Uploader.syncAll(); }
+        WatchUi.requestUpdate();
+    }
 
     function onUpdate(dc as Graphics.Dc) as Void {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
@@ -23,6 +42,13 @@ class StartView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, cy + 40, Graphics.FONT_TINY, "START drücken",
             Graphics.TEXT_JUSTIFY_CENTER);
+
+        // Sync-Status vom letzten Dienst
+        if (!Uploader.allSynced()) {
+            dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
+                "Sync ausstehend…", Graphics.TEXT_JUSTIFY_CENTER);
+        }
     }
 }
 
@@ -32,6 +58,7 @@ class StartDelegate extends WatchUi.BehaviorDelegate {
 
     function onSelect() as Lang.Boolean {          // START
         Model.beginService();
+        Util.vibrateTwice();                       // fuehlbar: Aufzeichnung laeuft
         Nav.goTo(:clock);
         return true;
     }

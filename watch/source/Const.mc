@@ -42,7 +42,8 @@ module Const {
 
     // Reanimation
     const CPR_CYCLE_S = 120;         // 2:00-Countdown
-    const LONG_PRESS_MS = 1000;       // Aktion feuert nach 1 s Halten (nicht erst beim Loslassen)
+    const LONG_PRESS_MS = 1000;
+    const END_SYNC_WAIT_S = 10;       // Dienstende: so lange auf Sende-Bestaetigung warten       // Aktion feuert nach 1 s Halten (nicht erst beim Loslassen)
 
     // Storage-Schluessel
     const K_STATE = "state";         // Dienst-/Einsatz-/Rea-Zustand

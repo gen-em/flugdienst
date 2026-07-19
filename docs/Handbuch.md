@@ -86,6 +86,13 @@ Hauptanzeige heißt nur: Es wird später erneut versucht.
 
 ## 3. Die Web-Oberfläche
 
+Die Kopfleiste zeigt links das GenEM-Icon mit „Einsatzdokumentation
+Luftrettung – *Name*" (Name im Profil setzbar, sonst E-Mail), rechts die
+Menüs **Übersicht**, **Administration** (nur Admin) und **⚙ Einstellungen**
+(Profil, Geräte, Abmelden). Die Einsatztage-Leiste links begleitet alle
+Inhaltsseiten — auch Einsatzansicht und Formular; ein Tagesklick führt zur
+Übersicht des Tages.
+
 ### 3.1 Anmelden & Passwort
 
 Anmeldung mit E-Mail-Adresse und Passwort. Über **„Passwort vergessen oder
@@ -127,23 +134,34 @@ Reanimations-Zeiten lassen sich im Formular derzeit nicht erfassen.
 
 ### 3.5 Geräte
 
-Unter **„Geräte"** verwaltet jede/r die eigenen Uhren: **„Gerät anlegen"**
+Unter **⚙ Einstellungen → „Geräte"** verwaltet jede/r die eigenen Uhren: **„Gerät anlegen"**
 erzeugt Geräte-ID und API-Schlüssel — der Schlüssel wird **nur einmal**
 angezeigt, also sofort notieren bzw. eintragen. **Deaktivieren** sperrt den
 Upload sofort (z. B. bei Verlust); alle bereits hochgeladenen Daten bleiben
 erhalten, und **Aktivieren** schaltet dasselbe Gerät wieder frei.
 
-### 3.6 Verwaltung (nur Admin)
+### 3.5a Stammdaten
+
+Unter **⚙ Einstellungen → „Stammdaten"** pflegst du Vorbelegungen: Standorte,
+Hubschrauber (Kennung plus Häkchen, welche Rollen an Bord sind) sowie
+Namenslisten je Rolle und Bergwacht-Bereitschaften. Am Flugtag wählst du
+Maschine und Standort dann per Dropdown; die beim Hubschrauber angehakten
+Rollen erscheinen als Besatzungs-Dropdowns mit deinen Vorbelegungen.
+
+### 3.6 Administration (nur Admin)
 
 NutzerInnen anlegen (verschickt automatisch den Passwort-Setz-Link) und
-löschen (**Achtung:** entfernt alle Daten der Person unwiderruflich), dazu die
-Gesamtübersicht aller Geräte mit denselben Aktivieren/Deaktivieren-Schaltern.
+löschen (**Achtung:** entfernt alle Daten der Person unwiderruflich). Ein
+Klick auf eine NutzerIn öffnet die Editierseite: Rolle wechseln, E-Mail
+ändern, neues Passwort vergeben und die verbundenen Geräte einsehen
+(aktivieren/deaktivieren/löschen — Löschen lässt hochgeladene Daten
+bestehen).
 Nach Code-Updates mit Datenbank-Änderungen einmal **`update.php`** aufrufen
 (siehe Technik-Doku, Betrieb).
 
 ## 4. Eine neue Uhr einrichten (Kurzanleitung)
 
-1. Im Web unter **„Geräte" → „Gerät anlegen"** — Geräte-ID und API-Schlüssel
+1. Im Web unter **⚙ Einstellungen → „Geräte" → „Gerät anlegen"** — Geräte-ID und API-Schlüssel
    werden einmalig angezeigt.
 2. App auf die Uhr laden (siehe `Technik.md`, Abschnitt Build/Sideload).
 3. In **Garmin Connect** am Handy: Connect-IQ-Einstellungen der Einsatzdoku

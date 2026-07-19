@@ -92,15 +92,22 @@ class MapPageDelegate extends WatchUi.BehaviorDelegate {
         _v = v;
     }
 
-    // kurz START: in Garmins interaktiven Kartenmodus wechseln
-    // (native Zoom-/Verschiebe-Bedienung der Uhr); BACK kehrt zur Vorschau zurueck.
+    // kurz START: in Garmins interaktiven Kartenmodus wechseln.
+    // WICHTIG: Im Browse-Modus alle Tasten ans System durchreichen (return
+    // false) — nur dann erscheint Garmins Zoom-/Verschiebe-Bedienung.
     function onSelect() as Lang.Boolean {
         if (!_v.browse) {
             _v.browse = true;
             _v.setMapMode(WatchUi.MAP_MODE_BROWSE);
             WatchUi.requestUpdate();
+            return true;
         }
-        return true;
+        return false;                             // System: Pan/Zoom-Steuerung
+    }
+
+    function onKey(evt as WatchUi.KeyEvent) as Lang.Boolean {
+        if (_v.browse && evt.getKey() != WatchUi.KEY_ESC) { return false; }
+        return BehaviorDelegate.onKey(evt);
     }
 
     function onNextPage() as Lang.Boolean {

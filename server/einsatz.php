@@ -12,12 +12,12 @@ $id = (int)($_GET['id'] ?? 0);
 <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
-<header class="topbar">
-  <a class="brand" href="index.php"><img src="assets/logo-weiss.png" alt="GenEM Einsatzdoku"></a>
-  <nav><a href="index.php">Übersicht</a> <a href="geraete.php">Geräte</a> <a href="logout.php">Abmelden</a></nav>
-</header>
+<?php ui_topbar('uebersicht'); ?>
 
-<main class="page">
+<div class="layout">
+  <?php ui_days_sidebar($missionDay); ?>
+
+<main class="page page-center">
   <h1 id="title">Einsatz</h1>
   <p id="meta" class="muted"></p>
   <dl id="fieldlist" class="fieldlist" hidden></dl>
@@ -34,7 +34,9 @@ $id = (int)($_GET['id'] ?? 0);
   <section id="resus-section" hidden>
     <div id="resus-tables"></div>
   </section>
+<?php ui_footer(); ?>
 </main>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -106,6 +108,5 @@ async function init(){
 }
 init();
 </script>
-<footer class="sitefooter">© Gen-EM · <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a></footer>
 </body>
 </html>

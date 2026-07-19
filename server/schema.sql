@@ -3,7 +3,8 @@ SET NAMES utf8mb4;
 
 CREATE TABLE users (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  email         VARCHAR(190) NOT NULL UNIQUE,        -- Username = E-Mail
+  email         VARCHAR(190) NOT NULL UNIQUE,
+  name          VARCHAR(120) NULL,                   -- Anzeigename (Kopfleiste)
   password_hash VARCHAR(255) NULL,                   -- NULL bis Erst-Setzung per Mail-Link
   role          ENUM('user','admin') NOT NULL DEFAULT 'user',
   created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -34,7 +35,7 @@ CREATE TABLE devices (
 CREATE TABLE missions (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id    INT UNSIGNED NOT NULL,
-  device_id  INT UNSIGNED NOT NULL,
+  device_id  INT UNSIGNED NULL,               -- NULL = Geraet geloescht (Daten bleiben)
   client_ref VARCHAR(64) NOT NULL,
   day        DATE NOT NULL,                          -- Betriebstag (Datum Dienstbeginn)
   started_at DATETIME NOT NULL,                      -- UTC
@@ -49,7 +50,7 @@ CREATE TABLE missions (
   UNIQUE KEY uq_dev_ref (device_id, client_ref),
   INDEX (user_id, day),
   FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE CASCADE,
-  FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
+  FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE mission_phases (
@@ -82,7 +83,7 @@ CREATE TABLE resus_events (
 CREATE TABLE rest_segments (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id    INT UNSIGNED NOT NULL,
-  device_id  INT UNSIGNED NOT NULL,
+  device_id  INT UNSIGNED NULL,               -- NULL = Geraet geloescht (Daten bleiben)
   client_ref VARCHAR(64) NOT NULL,
   day        DATE NOT NULL,
   started_at DATETIME NOT NULL,
@@ -91,7 +92,47 @@ CREATE TABLE rest_segments (
   UNIQUE KEY uq_dev_ref (device_id, client_ref),
   INDEX (user_id, day),
   FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE CASCADE,
-  FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
+  FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Stammdaten (je NutzerIn): Standorte, Hubschrauber mit Rollen,
+-- Besatzungs-Vorbelegungen, Bergwacht-Bereitschaften
+CREATE TABLE bases (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  UNIQUE KEY uq_user_name (user_id, name),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE aircraft (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  registration VARCHAR(64) NOT NULL,               -- Kennung
+  p1 TINYINT(1) NOT NULL DEFAULT 0,                -- Pilot 1 an Bord
+  p2 TINYINT(1) NOT NULL DEFAULT 0,                -- Pilot 2
+  hems TINYINT(1) NOT NULL DEFAULT 0,              -- HEMS-TC
+  fr TINYINT(1) NOT NULL DEFAULT 0,                -- Flugretter
+  other TINYINT(1) NOT NULL DEFAULT 0,             -- Sonstige
+  UNIQUE KEY uq_user_reg (user_id, registration),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE crew_presets (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  role ENUM('p1','p2','hems','fr','other') NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  UNIQUE KEY uq_user_role_name (user_id, role, name),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE bw_units (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  UNIQUE KEY uq_user_name (user_id, name),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Flugtage: editierbare Metadaten je Betriebstag. Verknuepfung zu Einsaetzen
@@ -100,12 +141,21 @@ CREATE TABLE days (
   id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id  INT UNSIGNED NOT NULL,
   day      DATE NOT NULL,
-  aircraft VARCHAR(64) NULL,        -- Maschine / Kennung
-  base     VARCHAR(64) NULL,        -- Basis / Standort
-  crew     VARCHAR(190) NULL,       -- Besatzung
+  aircraft_id INT UNSIGNED NULL,    -- Maschine (Stammdaten)
+  base_id     INT UNSIGNED NULL,    -- Standort (Stammdaten)
+  crew_p1     VARCHAR(120) NULL,    -- Besatzung je Rolle (aus Vorbelegungen)
+  crew_p2     VARCHAR(120) NULL,
+  crew_hems   VARCHAR(120) NULL,
+  crew_fr     VARCHAR(120) NULL,
+  crew_other  VARCHAR(120) NULL,
+  aircraft VARCHAR(64) NULL,        -- Alt (Freitext, wird nicht mehr beschrieben)
+  base     VARCHAR(64) NULL,        -- Alt
+  crew     VARCHAR(190) NULL,       -- Alt
   notes    TEXT NULL,
   UNIQUE KEY uq_user_day (user_id, day),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (aircraft_id) REFERENCES aircraft(id) ON DELETE SET NULL,
+  FOREIGN KEY (base_id) REFERENCES bases(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Kleiner Schluessel/Wert-Speicher fuer App-interne Zustaende (z. B. Wartung)

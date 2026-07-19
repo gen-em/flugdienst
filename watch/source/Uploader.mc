@@ -25,6 +25,12 @@ module Uploader {
     var _inflight as Lang.Dictionary or Null = null;  // Kontext der laufenden Anfrage
 
     // Von ueberall aufrufbar: arbeitet die Warteschlange sequenziell ab.
+    // Alles beim Server bestaetigt? (Nach Dienstende liegt alles Unbestaetigte
+    // in den Pending-Listen; vollstaendig bestaetigte Eintraege werden entfernt.)
+    function allSynced() as Lang.Boolean {
+        return Model.pendingMissions.size() == 0 && Model.pendingRest.size() == 0;
+    }
+
     function syncAll() as Void {
         if (_busy) { return; }
         _next();

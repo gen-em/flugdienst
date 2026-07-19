@@ -35,34 +35,32 @@ class ClockView extends WatchUi.View {
 
         var t = System.getClockTime();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy - 52, Graphics.FONT_NUMBER_HOT,
+        dc.drawText(cx, cy - 36, Graphics.FONT_NUMBER_THAI_HOT,
             t.hour.format("%02d") + ":" + t.min.format("%02d"),
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-        // Phase: Zahl + Bezeichnung (bewusst kleiner als die Uhrzeit)
+        // Phase im unteren Drittel (bewusst kleiner als die Uhrzeit)
         dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 26, Graphics.FONT_LARGE,
+        dc.drawText(cx, cy + 42, Graphics.FONT_LARGE,
             Model.phase.toString(),
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 62, Graphics.FONT_SMALL,
+        dc.drawText(cx, cy + 66, Graphics.FONT_TINY,
             Const.PHASE_LABELS[Model.phase], Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Haltezustand: Einsatz offen nach Phase 9
-        if (Model.missionActive() && Model.phase >= 9) {
-            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
-                "START = Einsatz abschließen", Graphics.TEXT_JUSTIFY_CENTER);
-        }
-
-        // dezente Statuszeile: laufende Rea / Upload-Problem
+        // eine Statuszeile unten, nach Prioritaet:
+        // REA laeuft > Einsatz offen (Haltezustand) > Sync ausstehend
         if (Cpr.active) {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, dc.getHeight() - 32, Graphics.FONT_XTINY,
+            dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
                 "REA läuft", Graphics.TEXT_JUSTIFY_CENTER);
+        } else if (Model.missionActive() && Model.phase >= 9) {
+            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
+                "START = Einsatz abschließen", Graphics.TEXT_JUSTIFY_CENTER);
         } else if (Uploader.lastError != null) {
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, dc.getHeight() - 32, Graphics.FONT_XTINY,
+            dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
                 "Sync ausstehend", Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
@@ -160,6 +158,82 @@ class EndDayConfirmDelegate extends WatchUi.ConfirmationDelegate {
         if (response == WatchUi.CONFIRM_YES) {
             Cpr.stop();
             Model.endService();
+            WatchUi.switchToView(new SendingView(), new SendingDelegate(), WatchUi.SLIDE_DOWN);
+        }
+        return true;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Dienstende: "Sende Daten..." — wartet auf die Server-Bestaetigung und
+// beendet die App dann automatisch. Klappt es nicht binnen
+// Const.END_SYNC_WAIT_S, folgt die Rueckfrage "Trotzdem beenden?".
+// ---------------------------------------------------------------------------
+
+class SendingView extends WatchUi.View {
+
+    var _timer as Timer.Timer or Null = null;
+    var _ticks as Lang.Number = 0;
+
+    function initialize() { View.initialize(); }
+
+    function onShow() as Void {
+        if (_timer == null) { _timer = new Timer.Timer(); }
+        _timer.start(method(:tick), 1000, true);
+        Uploader.syncAll();
+    }
+
+    function onHide() as Void {
+        if (_timer != null) { _timer.stop(); }
+    }
+
+    function tick() as Void {
+        if (Uploader.allSynced()) {
+            System.exit();                        // alles bestaetigt -> App zu
+        }
+        _ticks += 1;
+        if (_ticks >= Const.END_SYNC_WAIT_S) {
+            if (_timer != null) { _timer.stop(); }
+            var dlg = new WatchUi.Confirmation("Noch nicht alles gesendet. Trotzdem beenden?");
+            WatchUi.pushView(dlg, new QuitConfirmDelegate(), WatchUi.SLIDE_LEFT);
+            return;
+        }
+        Uploader.syncAll();                       // weiter versuchen
+        WatchUi.requestUpdate();
+    }
+
+    function onUpdate(dc as Graphics.Dc) as Void {
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.clear();
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, cy - 14, Graphics.FONT_MEDIUM, "Sende Daten…",
+            Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, cy + 26, Graphics.FONT_TINY,
+            (Model.pendingMissions.size() + Model.pendingRest.size()).toString() + " offen",
+            Graphics.TEXT_JUSTIFY_CENTER);
+    }
+}
+
+class SendingDelegate extends WatchUi.BehaviorDelegate {
+    function initialize() { BehaviorDelegate.initialize(); }
+    // Waehrend des Sendens keine Aktionen — BACK ueberspringt das Warten
+    function onBack() as Lang.Boolean {
+        var dlg = new WatchUi.Confirmation("Noch nicht alles gesendet. Trotzdem beenden?");
+        WatchUi.pushView(dlg, new QuitConfirmDelegate(), WatchUi.SLIDE_LEFT);
+        return true;
+    }
+}
+
+class QuitConfirmDelegate extends WatchUi.ConfirmationDelegate {
+    function initialize() { ConfirmationDelegate.initialize(); }
+    function onResponse(response) as Lang.Boolean {
+        if (response == WatchUi.CONFIRM_YES) {
+            System.exit();                        // Daten bleiben gepuffert
+        } else {
+            // Warten: zurueck zum Startbildschirm mit Live-Sync-Status
             WatchUi.switchToView(new StartView(), new StartDelegate(), WatchUi.SLIDE_DOWN);
         }
         return true;

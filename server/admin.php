@@ -4,7 +4,7 @@ require_once __DIR__ . '/auth_guard.php';
 require_once __DIR__ . '/smtp.php';
 require_admin();
 
-$notice = null; $newKey = null;
+$notice = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
@@ -35,48 +35,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else { $notice = 'Du kannst dich nicht selbst löschen.'; }
     }
 
-    if ($action === 'device_add') {
-        $forUser = (int)($_POST['user_id'] ?? 0);
-        $label   = trim($_POST['label'] ?? '');
-        $devId   = 'dev-' . bin2hex(random_bytes(4));
-        $key     = bin2hex(random_bytes(24));           // 48 Hex-Zeichen
-        db()->prepare('INSERT INTO devices (user_id, device_id, api_key_hash, label) VALUES (?,?,?,?)')
-            ->execute([$forUser, $devId, password_hash($key, PASSWORD_DEFAULT), $label ?: null]);
-        $newKey = ['device_id' => $devId, 'api_key' => $key];
-        $notice = 'Gerät angelegt. Schlüssel unten JETZT notieren — er wird nur einmal angezeigt.';
-    }
-
-    if ($action === 'device_toggle') {
-        db()->prepare('UPDATE devices SET active = 1 - active WHERE id = ?')
-            ->execute([(int)($_POST['id'] ?? 0)]);
-        $notice = 'Gerätestatus geändert.';
-    }
 }
 
-$users   = db()->query('SELECT id, email, role, created_at FROM users ORDER BY email')->fetchAll();
-$devices = db()->query('SELECT d.id, d.device_id, d.label, d.active, d.last_seen, u.email
-                        FROM devices d JOIN users u ON u.id = d.user_id WHERE d.device_id NOT LIKE \'manual-%\' ORDER BY u.email')->fetchAll();
+$users   = db()->query('SELECT id, email, name, role, created_at FROM users ORDER BY email')->fetchAll();
 ?><!doctype html>
 <html lang="de">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Verwaltung — Einsatzdoku</title>
+<title>Administration — Einsatzdoku</title>
 <link rel="stylesheet" href="assets/style.css">
 <link rel="icon" type="image/png" href="assets/favicon.png"></head>
 <body>
-<header class="topbar">
-  <a class="brand" href="index.php"><img src="assets/logo-weiss.png" alt="GenEM Einsatzdoku"></a>
-  <nav><a href="index.php">Übersicht</a> <a class="active" href="admin.php">Verwaltung</a> <a href="geraete.php">Geräte</a> <a href="logout.php">Abmelden</a></nav>
-</header>
+<?php ui_topbar('admin'); ?>
+
+<div class="layout">
+  <aside class="daylist">
+    <h2>Administration</h2>
+    <ul>
+      <li><a href="admin.php" class="active">Nutzerverwaltung</a></li>
+    </ul>
+  </aside>
+
 <main class="page">
   <?php if ($notice): ?><p class="alert alert-info"><?= e($notice) ?></p><?php endif; ?>
-  <?php if ($newKey): ?>
-    <div class="keybox">
-      <strong>Neues Gerät</strong>
-      <p>Geräte-ID: <code><?= e($newKey['device_id']) ?></code><br>
-         API-Schlüssel: <code><?= e($newKey['api_key']) ?></code></p>
-      <p>Beide Werte in die Uhr-App eintragen. Der Schlüssel wird serverseitig nur als Hash gespeichert.</p>
-    </div>
-  <?php endif; ?>
 
   <section>
     <h2>NutzerInnen</h2>
@@ -84,13 +64,14 @@ $devices = db()->query('SELECT d.id, d.device_id, d.label, d.active, d.last_seen
       <thead><tr><th>E-Mail</th><th>Rolle</th><th>Seit</th><th></th></tr></thead>
       <tbody>
       <?php foreach ($users as $u): ?>
-        <tr>
-          <td><?= e($u['email']) ?></td>
+        <tr class="rowlink" onclick="location.href='admin_user.php?id=<?= (int)$u['id'] ?>'">
+          <td><a href="admin_user.php?id=<?= (int)$u['id'] ?>"><?= e($u['email']) ?></a><?php
+            if (!empty($u['name'])): ?> <span class="muted">(<?= e($u['name']) ?>)</span><?php endif; ?></td>
           <td><?= e($u['role']) ?></td>
           <td><?= e(fmt_local($u['created_at'], 'd.m.Y')) ?></td>
           <td>
             <?php if ((int)$u['id'] !== $userId): ?>
-            <form method="post" onsubmit="return confirm('Nutzer und alle zugehörigen Daten löschen?')">
+            <form method="post" onclick="event.stopPropagation()" onsubmit="return confirm('Nutzer und alle zugehörigen Daten löschen?')">
               <?= csrf_field() ?><input type="hidden" name="action" value="user_del">
               <input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
               <button class="btn-danger">Löschen</button>
@@ -110,40 +91,8 @@ $devices = db()->query('SELECT d.id, d.device_id, d.label, d.active, d.last_seen
   </section>
 
   <section>
-    <h2>Geräte (Uhren)</h2>
-    <table class="data">
-      <thead><tr><th>Geräte-ID</th><th>Bezeichnung</th><th>NutzerIn</th><th>Status</th><th>Zuletzt gesehen</th><th></th></tr></thead>
-      <tbody>
-      <?php foreach ($devices as $d): ?>
-        <tr>
-          <td><code><?= e($d['device_id']) ?></code></td>
-          <td><?= e($d['label'] ?? '–') ?></td>
-          <td><?= e($d['email']) ?></td>
-          <td><?= (int)$d['active'] ? 'aktiv' : '<span class="muted">deaktiviert</span>' ?></td>
-          <td><?= e($d['last_seen'] ? fmt_local($d['last_seen'], 'd.m.Y H:i') : 'nie') ?></td>
-          <td>
-            <form method="post">
-              <?= csrf_field() ?><input type="hidden" name="action" value="device_toggle">
-              <input type="hidden" name="id" value="<?= (int)$d['id'] ?>">
-              <button class="btn-danger"><?= (int)$d['active'] ? 'Deaktivieren' : 'Aktivieren' ?></button>
-            </form>
-          </td>
-        </tr>
-      <?php endforeach; ?>
-      </tbody>
-    </table>
-    <form method="post" class="inline-form">
-      <?= csrf_field() ?><input type="hidden" name="action" value="device_add">
-      <select name="user_id" required>
-        <?php foreach ($users as $u): ?>
-          <option value="<?= (int)$u['id'] ?>"><?= e($u['email']) ?></option>
-        <?php endforeach; ?>
-      </select>
-      <input type="text" name="label" placeholder="z. B. Fenix 6 Pro Philipp">
-      <button class="btn-primary">Gerät anlegen</button>
-    </form>
-  </section>
+<?php ui_footer(); ?>
 </main>
-<footer class="sitefooter">© Gen-EM · <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a></footer>
+</div>
 </body>
 </html>

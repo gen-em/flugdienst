@@ -3,6 +3,29 @@ declare(strict_types=1);
 // Noch nicht eingerichtet? -> Installer starten (erledigt sich nach 1x selbst).
 if (!file_exists(__DIR__ . '/config.php')) { header('Location: install.php'); exit; }
 require_once __DIR__ . '/auth_guard.php';
+
+// Gewaehlter Tag: ?day=YYYY-MM-DD, sonst der neueste
+// Stammdaten fuer die Flugtag-Dropdowns
+$SD_BASES = db()->prepare('SELECT id, name FROM bases WHERE user_id = ? ORDER BY name');
+$SD_BASES->execute([$userId]); $SD_BASES = $SD_BASES->fetchAll();
+$SD_AC = db()->prepare('SELECT id, registration, p1, p2, hems, fr, other FROM aircraft
+                        WHERE user_id = ? ORDER BY registration');
+$SD_AC->execute([$userId]); $SD_AC = $SD_AC->fetchAll();
+$SD_CREW = db()->prepare('SELECT role, name FROM crew_presets WHERE user_id = ? ORDER BY name');
+$SD_CREW->execute([$userId]);
+$SD_PRESETS = ['p1' => [], 'p2' => [], 'hems' => [], 'fr' => [], 'other' => []];
+foreach ($SD_CREW->fetchAll() as $c) { $SD_PRESETS[$c['role']][] = $c['name']; }
+
+$selDay = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['day'] ?? '') ? $_GET['day'] : null;
+if ($selDay === null) {
+    $q = db()->prepare('SELECT day FROM (
+            SELECT day FROM missions WHERE user_id = ?
+            UNION SELECT day FROM rest_segments WHERE user_id = ?
+            UNION SELECT day FROM days WHERE user_id = ?
+        ) t ORDER BY day DESC LIMIT 1');
+    $q->execute([$userId, $userId, $userId]);
+    $selDay = $q->fetchColumn() ?: null;
+}
 ?><!doctype html>
 <html lang="de">
 <head>
@@ -13,29 +36,50 @@ require_once __DIR__ . '/auth_guard.php';
 <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
-<header class="topbar">
-  <a class="brand" href="index.php"><img src="assets/logo-weiss.png" alt="GenEM Einsatzdoku"></a>
-  <nav>
-    <a class="active" href="index.php">Übersicht</a>
-    <?php if ($userRole === 'admin'): ?><a href="admin.php">Verwaltung</a><?php endif; ?>
-    <a href="geraete.php">Geräte</a> <a href="logout.php">Abmelden</a>
-  </nav>
-</header>
+<?php ui_topbar('uebersicht'); ?>
 
 <div class="layout">
-  <aside class="daylist">
-    <h2>Einsatztage</h2>
-    <ul id="days"></ul>
-  </aside>
+  <?php ui_days_sidebar($selDay); ?>
 
   <main class="page">
     <h1 id="daytitle">–</h1>
     <details class="daymeta" id="daymeta">
       <summary>Flugtag-Daten <span id="metahint" class="muted"></span></summary>
       <form id="dayform" class="meta-form">
-        <label>Maschine <input name="aircraft" maxlength="64" placeholder="z. B. Christoph 17 / H145"></label>
-        <label>Basis / Standort <input name="base" maxlength="64" placeholder="z. B. Kempten"></label>
-        <label>Besatzung <input name="crew" maxlength="190" placeholder="z. B. Pilot, HEMS-TC, Notarzt"></label>
+        <label>Maschine
+          <select name="aircraft_id" id="acsel">
+            <option value="">–</option>
+            <?php foreach ($SD_AC as $a): ?>
+              <option value="<?= (int)$a['id'] ?>"
+                data-roles='<?= json_encode(['p1'=>(int)$a['p1'],'p2'=>(int)$a['p2'],'hems'=>(int)$a['hems'],'fr'=>(int)$a['fr'],'other'=>(int)$a['other']]) ?>'>
+                <?= e($a['registration']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>Basis / Standort
+          <select name="base_id">
+            <option value="">–</option>
+            <?php foreach ($SD_BASES as $b): ?>
+              <option value="<?= (int)$b['id'] ?>"><?= e($b['name']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <div id="crewfields">
+          <?php $RL = ['p1'=>'Pilot 1','p2'=>'Pilot 2','hems'=>'HEMS','fr'=>'Flugretter','other'=>'Sonstige'];
+          foreach ($RL as $rk => $lbl): ?>
+            <label class="crewrole" data-role="<?= $rk ?>" hidden><?= e($lbl) ?>
+              <select name="crew_<?= $rk ?>">
+                <option value="">–</option>
+                <?php foreach ($SD_PRESETS[$rk] as $n): ?>
+                  <option value="<?= e($n) ?>"><?= e($n) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+          <?php endforeach; ?>
+        </div>
+        <p class="muted" id="sd-hint" <?= ($SD_AC || $SD_BASES) ? 'hidden' : '' ?>>
+          Noch keine Stammdaten hinterlegt — unter
+          <a href="einstellungen.php?t=stammdaten">Einstellungen → Stammdaten</a> anlegen.</p>
         <label>Notizen <textarea name="notes" rows="3" maxlength="2000"></textarea></label>
         <button type="submit" class="btn-primary">Speichern</button>
         <span id="savestate" class="muted"></span>
@@ -48,12 +92,14 @@ require_once __DIR__ . '/auth_guard.php';
     </table>
     <p id="empty" class="muted" hidden>Für diesen Tag sind keine Einsätze dokumentiert.</p>
     <p><a href="einsatz_form.php" id="addmission" class="add-link">+ Einsatz nachtragen</a></p>
+    <?php ui_footer(); ?>
   </main>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const CSRF = '<?= e($_SESSION['csrf']) ?>';
+const SEL_DAY = <?= json_encode($selDay) ?>;
 const COLORS = ['#FF8F1F','#4280E5','#D63338','#1A2E4D','#0C8599','#9C36B5','#2F9E44','#8A5A00'];
 let currentDay = null;
 
@@ -77,12 +123,23 @@ async function loadDay(day){
 
   // Flugtag-Felder befuellen
   const f = document.getElementById('dayform');
-  ['aircraft','base','crew','notes'].forEach(k => {
-    f.elements[k].value = (d.meta && d.meta[k]) ? d.meta[k] : '';
+  f.elements['aircraft_id'].value = (d.meta && d.meta.aircraft_id) ? d.meta.aircraft_id : '';
+  f.elements['base_id'].value     = (d.meta && d.meta.base_id) ? d.meta.base_id : '';
+  ['p1','p2','hems','fr','other'].forEach(r => {
+    f.elements['crew_' + r].value = (d.meta && d.meta['crew_' + r]) ? d.meta['crew_' + r] : '';
   });
-  const filled = d.meta && [d.meta.aircraft, d.meta.base, d.meta.crew].filter(Boolean);
-  document.getElementById('metahint').textContent =
-    filled && filled.length ? '— ' + filled.join(' · ') : '';
+  f.elements['notes'].value = (d.meta && d.meta.notes) ? d.meta.notes : '';
+  updateCrewFields();
+  const parts = [];
+  if (d.meta) {
+    if (d.meta.aircraft_name) parts.push(d.meta.aircraft_name);
+    if (d.meta.base_name) parts.push(d.meta.base_name);
+    ['p1','p2','hems','fr','other'].forEach(r => { if (d.meta['crew_' + r]) parts.push(d.meta['crew_' + r]); });
+    if (!parts.length && (d.meta.aircraft || d.meta.base || d.meta.crew)) {
+      [d.meta.aircraft, d.meta.base, d.meta.crew].filter(Boolean).forEach(x => parts.push(x + ' (alt)'));
+    }
+  }
+  document.getElementById('metahint').textContent = parts.length ? '— ' + parts.join(' · ') : '';
   document.getElementById('savestate').textContent = '';
   document.getElementById('addmission').href = 'einsatz_form.php?day=' + d.day;
 
@@ -125,13 +182,26 @@ async function loadDay(day){
   }
 }
 
+function updateCrewFields(){
+  const sel = document.getElementById('acsel');
+  const opt = sel.options[sel.selectedIndex];
+  const roles = (opt && opt.dataset.roles) ? JSON.parse(opt.dataset.roles) : {};
+  document.querySelectorAll('.crewrole').forEach(el => {
+    el.hidden = !roles[el.dataset.role];
+  });
+}
+
 async function init(){
+  document.getElementById('acsel').addEventListener('change', updateCrewFields);
   document.getElementById('dayform').addEventListener('submit', async ev => {
     ev.preventDefault();
     if (!currentDay) return;
     const f = ev.target;
-    const body = { day: currentDay };
-    ['aircraft','base','crew','notes'].forEach(k => body[k] = f.elements[k].value);
+    const body = { day: currentDay,
+      aircraft_id: f.elements['aircraft_id'].value || null,
+      base_id: f.elements['base_id'].value || null,
+      notes: f.elements['notes'].value };
+    ['p1','p2','hems','fr','other'].forEach(r => body['crew_' + r] = f.elements['crew_' + r].value);
     const state = document.getElementById('savestate');
     state.textContent = 'Speichern…';
     const res = await fetch('api/day.php', {
@@ -142,23 +212,10 @@ async function init(){
     state.textContent = res.ok ? 'Gespeichert.' : 'Fehler beim Speichern.';
     if (res.ok) loadDay(currentDay);
   });
-  const res = await fetch('api/day.php');
-  const d = await res.json();
-  const ul = document.getElementById('days');
-  d.days.forEach(day => {
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-    a.href = '#'; a.textContent = fmtDay(day);
-    a.addEventListener('click', ev => { ev.preventDefault();
-      document.querySelectorAll('#days a').forEach(x => x.classList.remove('active'));
-      a.classList.add('active'); loadDay(day); });
-    li.appendChild(a); ul.appendChild(li);
-  });
-  if (d.latest) { ul.querySelector('a')?.classList.add('active'); loadDay(d.latest); }
+  if (SEL_DAY) { loadDay(SEL_DAY); }
   else document.getElementById('daytitle').textContent = 'Noch keine Daten';
 }
 init();
 </script>
-<footer class="sitefooter">© Gen-EM · <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a></footer>
 </body>
 </html>

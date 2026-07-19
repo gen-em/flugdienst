@@ -21,12 +21,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         json_out(['error' => 'payload'], 400);
     }
     $trim = fn($k, $max) => mb_substr(trim((string)($b[$k] ?? '')), 0, $max) ?: null;
-    db()->prepare('INSERT INTO days (user_id, day, aircraft, base, crew, notes)
-                   VALUES (?,?,?,?,?,?)
-                   ON DUPLICATE KEY UPDATE aircraft = VALUES(aircraft),
-                     base = VALUES(base), crew = VALUES(crew), notes = VALUES(notes)')
-        ->execute([$userId, $day, $trim('aircraft', 64), $trim('base', 64),
-                   $trim('crew', 190), $trim('notes', 2000)]);
+
+    // Dropdown-IDs nur uebernehmen, wenn sie der NutzerIn gehoeren
+    $checkId = function (?int $id, string $table) use ($userId): ?int {
+        if ($id === null || $id <= 0) { return null; }
+        $q = db()->prepare("SELECT id FROM `$table` WHERE id = ? AND user_id = ?");
+        $q->execute([$id, $userId]);
+        return $q->fetchColumn() !== false ? $id : null;
+    };
+    $acId   = $checkId(isset($b['aircraft_id']) ? (int)$b['aircraft_id'] : null, 'aircraft');
+    $baseId = $checkId(isset($b['base_id']) ? (int)$b['base_id'] : null, 'bases');
+
+    db()->prepare('INSERT INTO days (user_id, day, aircraft_id, base_id,
+                     crew_p1, crew_p2, crew_hems, crew_fr, crew_other, notes)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)
+                   ON DUPLICATE KEY UPDATE aircraft_id = VALUES(aircraft_id),
+                     base_id = VALUES(base_id), crew_p1 = VALUES(crew_p1),
+                     crew_p2 = VALUES(crew_p2), crew_hems = VALUES(crew_hems),
+                     crew_fr = VALUES(crew_fr), crew_other = VALUES(crew_other),
+                     notes = VALUES(notes)')
+        ->execute([$userId, $day, $acId, $baseId,
+                   $trim('crew_p1', 120), $trim('crew_p2', 120), $trim('crew_hems', 120),
+                   $trim('crew_fr', 120), $trim('crew_other', 120), $trim('notes', 2000)]);
     json_out(['ok' => true]);
 }
 
@@ -45,8 +61,14 @@ if ($day === '') {
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) json_out(['error' => 'payload'], 400);
 
 // Flugtag-Metadaten (null, wenn noch keine gespeichert)
-$mt = db()->prepare('SELECT aircraft, base, crew, notes FROM days
-                     WHERE user_id = ? AND day = ?');
+$mt = db()->prepare('SELECT d.aircraft_id, d.base_id, d.crew_p1, d.crew_p2, d.crew_hems,
+                            d.crew_fr, d.crew_other, d.notes,
+                            d.aircraft, d.base, d.crew,
+                            a.registration AS aircraft_name, b.name AS base_name
+                     FROM days d
+                     LEFT JOIN aircraft a ON a.id = d.aircraft_id
+                     LEFT JOIN bases b ON b.id = d.base_id
+                     WHERE d.user_id = ? AND d.day = ?');
 $mt->execute([$userId, $day]);
 $meta = $mt->fetch() ?: null;
 

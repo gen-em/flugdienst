@@ -30,9 +30,11 @@ body{margin:0;background:var(--rauch);color:var(--ink);
 /* Kopfleiste (Dunkelblau, helle Logo-Variante) */
 .topbar{display:flex;justify-content:space-between;align-items:center;
   background:var(--navy);color:#fff;padding:.5rem 1.2rem}
-.brand{display:flex;align-items:center;text-decoration:none;color:#fff;
-  font-family:var(--head);font-size:1.15rem;font-weight:600;letter-spacing:.04em}
-.brand img{height:30px;display:block}
+.brand{display:flex;align-items:center;gap:.55rem;text-decoration:none;color:#fff;
+  font-family:var(--head);font-size:1rem;font-weight:600;letter-spacing:.02em;min-width:0}
+.brand img{height:30px;display:block;flex:none}
+.brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:560px){.brand span{font-size:.85rem}}
 .topbar nav a{color:#C6CEDB;text-decoration:none;margin-left:1.1rem;
   font-family:var(--head);font-weight:500;
   padding-bottom:2px;border-bottom:2px solid transparent}
@@ -156,9 +158,52 @@ textarea{width:100%;padding:.5rem .6rem;border:1px solid var(--line);
   padding:.25rem .7rem;border-radius:5px;text-decoration:none;vertical-align:1px}
 .btn-edit:hover{background:var(--accent-dark)}
 
-/* Fusszeile mit Copyright/Lizenz */
-.sitefooter{text-align:right;padding:.6rem 1.2rem 1rem;
+/* Fusszeile: im Dokumentfluss, rechtsbündig unter dem Inhalt (auch mobil) */
+.sitefooter{text-align:right;margin-top:2.2rem;padding-bottom:.4rem;
   color:var(--muted);font-size:.8rem}
 .sitefooter a{color:var(--muted)}
-.login-body .sitefooter{position:fixed;right:0;bottom:0;color:#8A96A8}
-.login-body .sitefooter a{color:#8A96A8}
+.login-wrap{display:flex;flex-direction:column}
+.login-wrap .sitefooter{color:#8A96A8;margin-top:.7rem}
+.login-wrap .sitefooter a{color:#8A96A8}
+
+/* Zahnrad-Menue (Einstellungen) */
+.gearmenu{position:relative;display:inline-block;margin-left:1.1rem}
+.gearmenu summary{list-style:none;cursor:pointer;color:#C6CEDB;
+  font-size:1.15rem;padding-bottom:2px;border-bottom:2px solid transparent;user-select:none}
+.gearmenu summary::-webkit-details-marker{display:none}
+.gearmenu summary:hover,.gearmenu summary.active{color:#fff;border-bottom-color:var(--accent)}
+.gearmenu[open] summary{color:#fff}
+.gearlist{position:absolute;right:0;top:calc(100% + .55rem);z-index:1100;
+  background:var(--navy);border:1px solid #33455F;border-radius:6px;
+  min-width:150px;padding:.3rem 0;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.gearlist a{display:block;padding:.45rem .9rem;margin:0;border-bottom:0 !important;
+  color:#C6CEDB;text-decoration:none;font-family:var(--head);font-weight:500}
+.gearlist a:hover{background:#26395A;color:#fff}
+
+/* Einsatzansicht mittig */
+.page-center{max-width:900px;margin-inline:auto}
+
+/* Formulare in den Einstellungen */
+.settings-form{max-width:460px;margin-bottom:1.4rem}
+.settings-form .btn-primary{width:auto}
+
+/* Stammdaten */
+.chips{list-style:none;margin:.3rem 0 .6rem;padding:0;display:flex;flex-wrap:wrap;gap:.4rem}
+.chips li{display:flex;align-items:center;gap:.35rem;background:var(--schnee);
+  border:1px solid var(--line);border-radius:99px;padding:.2rem .35rem .2rem .7rem}
+.chips form{display:inline}
+.chip-x{background:none;border:0;color:var(--muted);cursor:pointer;
+  font-size:.8rem;padding:.1rem .3rem;border-radius:99px}
+.chip-x:hover{background:var(--rot-light);color:var(--rot)}
+.rolechecks{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;margin:.5rem 0 1rem}
+.rolechecks label{display:inline-flex;align-items:center;gap:.35rem;margin:0}
+.rolechecks input{width:auto}
+.rolehead{font-family:var(--head);font-size:.85rem;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);margin:.9rem 0 .2rem}
+.ac-form{margin-bottom:1.6rem}
+td.actions{display:flex;gap:.4rem;align-items:center}
+td.actions form{display:inline}
+a.btn-danger{text-decoration:none;display:inline-block}
+.rowlink{cursor:pointer}
+.rowlink a{color:var(--ink);text-decoration:none}
+.rowlink:hover a{color:var(--accent-dark)}

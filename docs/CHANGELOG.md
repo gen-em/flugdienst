@@ -7,6 +7,38 @@ jedem Änderungspaket oben dazu.
 ## [Unveröffentlicht]
 
 ### Geändert
+- **Administration:** Klick auf eine NutzerIn öffnet die Editierseite (Rolle,
+  E-Mail, neues Passwort, verbundene Geräte mit Aktivieren/Deaktivieren und
+  Löschen). Admin-Geräteanlage ersatzlos entfernt (Selbstverwaltung genügt).
+- **Geräte löschen ohne Datenverlust:** Löschen (mit Bestätigung, in
+  Einstellungen → Geräte und auf der Admin-Editierseite) entfernt nur den
+  Zugang — Einsätze und Tracks bleiben erhalten (Migration entkoppelt die
+  Datenbank-Kaskade). Deaktivieren bleibt als sanfte Option.
+- **Stammdaten** (Einstellungen → Stammdaten): Standorte, Hubschrauber mit
+  Kennung und Rollen-Häkchen (Pilot 1/2, HEMS, Flugretter, Sonstige),
+  Besatzungs-Vorbelegungen je Rolle, Bergwacht-Bereitschaften.
+- **Flugtag mit Dropdowns:** Maschine und Standort aus den Stammdaten; die
+  beim Hubschrauber angehakten Rollen erscheinen als Besatzungs-Dropdowns
+  (gespeist aus den Vorbelegungen). Freitextfeld „Besatzung" entfällt; alte
+  Freitext-Werte bleiben lesbar („alt"-Hinweis).
+- **Web-Navigation neu:** Kopfleiste mit Vogel-Icon und „Einsatzdokumentation
+  Luftrettung – Name" (Name im neuen Profil setzbar, sonst E-Mail); Menüs
+  Übersicht / Administration / ⚙ Einstellungen (Profil, Geräte, Abmelden);
+  „Verwaltung" heißt jetzt Administration. Geräte sind in die Einstellungen
+  umgezogen (alte Adresse leitet weiter).
+- **Profil:** Name und E-Mail änderbar; Passwortwechsel nur mit korrektem
+  aktuellen Passwort (Migration: Namensfeld).
+- Einsatztage-Leiste auf allen Inhaltsseiten (auch Einsatzansicht und
+  Formular); Tagesklick öffnet die Übersicht des Tages. Einsatzansicht
+  mittig. Fußzeile „© Gen-EM – OpenSource Software – AGPL-3.0" im
+  Dokumentfluss rechts unter dem Inhalt, auch mobil.
+- **Uhr-Paket:** Kartenmodus-Fix (Tasten werden im Browse-Modus ans System
+  durchgereicht — Garmins Zoom/Verschieben erscheint); 2× Vibration nach
+  „Dienst beginnen"; Rea-Gesamtdauer in Ziffernschrift (~50 % größer); neue
+  **Statistik-Ansicht** (Einsätze/Alarmierungen des Tages); Hauptanzeige mit
+  größerer, mittigerer Uhrzeit und Phase im unteren Drittel;
+  **„Einsatztag beenden" sendet, bestätigt und schließt die App** — bei
+  Sendeproblemen Rückfrage „Trotzdem beenden?" mit Warten-Option.
 - Reanimation: Display bleibt während laufender Rea dauerhaft hell;
   Rea-Start vibriert 2×, Zyklusende 5× (statt 2×), Ereignis-Bestätigung
   kräftiger.

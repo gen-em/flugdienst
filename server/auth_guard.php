@@ -33,4 +33,12 @@ function csrf_check(): void {
     }
 }
 
+// Anzeigename fuer die Kopfleiste (name-Spalte existiert erst nach Migration)
+$u = db()->prepare('SELECT * FROM users WHERE id = ?');
+$u->execute([$userId]);
+$row = $u->fetch();
+$userEmail = $row ? (string)$row['email'] : '';
+$userName  = ($row && isset($row['name'])) ? $row['name'] : null;
+require_once __DIR__ . '/ui.php';
+
 run_cleanup_if_due();   // taegliche Wartung, huckepack auf Web-Anfragen

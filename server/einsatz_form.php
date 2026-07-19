@@ -148,10 +148,11 @@ function fieldValue(string $col) {
 <link rel="stylesheet" href="assets/style.css">
 <link rel="icon" type="image/png" href="assets/favicon.png"></head>
 <body>
-<header class="topbar">
-  <a class="brand" href="index.php"><img src="assets/logo-weiss.png" alt="GenEM Einsatzdoku"></a>
-  <nav><a href="index.php">Übersicht</a> <a href="geraete.php">Geräte</a> <a href="logout.php">Abmelden</a></nav>
-</header>
+<?php ui_topbar('uebersicht'); ?>
+
+<div class="layout">
+  <?php ui_days_sidebar($day); ?>
+
 <main class="page page-narrow">
   <h1><?= $editing ? 'Einsatz bearbeiten' : 'Einsatz nachtragen' ?></h1>
   <?php if ($editing && !(int)$mission['manual']): ?>
@@ -195,7 +196,9 @@ function fieldValue(string $col) {
       <p class="login-aux"><a href="einsatz.php?id=<?= $id ?>">Abbrechen</a></p>
     <?php endif; ?>
   </form>
+<?php ui_footer(); ?>
 </main>
+</div>
 
 <script>
 const PHASE_LABELS = <?= json_encode(PHASE_LABELS) ?>;
@@ -230,6 +233,5 @@ document.getElementById('addrow').addEventListener('click', ev => {
   addRow(Math.min(last + 1, 10), '').focus();   // direkt per Tastatur bedienbar
 });
 </script>
-<footer class="sitefooter">© Gen-EM · <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a></footer>
 </body>
 </html>

@@ -36,7 +36,7 @@ class CprView extends WatchUi.View {
         // kleiner Timer: Gesamtdauer vorwaerts (LILA, gut ablesbar)
         var e = Cpr.elapsedS();
         dc.setColor(Graphics.COLOR_PURPLE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 34, Graphics.FONT_MEDIUM,
+        dc.drawText(cx, 38, Graphics.FONT_NUMBER_MILD,
             _mmss(e), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         // grosser Timer: 2:00-Countdown (steht bei 0:00, dann rot)

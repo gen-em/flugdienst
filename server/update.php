@@ -116,6 +116,99 @@ $MIGRATIONS = [
             "DELETE FROM mission_phases WHERE phase = 10",
         ],
     ],
+    [
+        'id'    => '2026_07_19_profil_name',
+        'label' => 'Profil: Anzeigename für NutzerInnen',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.columns
+                              WHERE table_schema = DATABASE()
+                                AND table_name = 'users' AND column_name = 'name'");
+            return (int)$q->fetchColumn() > 0;
+        },
+        'sql'   => [
+            "ALTER TABLE users ADD COLUMN name VARCHAR(120) NULL AFTER email",
+        ],
+    ],
+    [
+        'id'    => '2026_07_19_geraete_entkoppeln',
+        'label' => 'Geräte löschbar ohne Datenverlust (Einsätze/Segmente bleiben, Verweis wird geleert)',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT IS_NULLABLE FROM information_schema.columns
+                              WHERE table_schema = DATABASE()
+                                AND table_name = 'missions' AND column_name = 'device_id'");
+            return $q->fetchColumn() === 'YES';
+        },
+        'run'   => function (PDO $pdo): void {
+            foreach ([['missions', 'device_id'], ['rest_segments', 'device_id']] as $t) {
+                [$tbl, $col] = $t;
+                // Bestehende FK-Namen sind auto-generiert -> dynamisch ermitteln
+                $q = $pdo->prepare("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+                                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+                                      AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = 'devices'");
+                $q->execute([$tbl, $col]);
+                foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $fk) {
+                    $pdo->exec("ALTER TABLE `$tbl` DROP FOREIGN KEY `$fk`");
+                }
+                $pdo->exec("ALTER TABLE `$tbl` MODIFY `$col` INT UNSIGNED NULL");
+                $pdo->exec("ALTER TABLE `$tbl` ADD CONSTRAINT fk_{$tbl}_device
+                            FOREIGN KEY (`$col`) REFERENCES devices(id) ON DELETE SET NULL");
+            }
+        },
+    ],
+    [
+        'id'    => '2026_07_19_stammdaten',
+        'label' => 'Stammdaten (Standorte, Hubschrauber mit Rollen, Besatzungs-Vorbelegungen, Bergwacht) + Flugtag-Dropdowns',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.tables
+                              WHERE table_schema = DATABASE() AND table_name = 'bases'");
+            return (int)$q->fetchColumn() > 0;
+        },
+        'sql'   => [
+            "CREATE TABLE bases (
+               id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+               user_id INT UNSIGNED NOT NULL,
+               name VARCHAR(120) NOT NULL,
+               UNIQUE KEY uq_user_name (user_id, name),
+               FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+            "CREATE TABLE aircraft (
+               id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+               user_id INT UNSIGNED NOT NULL,
+               registration VARCHAR(64) NOT NULL,
+               p1 TINYINT(1) NOT NULL DEFAULT 0, p2 TINYINT(1) NOT NULL DEFAULT 0,
+               hems TINYINT(1) NOT NULL DEFAULT 0, fr TINYINT(1) NOT NULL DEFAULT 0,
+               other TINYINT(1) NOT NULL DEFAULT 0,
+               UNIQUE KEY uq_user_reg (user_id, registration),
+               FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+            "CREATE TABLE crew_presets (
+               id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+               user_id INT UNSIGNED NOT NULL,
+               role ENUM('p1','p2','hems','fr','other') NOT NULL,
+               name VARCHAR(120) NOT NULL,
+               UNIQUE KEY uq_user_role_name (user_id, role, name),
+               FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+            "CREATE TABLE bw_units (
+               id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+               user_id INT UNSIGNED NOT NULL,
+               name VARCHAR(120) NOT NULL,
+               UNIQUE KEY uq_user_name (user_id, name),
+               FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+            "ALTER TABLE days ADD COLUMN aircraft_id INT UNSIGNED NULL AFTER day",
+            "ALTER TABLE days ADD COLUMN base_id INT UNSIGNED NULL AFTER aircraft_id",
+            "ALTER TABLE days ADD COLUMN crew_p1 VARCHAR(120) NULL AFTER base_id",
+            "ALTER TABLE days ADD COLUMN crew_p2 VARCHAR(120) NULL AFTER crew_p1",
+            "ALTER TABLE days ADD COLUMN crew_hems VARCHAR(120) NULL AFTER crew_p2",
+            "ALTER TABLE days ADD COLUMN crew_fr VARCHAR(120) NULL AFTER crew_hems",
+            "ALTER TABLE days ADD COLUMN crew_other VARCHAR(120) NULL AFTER crew_fr",
+            "ALTER TABLE days ADD CONSTRAINT fk_days_aircraft
+               FOREIGN KEY (aircraft_id) REFERENCES aircraft(id) ON DELETE SET NULL",
+            "ALTER TABLE days ADD CONSTRAINT fk_days_base
+               FOREIGN KEY (base_id) REFERENCES bases(id) ON DELETE SET NULL",
+        ],
+    ],
     // Naechste Migration hier anhaengen.
 ];
 
@@ -145,7 +238,8 @@ foreach ($MIGRATIONS as $m) {
     }
 
     try {
-        foreach ($m['sql'] as $stmt) {
+        if (isset($m['run'])) { ($m['run'])($pdo); }
+        foreach (($m['sql'] ?? []) as $stmt) {
             try {
                 $pdo->exec($stmt);
             } catch (PDOException $inner) {
@@ -175,10 +269,8 @@ foreach ($MIGRATIONS as $m) {
 <link rel="stylesheet" href="assets/style.css">
 <link rel="icon" type="image/png" href="assets/favicon.png"></head>
 <body>
-<header class="topbar">
-  <a class="brand" href="index.php"><img src="assets/logo-weiss.png" alt="GenEM Einsatzdoku"></a>
-  <nav><a href="index.php">Übersicht</a> <a href="admin.php">Verwaltung</a> <a href="geraete.php">Geräte</a> <a href="logout.php">Abmelden</a></nav>
-</header>
+<?php ui_topbar(''); ?>
+
 <main class="page">
   <h1>Datenbank-Update</h1>
   <?php if (!$results): ?>
@@ -202,7 +294,7 @@ foreach ($MIGRATIONS as $m) {
     <p class="muted">Diese Seite kann gefahrlos mehrfach aufgerufen werden —
        bereits erledigte Updates werden übersprungen.</p>
   <?php endif; ?>
+<?php ui_footer(); ?>
 </main>
-<footer class="sitefooter">© Gen-EM · <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0</a></footer>
 </body>
 </html>
