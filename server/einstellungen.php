@@ -411,9 +411,10 @@ if ($tab === 'geraete') {
       <input type="text" name="name" maxlength="120" required
              placeholder="z. B. Kempten" value="<?= e($editBase['name'] ?? '') ?>">
       <button class="btn-primary"><?= $editBase ? 'Änderung speichern' : 'Standort hinzufügen' ?></button>
-      <?php if ($editBase): ?><a class="add-link" href="einstellungen.php?t=stammdaten">abbrechen</a><?php endif; ?>
+      <?php if ($editBase): ?><a class="btn-red" href="einstellungen.php?t=stammdaten">Abbrechen</a><?php endif; ?>
     </form>
 
+    <hr class="sep">
     <h2>Hubschrauber</h2>
     <p class="muted">Die angehakten Rollen bestimmen, welche Besatzungsfelder am Flugtag erscheinen.</p>
     <table class="data">
@@ -455,7 +456,7 @@ if ($tab === 'geraete') {
                placeholder="Kennung, z. B. Christoph 17"
                value="<?= e($editAc['registration'] ?? '') ?>">
         <button class="btn-primary"><?= $editAc ? 'Änderungen speichern' : 'Hubschrauber anlegen' ?></button>
-        <?php if ($editAc): ?><a class="add-link" href="einstellungen.php?t=stammdaten">abbrechen</a><?php endif; ?>
+        <?php if ($editAc): ?><a class="btn-red" href="einstellungen.php?t=stammdaten">Abbrechen</a><?php endif; ?>
       </div>
       <div class="rolechecks">
         <?php foreach ($ROLE_LABELS as $k => $lbl): ?>
@@ -465,6 +466,7 @@ if ($tab === 'geraete') {
       </div>
     </form>
 
+    <hr class="sep">
     <h2>Besatzung — Vorbelegungen</h2>
     <p class="muted">Diese Namen erscheinen am Flugtag als Auswahl im jeweiligen Rollen-Dropdown.</p>
     <?php foreach ($ROLE_LABELS as $rk => $lbl): ?>
@@ -497,10 +499,11 @@ if ($tab === 'geraete') {
                value="<?= ($editCrew && $editCrew['role'] === $rk) ? e($editCrew['name']) : '' ?>">
         <button class="btn-primary"><?= ($editCrew && $editCrew['role'] === $rk) ? 'Änderung speichern' : 'Hinzufügen' ?></button>
         <?php if ($editCrew && $editCrew['role'] === $rk): ?>
-          <a class="add-link" href="einstellungen.php?t=stammdaten">abbrechen</a><?php endif; ?>
+          <a class="btn-red" href="einstellungen.php?t=stammdaten">Abbrechen</a><?php endif; ?>
       </form>
     <?php endforeach; ?>
 
+    <hr class="sep">
     <h2>Bergwacht-Bereitschaften</h2>
     <table class="data">
       <tbody>
@@ -527,7 +530,7 @@ if ($tab === 'geraete') {
       <input type="text" name="name" maxlength="120" required
              placeholder="z. B. Bereitschaft Oberstdorf" value="<?= e($editBw['name'] ?? '') ?>">
       <button class="btn-primary"><?= $editBw ? 'Änderung speichern' : 'Bereitschaft hinzufügen' ?></button>
-      <?php if ($editBw): ?><a class="add-link" href="einstellungen.php?t=stammdaten">abbrechen</a><?php endif; ?>
+      <?php if ($editBw): ?><a class="btn-red" href="einstellungen.php?t=stammdaten">Abbrechen</a><?php endif; ?>
     </form>
 
   <?php elseif ($tab === 'backup'): ?>
