@@ -21,14 +21,14 @@ module Cpr {
     var _timer as Timer.Timer or Null = null;
     var _cb as CprCb or Null = null;
     var _alarmFired as Lang.Boolean = false;
+    var _vibeMore as Lang.Number = 0;          // Zyklusende-Vibration Teil 2
 
     function start() as Void {
         if (active) { restartCycle(); return; }  // kurz START = manueller Neustart
         active = true;
         startEpoch = Util.epochNow();
         Model.resusStart();                      // legt eine NEUE Sitzung an
-        Util.vibrateTwice();                     // fühlbare Startbestätigung
-        restartCycle();
+        restartCycle();                          // vibriert 2x (Startbestaetigung)
         _startTimer();
         _persist();
     }
@@ -76,7 +76,11 @@ module Cpr {
     function restartCycle() as Void {
         cycleEndEpoch = Util.epochNow() + Const.CPR_CYCLE_S;
         _alarmFired = false;
-        if (active) { _persist(); }
+        _vibeMore = 0;
+        if (active) {
+            Util.vibrateTwice();               // Bestaetigung: 2:00 laeuft neu
+            _persist();
+        }
     }
 
     function stop() as Void {                  // bei Dienstende
@@ -90,10 +94,15 @@ module Cpr {
         if (Toybox.Attention has :backlight) {
             try { Toybox.Attention.backlight(true); } catch (ex) { }
         }
+        if (_vibeMore > 0) {
+            _vibeMore -= 1;
+            if (_vibeMore == 0) { Util.vibrateTwice(); }   // Pulse 4+5
+        }
         if (cycleEndEpoch > 0 && Util.epochNow() >= cycleEndEpoch && !_alarmFired) {
             _alarmFired = true;
             cycleEndEpoch = 0;                 // steht bei 0:00 bis Neustart
-            Util.vibrateCycleEnd();            // 5x — unuebersehbar
+            Util.vibrateCycleEnd();            // Pulse 1-3 (Teil 2 im naechsten Tick)
+            _vibeMore = 2;
         }
         WatchUi.requestUpdate();               // Timeranzeige aktualisieren
     }

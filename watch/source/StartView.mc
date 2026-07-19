@@ -43,11 +43,26 @@ class StartView extends WatchUi.View {
         dc.drawText(cx, cy + 40, Graphics.FONT_TINY, "START drücken",
             Graphics.TEXT_JUSTIFY_CENTER);
 
+        // Kopplung: Hinweis solange keine Zugangsdaten da sind, sonst Status
+        if (Pair.status != null) {
+            var ok = Pair.status.substring(0, 3).equals("Gek");
+            dc.setColor(ok ? Graphics.COLOR_GREEN : Graphics.COLOR_YELLOW,
+                Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
+                Pair.status, Graphics.TEXT_JUSTIFY_CENTER);
+        } else if (!Uploader.hasCredentials()) {
+            dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
+                "UP halten: Gerät koppeln", Graphics.TEXT_JUSTIFY_CENTER);
+        }
+
         // Sync-Status vom letzten Dienst
-        if (!Uploader.allSynced()) {
+        if (!Uploader.allSynced() || Uploader.lastError != null) {
             dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
+            var msg = Uploader.lastError != null
+                ? "Sync: " + Uploader.lastError : "Sync ausstehend…";
             dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
-                "Sync ausstehend…", Graphics.TEXT_JUSTIFY_CENTER);
+                msg, Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
 }
@@ -55,6 +70,12 @@ class StartView extends WatchUi.View {
 class StartDelegate extends WatchUi.BehaviorDelegate {
 
     function initialize() { BehaviorDelegate.initialize(); }
+
+    // lang UP: Geraet koppeln (Code-Eingabe)
+    function onMenu() as Lang.Boolean {
+        Pair.openInput();
+        return true;
+    }
 
     function onSelect() as Lang.Boolean {          // START
         Model.beginService();

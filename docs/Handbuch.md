@@ -89,7 +89,8 @@ Hauptanzeige heißt nur: Es wird später erneut versucht.
 Die Kopfleiste zeigt links das GenEM-Icon mit „Einsatzdokumentation
 Luftrettung – *Name*" (Name im Profil setzbar, sonst E-Mail), rechts die
 Menüs **Übersicht**, **Administration** (nur Admin) und **⚙ Einstellungen**
-(Profil, Geräte, Abmelden). Die Einsatztage-Leiste links begleitet alle
+(Direktlink zu Profil, Stammdaten, Geräten und Abmelden). Nach 30 Minuten
+ohne Aktivität meldet das System automatisch ab. Die Einsatztage-Leiste links begleitet alle
 Inhaltsseiten — auch Einsatzansicht und Formular; ein Tagesklick führt zur
 Übersicht des Tages.
 
@@ -108,24 +109,40 @@ Links die Liste der Flugtage; der neueste ist vorausgewählt. Pro Tag:
   Kurzfassung.
 - **Karte** mit allen Einsätzen des Tages (jeder in eigener Farbe, beginnend
   mit Orange/Blau/Rot) und dem Ruhe-Track in Schwarz.
-- **Tabelle** der Einsätze (Beginn, Dauer, Kilometer) — Klick öffnet den
-  Einsatz.
+- **Tabelle** der Einsätze (Nr., Beginn, Dauer, Einsatzort, Winde, Bergwacht,
+  Kilometer) — Klick öffnet den Einsatz, Klick auf einen Spaltenkopf sortiert.
+  Die Dauer rechnet von der Alarmierung bis Phase 9; fehlt Phase 9, steht dort
+  „kein Ende".
 - **„+ Einsatz nachtragen"** öffnet das Eingabeformular für diesen Tag.
 
 ### 3.3 Einsatzübersicht
 
-Karte mit Track (Start grün, Ende rot), darunter die Phasen-Tabelle und — bei
-Reanimationen — je Reanimation eine eigene Zeiten-Tabelle. In der Kopfzeile:
-Datum, Zeitfenster, Kilometer, ggf. das Badge **„manuell"** sowie der Link
-**„Bearbeiten"**.
+Titel „Einsatz N · Uhrzeit" (N = Nummer des Tages nach Alarmierungszeit),
+darunter **Bearbeiten** und **Löschen** (mit Bestätigung; entfernt auch Phasen,
+Reanimationen und Track — die Uhr legt den Einsatz danach nicht wieder an).
+Karte mit Track (Start grün, Ende rot) und ggf. dem Einsatzort-Pin; auf dem
+Track sitzen **Phasen-Nummern** an den GPS-Positionen der Zeitstempel
+(Umschalter unter der Karte). Zeigt man auf eine Phasenzeile oder eine Kachel,
+leuchtet das Gegenstück orange auf (am Handy: antippen). Darunter die
+Phasen-Tabelle und je Reanimation eine eigene Zeiten-Tabelle.
 
 ### 3.4 Einsätze nachtragen und bearbeiten
 
 Das Formular dient beidem. Phasen werden als Zeilen erfasst (Phase wählen,
 Uhrzeit eintragen, Zeilen hinzufügen/entfernen — auch dieselbe Phase mehrfach).
 **In chronologischer Reihenfolge eintragen**; Zeiten nach Mitternacht werden
-automatisch dem Folgetag zugerechnet. Dazu Zusatzfelder wie Einsatznummer und
-Notizen.
+automatisch dem Folgetag zugerechnet.
+
+Der **Einsatzort** hat ein Suchfeld: Ab drei Buchstaben erscheinen
+Adressvorschläge (OpenStreetMap); die Auswahl eines Vorschlags speichert die
+Koordinaten und setzt den Pin auf den Karten. Freitext ohne Vorschlag geht
+auch — dann ohne Pin.
+
+Dazu die Zusatzfelder: Einsatznummer, Transportziel, Beschreibung Einsatzort
+(erscheint in der Tagestabelle), **Windeneinsatz** (Haken öffnet Cycles,
+Cycles mit Patient, Luftverladung), **Bergwacht** (Haken öffnet Bereitschaft
+aus den Stammdaten plus Namen/Infos), Anderer Notarzt, Weitere Rettungsmittel
+und Notizen.
 
 Beim Bearbeiten eines **Uhr-Einsatzes** gilt: Nach dem Speichern ist er als
 „manuell" markiert — die Uhr überschreibt ihn dann nicht mehr (nur der
@@ -146,7 +163,9 @@ Unter **⚙ Einstellungen → „Stammdaten"** pflegst du Vorbelegungen: Standor
 Hubschrauber (Kennung plus Häkchen, welche Rollen an Bord sind) sowie
 Namenslisten je Rolle und Bergwacht-Bereitschaften. Am Flugtag wählst du
 Maschine und Standort dann per Dropdown; die beim Hubschrauber angehakten
-Rollen erscheinen als Besatzungs-Dropdowns mit deinen Vorbelegungen.
+Rollen erscheinen als Besatzungs-Dropdowns mit deinen Vorbelegungen. Mit
+„Als Standard" (★) markierte Maschine und Standort werden bei neuen Flugtagen
+vorbelegt.
 
 ### 3.6 Administration (nur Admin)
 
@@ -159,13 +178,49 @@ bestehen).
 Nach Code-Updates mit Datenbank-Änderungen einmal **`update.php`** aufrufen
 (siehe Technik-Doku, Betrieb).
 
+### 3.7 PatientInnendaten (Ende-zu-Ende-verschlüsselt)
+
+Unter **⚙ Einstellungen → „PatientInnendaten"** aktivierst du das Modul. Die
+Felder (Nachname, Vorname, Diagnose, Geburtsdatum, Alter) werden **im
+Browser** ver- und entschlüsselt; der Server speichert nur Chiffretext. Der
+Schlüssel entsteht aus deinem Login-Passwort — es gibt kein zweites Passwort.
+
+**Unbedingt wissen:**
+- Bei der Aktivierung erscheint **einmalig** ein Wiederherstellungsschlüssel —
+  ausdrucken und sicher ablegen. Nach einem Passwort-Reset („vergessen" oder
+  durch Admin) ist er der **einzige** Weg zu den Daten; ohne ihn sind sie
+  unwiederbringlich verloren. Normales Passwort-Ändern (mit altem Passwort)
+  ist dagegen völlig unkritisch.
+- Verschlüsselte Felder sind serverseitig **nicht durchsuchbar** und nur für
+  dich lesbar (kein Teilen).
+- Der Schutz wirkt gegen Datenbank-Diebstahl, Backups und Mitleser — nicht
+  gegen einen vollständig übernommenen Server, der verändertes JavaScript
+  ausliefern könnte (prinzipbedingte Grenze aller Web-E2E-Lösungen).
+
+Im Einsatzformular erscheinen die gewählten Felder; das Alter wird aus dem
+Geburtsdatum berechnet (Stichtag = Einsatzdatum, Berechnung gewinnt), kann
+aber auch allein eingetragen werden. In der Tagesübersicht gibt es eine
+sortierbare Nachname-Spalte. Zeigt eine Seite „gesperrt", genügt ab- und
+neu anmelden.
+
+### 3.8 Backup
+
+Unter **⚙ Einstellungen → „Backup"** lädst du alle deine Daten als einzelne
+verschlüsselte Datei (`.edbak`) herunter — Passwort frei wählbar, mindestens
+8 Zeichen, wird nirgends gespeichert (ohne Passwort ist die Datei wertlos).
+Der Import spielt ein Backup ins eigene Konto zurück und ergänzt dabei nur,
+was fehlt; Vorhandenes bleibt unangetastet. PatientInnendaten bleiben auch im
+Backup verschlüsselt. Details zum Dateiaufbau: `docs/Backup-Format.md`.
+
 ## 4. Eine neue Uhr einrichten (Kurzanleitung)
 
-1. Im Web unter **⚙ Einstellungen → „Geräte" → „Gerät anlegen"** — Geräte-ID und API-Schlüssel
-   werden einmalig angezeigt.
-2. App auf die Uhr laden (siehe `Technik.md`, Abschnitt Build/Sideload).
-3. In **Garmin Connect** am Handy: Connect-IQ-Einstellungen der Einsatzdoku
-   öffnen und eintragen: Server-URL (`https://luftrettung.net/ingest.php`),
-   Geräte-ID, API-Schlüssel.
-4. Auf der Uhr „Dienst beginnen" — nach dem ersten Upload erscheint das Gerät
-   im Web unter „Zuletzt gesehen".
+1. App auf die Uhr laden (siehe `Technik.md`); als Server-Einstellung genügt
+   die Domain (z. B. `luftrettung.net`).
+2. Im Web unter **⚙ Einstellungen → „Geräte" → „Kopplungscode erzeugen"** —
+   der 5-Zeichen-Code ist 60 Minuten gültig und einmal verwendbar.
+3. Auf der Uhr am Startbildschirm **UP halten**, den Code eintippen und
+   bestätigen — die Uhr meldet „Gekoppelt ✓" und ist einsatzbereit. Das Gerät
+   erscheint im Web in der Geräteliste („Uhr (gekoppelt …)").
+4. Alternative ohne Code: Gerät manuell anlegen und Geräte-ID/API-Schlüssel
+   in die Einstellungen eintragen (nur nötig, wenn die Kopplung nicht möglich
+   ist).

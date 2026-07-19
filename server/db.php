@@ -83,6 +83,11 @@ function run_cleanup_if_due(): void {
         $pdo->exec("DELETE tp FROM track_points tp
                     LEFT JOIN rest_segments r ON r.id = tp.owner_id
                     WHERE tp.owner_type = 'rest' AND r.id IS NULL");
+        $pdo->exec("DELETE FROM pair_codes
+                    WHERE used_at IS NOT NULL
+                       OR created_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)");
+        $pdo->exec("DELETE FROM deleted_refs
+                    WHERE deleted_at < DATE_SUB(NOW(), INTERVAL 90 DAY)");
         $pdo->exec("DELETE FROM password_resets
                     WHERE used_at IS NOT NULL
                        OR expires_at < DATE_SUB(NOW(), INTERVAL 7 DAY)");

@@ -67,17 +67,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $startedAt = $rows[0][1];
         $endedAt   = $rows[count($rows) - 1][1];
 
-        // Zusatzfelder generisch aus der zentralen Definition uebernehmen
+        // Zusatzfelder generisch aus der zentralen Definition uebernehmen.
+        // Checkbox-Unterfelder werden nur gespeichert, wenn der Haken gesetzt
+        // ist — sonst geleert (kein Geister-Inhalt hinter "Nein").
         $fieldCols = []; $fieldVals = [];
-        foreach ($FIELDS as $col => $f) {
-            $v = trim((string)($_POST['f_' . $col] ?? ''));
-            if (($f['type'] ?? 'text') === 'number') {
-                $v = ($v === '') ? null : (string)(float)str_replace(',', '.', $v);
+        $readField = function (string $col, array $f, bool $parentOn = true) use (&$readField, &$fieldCols, &$fieldVals) {
+            $type = $f['type'] ?? 'text';
+            if ($type === 'checkbox') {
+                $v = ($parentOn && isset($_POST['f_' . $col])) ? 1 : 0;
+                $fieldCols[] = $col; $fieldVals[] = $v;
+                foreach (($f['children'] ?? []) as $cc => $cf) {
+                    $readField($cc, $cf, $v === 1);
+                }
+                return;
+            }
+            $raw = trim((string)($_POST['f_' . $col] ?? ''));
+            if (!$parentOn) { $raw = ''; }
+            if ($type === 'number') {
+                $v = ($raw === '') ? null : (string)(float)str_replace(',', '.', $raw);
+            } elseif ($type === 'select') {
+                $opts = $f['options'] ?? null;   // options_src: freie Werte zulassen (Stammdaten aenderbar)
+                $v = ($raw === '') ? null : mb_substr($raw, 0, (int)($f['max'] ?? 120));
+                if ($opts !== null && $v !== null && !in_array($v, $opts, true)) { $v = null; }
             } else {
-                $v = mb_substr($v, 0, (int)($f['max'] ?? 190));
+                $v = mb_substr($raw, 0, (int)($f['max'] ?? 190));
                 if ($v === '') { $v = null; }
             }
             $fieldCols[] = $col; $fieldVals[] = $v;
+        };
+        foreach ($FIELDS as $col => $f) { $readField($col, $f); }
+
+        // Einsatzort (Photon): Adresse + Koordinaten
+        $locAddr = mb_substr(trim((string)($_POST['loc_addr'] ?? '')), 0, 255) ?: null;
+        $locLat = $locLon = null;
+        if ($locAddr !== null && is_numeric($_POST['loc_lat'] ?? '') && is_numeric($_POST['loc_lon'] ?? '')) {
+            $locLat = (float)$_POST['loc_lat'];
+            $locLon = (float)$_POST['loc_lon'];
+            if ($locLat < -90 || $locLat > 90 || $locLon < -180 || $locLon > 180) { $locLat = $locLon = null; }
+        }
+        $fieldCols[] = 'loc_addr'; $fieldVals[] = $locAddr;
+        $fieldCols[] = 'loc_lat';  $fieldVals[] = $locLat;
+        $fieldCols[] = 'loc_lon';  $fieldVals[] = $locLon;
+
+        // PatientInnendaten: der Browser liefert NUR Chiffretext (pat_blob).
+        // Leerer Wert = Blob nicht anfassen (z. B. Sitzung nicht entsperrt).
+        if ($patEnabled) {
+            $pb = (string)($_POST['pat_blob'] ?? '');
+            if ($pb !== '' && preg_match('/^[A-Za-z0-9+\/=]{16,8000}$/', $pb)) {
+                $fieldCols[] = 'pat_blob'; $fieldVals[] = $pb;
+            } elseif ($pb === '__CLEAR__') {
+                $fieldCols[] = 'pat_blob'; $fieldVals[] = null;
+            }
         }
 
         $pdo = db(); $pdo->beginTransaction();
@@ -138,7 +178,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 function fieldValue(string $col) {
     global $mission;
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') { return (string)($_POST['f_' . $col] ?? ''); }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        return isset($_POST['f_' . $col]) ? (string)$_POST['f_' . $col] : '';
+    }
     return $mission !== null ? (string)($mission[$col] ?? '') : '';
 }
 ?><!doctype html>
@@ -162,7 +204,7 @@ function fieldValue(string $col) {
   <?php endif; ?>
   <?php if ($error): ?><p class="alert"><?= e($error) ?></p><?php endif; ?>
 
-  <form method="post">
+  <form method="post" id="missionform">
     <?= csrf_field() ?>
     <?php if ($editing): ?><input type="hidden" name="id" value="<?= $id ?>"><?php endif; ?>
 
@@ -176,20 +218,96 @@ function fieldValue(string $col) {
     <div id="phaserows"></div>
     <p><a href="#" id="addrow" class="add-link">+ Phase hinzufügen</a></p>
 
-    <h2>Weitere Angaben</h2>
-    <?php foreach ($FIELDS as $col => $f): ?>
-      <label><?= e($f['label']) ?>
-        <?php if (($f['type'] ?? 'text') === 'textarea'): ?>
-          <textarea name="f_<?= e($col) ?>" rows="3" maxlength="<?= (int)($f['max'] ?? 190) ?>"
-            placeholder="<?= e($f['placeholder'] ?? '') ?>"><?= e(fieldValue($col)) ?></textarea>
-        <?php else: ?>
-          <input type="<?= ($f['type'] ?? 'text') === 'number' ? 'number' : 'text' ?>"
-            name="f_<?= e($col) ?>" value="<?= e(fieldValue($col)) ?>"
-            <?= isset($f['max']) ? 'maxlength="' . (int)$f['max'] . '"' : '' ?>
-            placeholder="<?= e($f['placeholder'] ?? '') ?>" step="any">
-        <?php endif; ?>
+    <?php if ($patEnabled && $patFields): ?>
+    <h2>PatientInnendaten <span class="muted" style="font-weight:400">(Ende-zu-Ende-verschlüsselt)</span></h2>
+    <input type="hidden" name="pat_blob" id="pat_blob">
+    <div id="patlocked" class="alert" hidden>Entschlüsselung nicht möglich —
+      bitte einmal ab- und neu anmelden. Vorhandene PatientInnendaten bleiben unverändert.</div>
+    <div id="patfields">
+      <?php $PATF = ['ln' => 'Nachname', 'fn' => 'Vorname', 'dx' => 'Diagnose',
+                     'dob' => 'Geburtsdatum', 'age' => 'Alter']; ?>
+      <?php foreach ($patFields as $pf): ?>
+        <label><?= e($PATF[$pf]) ?>
+          <?php if ($pf === 'dob'): ?>
+            <input type="date" id="pat_dob">
+          <?php elseif ($pf === 'age'): ?>
+            <input type="number" id="pat_age" min="0" max="120" step="1">
+          <?php elseif ($pf === 'dx'): ?>
+            <input type="text" id="pat_dx" maxlength="190">
+          <?php else: ?>
+            <input type="text" id="pat_<?= $pf ?>" maxlength="120">
+          <?php endif; ?>
+        </label>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
+    <h2>Einsatzort</h2>
+    <div class="loc-widget">
+      <label>Adresse Einsatzort
+        <input type="text" id="locaddr" name="loc_addr" maxlength="255" autocomplete="off"
+               placeholder="tippen für Vorschläge, z. B. Ringstr. 18, Enger"
+               value="<?= e($mission['loc_addr'] ?? ($_POST['loc_addr'] ?? '')) ?>">
       </label>
-    <?php endforeach; ?>
+      <input type="hidden" name="loc_lat" id="loclat" value="<?= e((string)($mission['loc_lat'] ?? ($_POST['loc_lat'] ?? ''))) ?>">
+      <input type="hidden" name="loc_lon" id="loclon" value="<?= e((string)($mission['loc_lon'] ?? ($_POST['loc_lon'] ?? ''))) ?>">
+      <ul id="locsuggest" class="loc-suggest" hidden></ul>
+      <p class="muted" id="locstate"></p>
+    </div>
+
+    <h2>Weitere Angaben</h2>
+    <?php
+      // Optionslisten aus Stammdaten aufloesen (options_src)
+      $optSrc = function (array $f) use ($userId): array {
+          if (($f['options_src'] ?? '') === 'bw_units') {
+              $q = db()->prepare('SELECT name FROM bw_units WHERE user_id = ? ORDER BY name');
+              $q->execute([$userId]);
+              return $q->fetchAll(PDO::FETCH_COLUMN);
+          }
+          return $f['options'] ?? [];
+      };
+      $renderField = function (string $col, array $f, int $depth = 0) use (&$renderField, $optSrc): void {
+          $type = $f['type'] ?? 'text';
+          $val = fieldValue($col);
+          if ($type === 'checkbox') {
+              $on = ($val === '1' || $val === 1); ?>
+            <div class="fld-check<?= $depth ? ' fld-sub' : '' ?>">
+              <label class="checklabel">
+                <input type="checkbox" name="f_<?= e($col) ?>" class="parentcheck"
+                       data-target="ch_<?= e($col) ?>" <?= $on ? 'checked' : '' ?>>
+                <?= e($f['label']) ?></label>
+              <?php if (!empty($f['children'])): ?>
+                <div class="childfields" id="ch_<?= e($col) ?>" <?= $on ? '' : 'hidden' ?>>
+                  <?php foreach ($f['children'] as $cc => $cf) { $renderField($cc, $cf, $depth + 1); } ?>
+                </div>
+              <?php endif; ?>
+            </div>
+          <?php return; }
+          if ($type === 'select') { $opts = $optSrc($f); ?>
+            <label class="<?= $depth ? 'fld-sub' : '' ?>"><?= e($f['label']) ?>
+              <select name="f_<?= e($col) ?>">
+                <option value="">–</option>
+                <?php foreach ($opts as $o): ?>
+                  <option value="<?= e($o) ?>" <?= $val === (string)$o ? 'selected' : '' ?>><?= e($o) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+          <?php return; }
+          if ($type === 'textarea') { ?>
+            <label class="<?= $depth ? 'fld-sub' : '' ?>"><?= e($f['label']) ?>
+              <textarea name="f_<?= e($col) ?>" rows="3" maxlength="<?= (int)($f['max'] ?? 190) ?>"
+                placeholder="<?= e($f['placeholder'] ?? '') ?>"><?= e($val) ?></textarea>
+            </label>
+          <?php return; } ?>
+            <label class="<?= $depth ? 'fld-sub' : '' ?>"><?= e($f['label']) ?>
+              <input type="<?= $type === 'number' ? 'number' : 'text' ?>"
+                name="f_<?= e($col) ?>" value="<?= e($val) ?>"
+                <?= isset($f['max']) ? 'maxlength="' . (int)$f['max'] . '"' : '' ?>
+                placeholder="<?= e($f['placeholder'] ?? '') ?>" step="any">
+            </label>
+      <?php };
+      foreach ($FIELDS as $col => $f) { $renderField($col, $f); }
+    ?>
 
     <button type="submit" class="btn-primary"><?= $editing ? 'Änderungen speichern' : 'Einsatz anlegen' ?></button>
     <?php if ($editing): ?>
@@ -200,6 +318,7 @@ function fieldValue(string $col) {
 </main>
 </div>
 
+<script src="assets/crypto.js"></script>
 <script>
 const PHASE_LABELS = <?= json_encode(PHASE_LABELS) ?>;
 const START_ROWS = <?= json_encode($prefillRows) ?>;
@@ -224,6 +343,125 @@ function addRow(no, time) {
   document.getElementById('phaserows').appendChild(div);
   return sel;
 }
+
+<?php if ($patEnabled && $patFields): ?>
+// ---- PatientInnendaten: lokale Ver-/Entschluesselung -------------------
+const PAT_WRAP = <?= json_encode($patWrapPw) ?>;
+const PAT_PREV = <?= json_encode($mission['pat_blob'] ?? null) ?>;
+const PAT_FIELDS = <?= json_encode($patFields) ?>;
+const MISSION_DAY = <?= json_encode($day) ?>;
+let PAT_CK = null;
+let PAT_PREV_OBJ = {};
+
+(async () => {
+  PAT_CK = await EdCrypto.getContentKey(PAT_WRAP);
+  if (!PAT_CK) {
+    document.getElementById('patlocked').hidden = false;
+    document.querySelectorAll('#patfields input').forEach(i => i.disabled = true);
+    return;
+  }
+  if (PAT_PREV) {
+    try { PAT_PREV_OBJ = JSON.parse(await EdCrypto.decrypt(PAT_CK, PAT_PREV)) || {}; }
+    catch (e) { PAT_PREV_OBJ = {}; }
+    PAT_FIELDS.forEach(k => {
+      const el = document.getElementById('pat_' + k);
+      if (el && PAT_PREV_OBJ[k] != null) el.value = PAT_PREV_OBJ[k];
+    });
+  }
+})();
+
+// Alter aus Geburtsdatum, Stichtag = Einsatzdatum (Berechnung gewinnt)
+function patCalcAge() {
+  const dob = document.getElementById('pat_dob');
+  const age = document.getElementById('pat_age');
+  if (!dob || !age || !dob.value) return;
+  const b = new Date(dob.value), r = new Date(MISSION_DAY);
+  let a = r.getFullYear() - b.getFullYear();
+  if (r.getMonth() < b.getMonth()
+      || (r.getMonth() === b.getMonth() && r.getDate() < b.getDate())) a--;
+  if (a >= 0 && a <= 120) age.value = a;
+}
+document.getElementById('pat_dob')?.addEventListener('change', patCalcAge);
+
+document.getElementById('missionform')
+  .addEventListener('submit', async ev => {
+  const f = ev.target;
+  if (f.dataset.patDone === '1' || !PAT_CK) return;   // gesperrt: Blob bleibt
+  ev.preventDefault();
+  patCalcAge();
+  const obj = Object.assign({}, PAT_PREV_OBJ);        // ausgeblendete behalten
+  PAT_FIELDS.forEach(k => {
+    const el = document.getElementById('pat_' + k);
+    if (!el) return;
+    const v = el.value.trim();
+    if (v === '') { delete obj[k]; } else { obj[k] = k === 'age' ? parseInt(v, 10) : v; }
+  });
+  const empty = Object.keys(obj).length === 0;
+  document.getElementById('pat_blob').value =
+    empty ? '__CLEAR__' : await EdCrypto.encrypt(PAT_CK, JSON.stringify(obj));
+  f.dataset.patDone = '1';
+  f.submit();
+});
+<?php endif; ?>
+
+// Unterfelder ein-/ausblenden, wenn der zugehoerige Haken wechselt
+document.querySelectorAll('.parentcheck').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const t = document.getElementById(cb.dataset.target);
+    if (t) t.hidden = !cb.checked;
+  });
+});
+
+// Einsatzort: Photon-Autocomplete (OSM-Daten, kostenlos, kein Schluessel)
+const locIn = document.getElementById('locaddr');
+const locList = document.getElementById('locsuggest');
+const locState = document.getElementById('locstate');
+let locTimer = null;
+function locLabel(p) {
+  const parts = [];
+  if (p.name) parts.push(p.name);
+  const street = [p.street, p.housenumber].filter(Boolean).join(' ');
+  if (street && street !== p.name) parts.push(street);
+  const city = [p.postcode, p.city].filter(Boolean).join(' ');
+  if (city) parts.push(city);
+  return parts.join(', ');
+}
+function locSetState() {
+  locState.textContent = document.getElementById('loclat').value
+    ? 'Koordinaten gespeichert — Pin erscheint auf der Karte.'
+    : (locIn.value ? 'Nur Text (kein Vorschlag gewählt) — kein Karten-Pin.' : '');
+}
+locSetState();
+locIn.addEventListener('input', () => {
+  document.getElementById('loclat').value = '';
+  document.getElementById('loclon').value = '';
+  locSetState();
+  clearTimeout(locTimer);
+  const q = locIn.value.trim();
+  if (q.length < 3) { locList.hidden = true; return; }
+  locTimer = setTimeout(async () => {
+    try {
+      const r = await fetch('https://photon.komoot.io/api/?lang=de&limit=6&q=' + encodeURIComponent(q));
+      const d = await r.json();
+      locList.innerHTML = '';
+      (d.features || []).forEach(ft => {
+        const li = document.createElement('li');
+        li.textContent = locLabel(ft.properties);
+        li.addEventListener('mousedown', ev => {           // mousedown: vor blur
+          ev.preventDefault();
+          locIn.value = li.textContent;
+          document.getElementById('loclat').value = ft.geometry.coordinates[1];
+          document.getElementById('loclon').value = ft.geometry.coordinates[0];
+          locList.hidden = true;
+          locSetState();
+        });
+        locList.appendChild(li);
+      });
+      locList.hidden = locList.children.length === 0;
+    } catch (e) { locList.hidden = true; }
+  }, 300);
+});
+locIn.addEventListener('blur', () => setTimeout(() => { locList.hidden = true; }, 150));
 
 START_ROWS.forEach(r => addRow(r[0], r[1] === '–' ? '' : r[1]));
 document.getElementById('addrow').addEventListener('click', ev => {

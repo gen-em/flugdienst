@@ -207,3 +207,77 @@ a.btn-danger{text-decoration:none;display:inline-block}
 .rowlink{cursor:pointer}
 .rowlink a{color:var(--ink);text-decoration:none}
 .rowlink:hover a{color:var(--accent-dark)}
+
+/* WICHTIG: hidden-Attribut muss sich gegen display-Regeln durchsetzen
+   (behebt u. a. nicht verschwindende Rollenfelder am Flugtag) */
+[hidden]{display:none !important}
+
+/* Einsatzort-Autocomplete (Photon) */
+.loc-widget{position:relative}
+.loc-suggest{position:absolute;left:0;right:0;z-index:1200;list-style:none;
+  margin:.15rem 0 0;padding:.25rem 0;background:var(--schnee);
+  border:1px solid var(--line);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.loc-suggest li{padding:.4rem .7rem;cursor:pointer}
+.loc-suggest li:hover{background:var(--accent-light)}
+
+/* Bedingte Unterfelder im Einsatzformular */
+.fld-check{margin:.7rem 0 .2rem}
+.checklabel{display:flex;align-items:center;gap:.5rem;margin:0;
+  font-weight:600}
+.checklabel input{width:auto}
+.childfields{border-left:3px solid var(--line);margin:.3rem 0 .6rem .35rem;
+  padding-left:.9rem}
+.fld-sub{font-size:.92rem}
+
+/* Aktionsleiste der Einsatzansicht */
+.actionbar{display:flex;gap:.6rem;align-items:center}
+
+/* Phasen-Marker auf der Karte (Kachel-Design wie in der Tabelle) */
+.phase-marker{background:none;border:0}
+.pm-chip{cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.35);
+  border:2px solid #fff;display:inline-block;min-width:1.7em;text-align:center;
+  font-family:var(--mono);font-size:.85rem;font-weight:600;
+  background:var(--navy);color:#fff;border-radius:4px;padding:.1em .3em}
+.pm-chip.hl{background:var(--accent)}
+#phases tr.hl td{background:var(--accent-light)}
+#phases tbody tr{cursor:pointer}
+
+/* Sortierbare Tabellenspalten */
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+th.sortable:hover{color:var(--navy)}
+th.sortable .arrow{color:var(--accent-dark)}
+.checkcol{text-align:center;color:var(--navy);font-weight:700}
+
+/* Einheitliche Aktions-Buttons (Stammdaten & Co.) */
+.btn-yellow{display:inline-block;background:#F5C518;color:#3A2E00;
+  font-family:var(--head);font-weight:600;font-size:.85rem;
+  padding:.25rem .7rem;border-radius:5px;text-decoration:none;border:0;cursor:pointer}
+.btn-yellow:hover{background:#E0B310}
+.btn-red{background:var(--rot);color:#fff;font-family:var(--head);font-weight:600;
+  font-size:.85rem;padding:.25rem .7rem;border-radius:5px;border:0;cursor:pointer}
+.btn-red:hover{background:#B92A2E}
+.btn-plain{background:var(--schnee);color:var(--navy);border:1px solid var(--line);
+  font-size:.85rem;padding:.25rem .6rem}
+.btn-plain:hover{background:var(--accent-light)}
+.rowactions{display:flex;gap:.4rem;align-items:center;justify-content:flex-end;
+  flex-wrap:wrap}
+.rowactions form{display:inline;margin:0}
+.th-act{text-align:right}
+
+/* Kopfleiste: mehr Luft, Zahnrad als Direktlink */
+.topbar{padding:.7rem 1.3rem}
+.brand{gap:.7rem}
+.gearlink{color:#C6CEDB;text-decoration:none;font-size:1.2rem;margin-left:1.1rem;
+  padding-bottom:2px;border-bottom:2px solid transparent}
+.gearlink:hover,.gearlink.active{color:#fff;border-bottom-color:var(--accent)}
+
+/* Kopplungscode */
+.codebig{font-family:var(--mono);font-size:2.4rem;font-weight:700;
+  letter-spacing:.35em;color:var(--navy);margin:.3rem 0}
+
+/* PatientInnendaten-Modul */
+.patfields{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;margin:.5rem 0 1rem}
+.patfields label{display:inline-flex;align-items:center;gap:.35rem;margin:0}
+.patfields input{width:auto}
+#patfields label{max-width:460px}
+.paircode{border-color:var(--accent)}

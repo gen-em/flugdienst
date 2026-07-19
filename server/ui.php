@@ -23,14 +23,8 @@ function ui_topbar(string $active): void {
     <?php if ($userRole === 'admin'): ?>
       <a href="admin.php" <?= $active === 'admin' ? 'class="active"' : '' ?>>Administration</a>
     <?php endif; ?>
-    <details class="gearmenu">
-      <summary title="Einstellungen" <?= $active === 'einstellungen' ? 'class="active"' : '' ?>>⚙</summary>
-      <div class="gearlist">
-        <a href="einstellungen.php?t=profil">Profil</a>
-        <a href="einstellungen.php?t=geraete">Geräte</a>
-        <a href="logout.php">Abmelden</a>
-      </div>
-    </details>
+    <a class="gearlink <?= $active === 'einstellungen' ? 'active' : '' ?>"
+       href="einstellungen.php?t=profil" title="Einstellungen">⚙</a>
   </nav>
 </header>
 <?php }

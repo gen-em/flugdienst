@@ -74,6 +74,12 @@ module Uploader {
             _busy = false;
             return;
         }
+        var cred = credentials();
+        if (cred == null) {
+            lastError = "Nicht gekoppelt";
+            _busy = false;
+            return;
+        }
         var d = job["data"] as Lang.Dictionary;
         var ref = d["ref"] as Lang.String;
         var seqFrom = _ackedSeq(ref);
@@ -123,8 +129,8 @@ module Uploader {
             :method => Communications.HTTP_REQUEST_METHOD_POST,
             :headers => {
                 "Content-Type" => Communications.REQUEST_CONTENT_TYPE_JSON,
-                "X-Device-Id" => Properties.getValue("deviceId"),
-                "X-Api-Key"   => Properties.getValue("apiKey")
+                "X-Device-Id" => cred["d"],
+                "X-Api-Key" => cred["k"]
             },
             :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
         };
@@ -137,6 +143,38 @@ module Uploader {
 
         if (_cb == null) { _cb = new UploaderCb(); }
         Communications.makeWebRequest(url, body, opts, _cb.method(:onResponse));
+    }
+
+    // Zugangsdaten: bevorzugt aus der Kopplung (Storage), sonst aus den
+    // App-Einstellungen (Properties, Alt-Weg). null = noch nicht gekoppelt.
+    function credentials() as Lang.Dictionary or Null {
+        var c = Storage.getValue("cred");
+        if (c instanceof Lang.Dictionary && c["d"] != null && c["k"] != null) {
+            return { "d" => c["d"], "k" => c["k"] };
+        }
+        var did = Properties.getValue("deviceId");
+        var key = Properties.getValue("apiKey");
+        if (did instanceof Lang.String && did.length() > 0
+            && key instanceof Lang.String && key.length() > 0) {
+            return { "d" => did, "k" => key };
+        }
+        return null;
+    }
+
+    function hasCredentials() as Lang.Boolean {
+        return credentials() != null;
+    }
+
+    // Server-Basis (https://domain/…/) fuer beliebige Endpunkte (pair.php)
+    function serverBase() as Lang.String {
+        var u = _serverUrl();
+        if (u.length() == 0) { return ""; }
+        // ".../xyz.php" -> ".../"
+        var cut = u.length();
+        for (var i = u.length() - 1; i >= 8; i--) {
+            if (u.substring(i, i + 1).equals("/")) { cut = i + 1; break; }
+        }
+        return u.substring(0, cut) as Lang.String;
     }
 
     // Toleranz bei der Server-URL: "luftrettung.net" genuegt in den

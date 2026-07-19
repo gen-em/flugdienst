@@ -39,31 +39,32 @@ module Util {
 
     // Zwei kurze Vibrationen (Rea-Beginn)
     function vibrateTwice() as Void {
+        _vibe([
+            new Attention.VibeProfile(75, 300),
+            new Attention.VibeProfile(0, 200),
+            new Attention.VibeProfile(75, 300)
+        ]);
+    }
+
+    // Absturzsicherer Vibrationsaufruf (Hardware-Limit: max. 8 Profile!)
+    function _vibe(p as Lang.Array) as Void {
         if (Attention has :vibrate) {
-            Attention.vibrate([
-                new Attention.VibeProfile(75, 300),
-                new Attention.VibeProfile(0, 200),
-                new Attention.VibeProfile(75, 300)
-            ]);
+            try { Attention.vibrate(p); } catch (ex) { }
         }
     }
 
-    // Fuenf Vibrationen (Ablauf des 2:00-Zyklus — unuebersehbar)
+    // Zyklusende Teil 1: drei kraeftige Pulse (5 Profile — unter dem Limit).
+    // Cpr.tick() haengt einen Tick spaeter zwei weitere an (insgesamt 5).
     function vibrateCycleEnd() as Void {
-        if (Attention has :vibrate) {
-            var p = [];
-            for (var i = 0; i < 5; i++) {
-                if (i > 0) { p.add(new Attention.VibeProfile(0, 200)); }
-                p.add(new Attention.VibeProfile(90, 300));
-            }
-            Attention.vibrate(p);
-        }
+        _vibe([
+            new Attention.VibeProfile(90, 300), new Attention.VibeProfile(0, 200),
+            new Attention.VibeProfile(90, 300), new Attention.VibeProfile(0, 200),
+            new Attention.VibeProfile(90, 300)
+        ]);
     }
 
     // Kraeftiger Bestaetigungs-Puls (Phase/Ereignis dokumentiert)
     function vibrateShort() as Void {
-        if (Attention has :vibrate) {
-            Attention.vibrate([new Attention.VibeProfile(80, 200)]);
-        }
+        _vibe([new Attention.VibeProfile(80, 200)]);
     }
 }

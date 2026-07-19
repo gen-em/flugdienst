@@ -4,12 +4,14 @@
 // Fenix 6 Pro). MapView unterstuetzt genau EINE Polylinie -> Einsatz-Track.
 using Toybox.WatchUi;
 using Toybox.Position;
+using Toybox.Math;
 using Toybox.Lang;
 using Toybox.System;
 
 class MapPageView extends WatchUi.MapView {
 
-    var browse as Lang.Boolean = false;   // false = Vorschau, true = interaktiv
+    var zoomMode as Lang.Boolean = false;  // eigener Zoom-Modus (START schaltet um)
+    var spanM as Lang.Float = 2000.0;      // halbe Kantenlaenge des Ausschnitts in Metern
 
     function initialize() {
         MapView.initialize();
@@ -34,8 +36,23 @@ class MapPageView extends WatchUi.MapView {
     }
 
     function onUpdate(dc) as Void {
-        if (!browse) { _refreshTrack(); }   // im Browse-Modus steuert das System den Ausschnitt
+        if (zoomMode) { _applyZoom(); } else { _refreshTrack(); }
         MapView.onUpdate(dc);
+    }
+
+    // Zoom-Modus: Ausschnitt um die aktuelle Position (Rueckfall: Track-Fit)
+    function _applyZoom() as Void {
+        var c = Track.lastLatLon();
+        if (c[0] == null) { _refreshTrack(); return; }
+        var lat = c[0] as Lang.Float;
+        var lon = c[1] as Lang.Float;
+        var dLat = spanM / 111320.0;
+        var cosLat = Math.cos(lat * Math.PI / 180.0);
+        if (cosLat < 0.1) { cosLat = 0.1; }
+        var dLon = spanM / (111320.0 * cosLat);
+        setMapVisibleArea(
+            new Position.Location({ :latitude => lat - dLat, :longitude => lon - dLon, :format => :degrees }),
+            new Position.Location({ :latitude => lat + dLat, :longitude => lon + dLon, :format => :degrees }));
     }
 
     function _refreshTrack() as Void {
@@ -92,36 +109,37 @@ class MapPageDelegate extends WatchUi.BehaviorDelegate {
         _v = v;
     }
 
-    // kurz START: in Garmins interaktiven Kartenmodus wechseln.
-    // WICHTIG: Im Browse-Modus alle Tasten ans System durchreichen (return
-    // false) — nur dann erscheint Garmins Zoom-/Verschiebe-Bedienung.
+    // kurz START: Zoom-Modus an/aus. Im Zoom-Modus zoomen UP/DOWN um die
+    // aktuelle Position; BACK verlaesst erst den Modus, dann die Seite.
     function onSelect() as Lang.Boolean {
-        if (!_v.browse) {
-            _v.browse = true;
-            _v.setMapMode(WatchUi.MAP_MODE_BROWSE);
+        _v.zoomMode = !_v.zoomMode;
+        WatchUi.requestUpdate();
+        return true;
+    }
+
+    function onPreviousPage() as Lang.Boolean {            // UP
+        if (_v.zoomMode) {
+            _v.spanM = _v.spanM * 1.6;                     // rauszoomen
+            if (_v.spanM > 150000.0) { _v.spanM = 150000.0; }
             WatchUi.requestUpdate();
             return true;
         }
-        return false;                             // System: Pan/Zoom-Steuerung
-    }
-
-    function onKey(evt as WatchUi.KeyEvent) as Lang.Boolean {
-        if (_v.browse && evt.getKey() != WatchUi.KEY_ESC) { return false; }
-        return BehaviorDelegate.onKey(evt);
-    }
-
-    function onNextPage() as Lang.Boolean {
-        if (_v.browse) { return false; }          // im Browse-Modus zoomt/schiebt das System
-        Nav.go(1); return true;
-    }
-    function onPreviousPage() as Lang.Boolean {
-        if (_v.browse) { return false; }
         Nav.go(-1); return true;
     }
+
+    function onNextPage() as Lang.Boolean {                // DOWN
+        if (_v.zoomMode) {
+            _v.spanM = _v.spanM / 1.6;                     // reinzoomen
+            if (_v.spanM < 150.0) { _v.spanM = 150.0; }
+            WatchUi.requestUpdate();
+            return true;
+        }
+        Nav.go(1); return true;
+    }
+
     function onBack() as Lang.Boolean {
-        if (_v.browse) {                          // erst Browse verlassen, dann Seite
-            _v.browse = false;
-            _v.setMapMode(WatchUi.MAP_MODE_PREVIEW);
+        if (_v.zoomMode) {
+            _v.zoomMode = false;                           // zurueck zum Track-Fit
             WatchUi.requestUpdate();
             return true;
         }

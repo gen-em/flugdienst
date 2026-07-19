@@ -5,7 +5,13 @@ CREATE TABLE users (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email         VARCHAR(190) NOT NULL UNIQUE,
   name          VARCHAR(120) NULL,                   -- Anzeigename (Kopfleiste)
-  password_hash VARCHAR(255) NULL,                   -- NULL bis Erst-Setzung per Mail-Link
+  password_hash VARCHAR(255) NULL,                   -- Hash des Auth-Tokens (kdf_ver 1) bzw. Passworts (0)
+  kdf_salt      VARCHAR(64) NULL,                    -- Salt der Browser-Schluesselableitung
+  kdf_ver       TINYINT NOT NULL DEFAULT 0,          -- 0 = Alt (Klartext-Login), 1 = abgeleitetes Token
+  pat_enabled   TINYINT(1) NOT NULL DEFAULT 0,       -- PatientInnendaten-Modul an/aus
+  pat_fields    VARCHAR(190) NULL,                   -- JSON: sichtbare Felder
+  pat_wrap_pw   TEXT NULL,                           -- Inhaltsschluessel, mit Passwort-Schluessel verpackt
+  pat_wrap_rc   TEXT NULL,                           -- Inhaltsschluessel, mit Wiederherstellungsschluessel verpackt
   role          ENUM('user','admin') NOT NULL DEFAULT 'user',
   created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -44,8 +50,23 @@ CREATE TABLE missions (
   ascent_m   INT UNSIGNED NULL,
   final      TINYINT(1) NOT NULL DEFAULT 0,
   manual     TINYINT(1) NOT NULL DEFAULT 0,           -- von Hand angelegt/bearbeitet: Uhr ueberschreibt nicht mehr
-  mission_no VARCHAR(64) NULL,                        -- Zusatzfeld (mission_fields.php)
-  notes      TEXT NULL,                               -- Zusatzfeld (mission_fields.php)
+  mission_no VARCHAR(64) NULL,                        -- Zusatzfelder (mission_fields.php):
+  transport_dest VARCHAR(190) NULL,
+  site_desc  VARCHAR(190) NULL,
+  winch      TINYINT(1) NOT NULL DEFAULT 0,
+  winch_cycles TINYINT NULL,
+  winch_cycles_pat TINYINT NULL,
+  winch_airload TINYINT(1) NOT NULL DEFAULT 0,
+  bergwacht  TINYINT(1) NOT NULL DEFAULT 0,
+  bw_unit    VARCHAR(120) NULL,
+  bw_info    VARCHAR(190) NULL,
+  other_ema  VARCHAR(190) NULL,
+  other_resources VARCHAR(190) NULL,
+  loc_addr   VARCHAR(255) NULL,                       -- Einsatzort (Photon)
+  loc_lat    DOUBLE NULL,
+  loc_lon    DOUBLE NULL,
+  pat_blob   TEXT NULL,                              -- E2E-verschluesselte PatientInnendaten (Server: nur Chiffretext)
+  notes      TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_dev_ref (device_id, client_ref),
   INDEX (user_id, day),
@@ -101,6 +122,7 @@ CREATE TABLE bases (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id INT UNSIGNED NOT NULL,
   name VARCHAR(120) NOT NULL,
+  is_default TINYINT(1) NOT NULL DEFAULT 0,        -- Flugtag-Vorbelegung
   UNIQUE KEY uq_user_name (user_id, name),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -114,6 +136,7 @@ CREATE TABLE aircraft (
   hems TINYINT(1) NOT NULL DEFAULT 0,              -- HEMS-TC
   fr TINYINT(1) NOT NULL DEFAULT 0,                -- Flugretter
   other TINYINT(1) NOT NULL DEFAULT 0,             -- Sonstige
+  is_default TINYINT(1) NOT NULL DEFAULT 0,        -- Flugtag-Vorbelegung
   UNIQUE KEY uq_user_reg (user_id, registration),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -156,6 +179,28 @@ CREATE TABLE days (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (aircraft_id) REFERENCES aircraft(id) ON DELETE SET NULL,
   FOREIGN KEY (base_id) REFERENCES bases(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Kopplungscodes: kurzlebige Einmal-Codes (60 min), mit denen sich eine Uhr
+-- selbst Zugangsdaten holt (pair.php) — ohne Abtippen langer Schluessel.
+CREATE TABLE pair_codes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  code VARCHAR(8) NOT NULL UNIQUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  used_at TIMESTAMP NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Sperrliste geloeschter Einsaetze: verhindert, dass eine Uhr mit noch
+-- gepufferten Daten einen im Web geloeschten Einsatz wieder anlegt.
+-- Eintraege verfallen nach 90 Tagen (Aufraeumjob).
+CREATE TABLE deleted_refs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  device_id INT UNSIGNED NOT NULL,
+  client_ref VARCHAR(64) NOT NULL,
+  deleted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_dev_ref (device_id, client_ref)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Kleiner Schluessel/Wert-Speicher fuer App-interne Zustaende (z. B. Wartung)

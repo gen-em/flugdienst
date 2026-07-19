@@ -3,8 +3,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/auth_guard.php';
 
 $tab = $_GET['t'] ?? 'profil';
-if (!in_array($tab, ['profil', 'geraete', 'stammdaten'], true)) { $tab = 'profil'; }
-$notice = null; $error = null; $newKey = null;
+if (!in_array($tab, ['profil', 'geraete', 'stammdaten', 'pat', 'backup'], true)) { $tab = 'profil'; }
+$notice = null; $error = null; $newKey = null; $pairCode = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
@@ -31,21 +31,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* ---- Profil: Passwort (nur mit korrektem alten Passwort) ----------- */
     if ($action === 'password') {
-        $old = (string)($_POST['old'] ?? '');
-        $new = (string)($_POST['new1'] ?? '');
-        $st = db()->prepare('SELECT password_hash FROM users WHERE id = ?');
+        // Browser-Krypto: alt wird per Token (oder Alt-Passwort) belegt,
+        // neu kommt als Token+Salt; bei aktivem Modul zusaetzlich der neu
+        // verpackte Inhaltsschluessel (Server sieht weiterhin nichts).
+        $st = db()->prepare('SELECT password_hash, kdf_ver FROM users WHERE id = ?');
         $st->execute([$userId]);
-        $hash = (string)$st->fetchColumn();
-        if (!password_verify($old, $hash)) {
+        $u = $st->fetch();
+        $oldOk = ((int)$u['kdf_ver'] === 1)
+            ? password_verify((string)($_POST['old_token'] ?? ''), (string)$u['password_hash'])
+            : password_verify((string)($_POST['old'] ?? ''), (string)$u['password_hash']);
+        $newTok = (string)($_POST['new_token'] ?? '');
+        $newSalt = (string)($_POST['new_salt'] ?? '');
+        if (!$oldOk) {
             $error = 'Das aktuelle Passwort ist nicht korrekt.';
-        } elseif (strlen($new) < 10) {
-            $error = 'Das neue Passwort braucht mindestens 10 Zeichen.';
-        } elseif ($new !== (string)($_POST['new2'] ?? '')) {
-            $error = 'Die neuen Passwörter stimmen nicht überein.';
+        } elseif (!preg_match('/^[0-9a-f]{64}$/', $newTok)
+                  || !preg_match('/^[0-9a-f]{32}$/', $newSalt)) {
+            $error = 'Passwortwechsel unvollständig (JavaScript nötig).';
         } else {
-            db()->prepare('UPDATE users SET password_hash = ? WHERE id = ?')
-                ->execute([password_hash($new, PASSWORD_DEFAULT), $userId]);
+            db()->prepare('UPDATE users SET password_hash = ?, kdf_salt = ?, kdf_ver = 1 WHERE id = ?')
+                ->execute([password_hash($newTok, PASSWORD_DEFAULT), $newSalt, $userId]);
+            if (!empty($_POST['wrap_pw'])) {
+                db()->prepare('UPDATE users SET pat_wrap_pw = ? WHERE id = ?')
+                    ->execute([mb_substr((string)$_POST['wrap_pw'], 0, 4000), $userId]);
+            }
             $notice = 'Passwort geändert.';
+        }
+    }
+
+    /* ---- PatientInnendaten-Modul --------------------------------------- */
+    if ($action === 'pat_enable') {
+        $fields = array_values(array_intersect((array)($_POST['pf'] ?? []), ['ln','fn','dx','dob','age']));
+        $wp = (string)($_POST['wrap_pw'] ?? '');
+        $wr = (string)($_POST['wrap_rc'] ?? '');
+        if ($wp === '' || $wr === '' || !$fields) {
+            $error = 'Aktivierung unvollständig (JavaScript nötig).';
+        } else {
+            db()->prepare('UPDATE users SET pat_enabled = 1, pat_fields = ?,
+                             pat_wrap_pw = ?, pat_wrap_rc = ? WHERE id = ?')
+                ->execute([json_encode($fields), mb_substr($wp, 0, 4000),
+                           mb_substr($wr, 0, 4000), $userId]);
+            $notice = 'Modul aktiviert. Der Wiederherstellungsschlüssel wurde nur EINMAL angezeigt.';
+            $patEnabled = true;
+        }
+    }
+    if ($action === 'pat_fields') {
+        $fields = array_values(array_intersect((array)($_POST['pf'] ?? []), ['ln','fn','dx','dob','age']));
+        db()->prepare('UPDATE users SET pat_fields = ? WHERE id = ?')
+            ->execute([$fields ? json_encode($fields) : null, $userId]);
+        $notice = 'Feldauswahl gespeichert.';
+    }
+    if ($action === 'pat_toggle') {
+        $on = (int)($_POST['on'] ?? 0) === 1 ? 1 : 0;
+        db()->prepare('UPDATE users SET pat_enabled = ? WHERE id = ?')
+            ->execute([$on, $userId]);
+        $notice = $on ? 'Modul eingeschaltet.' : 'Modul ausgeschaltet — die Daten bleiben gespeichert.';
+    }
+    if ($action === 'backup_import') {
+        require_once __DIR__ . '/backup_lib.php';
+        $pw = (string)($_POST['ipw'] ?? '');
+        $f = $_FILES['bfile'] ?? null;
+        if (!$f || $f['error'] !== UPLOAD_ERR_OK) {
+            $error = 'Bitte eine Backup-Datei (.edbak) auswählen.';
+        } elseif ($f['size'] > 100 * 1024 * 1024) {
+            $error = 'Datei zu groß (max. 100 MB).';
+        } else {
+            try {
+                $data = edbak_open((string)file_get_contents($f['tmp_name']), $pw);
+                $r = edbak_restore($userId, $data);
+                $notice = 'Import abgeschlossen: '
+                    . $r['missions'] . ' Einsätze übernommen (' . $r['missions_skipped'] . ' bereits vorhanden), '
+                    . $r['rests'] . ' Ruhesegmente (' . $r['rests_skipped'] . ' vorhanden), '
+                    . $r['days'] . ' Flugtage, ' . $r['stammdaten'] . ' Stammdaten-Einträge; '
+                    . 'PatientInnendaten-Schlüssel: ' . $r['pat_module'] . '.';
+            } catch (Throwable $ex) {
+                $error = 'Import fehlgeschlagen: ' . $ex->getMessage();
+            }
+        }
+    }
+    if ($action === 'pat_rewrap') {
+        $wp = (string)($_POST['wrap_pw'] ?? '');
+        if (preg_match('/^[A-Za-z0-9+\/=]{20,4000}$/', $wp)) {
+            db()->prepare('UPDATE users SET pat_wrap_pw = ? WHERE id = ?')
+                ->execute([$wp, $userId]);
+            $notice = 'Zugriff wiederhergestellt.';
         }
     }
 
@@ -64,6 +132,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->execute([(int)($_POST['id'] ?? 0), $userId]);
         $notice = 'Status geändert.';
     }
+    if ($action === 'pair_code') {
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // ohne 0/O und 1/I
+        for ($try = 0; $try < 5; $try++) {
+            $code = '';
+            for ($i = 0; $i < 5; $i++) { $code .= $chars[random_int(0, strlen($chars) - 1)]; }
+            try {
+                db()->prepare('INSERT INTO pair_codes (user_id, code) VALUES (?,?)')
+                    ->execute([$userId, $code]);
+                $pairCode = $code;
+                break;
+            } catch (PDOException $ex) { /* Kollision -> neuer Versuch */ }
+        }
+    }
     if ($action === 'delete') {
         // FK setzt device_id in Einsaetzen/Segmenten auf NULL -> Daten bleiben
         db()->prepare('DELETE FROM devices WHERE id = ? AND user_id = ?')
@@ -72,12 +153,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     /* ---- Stammdaten ----------------------------------------------------- */
-    if ($action === 'base_add') {
+    if ($action === 'base_save') {
         $n = mb_substr(trim($_POST['name'] ?? ''), 0, 120);
+        $bid = (int)($_POST['id'] ?? 0);
         if ($n !== '') {
-            db()->prepare('INSERT IGNORE INTO bases (user_id, name) VALUES (?,?)')->execute([$userId, $n]);
+            if ($bid > 0) {
+                db()->prepare('UPDATE bases SET name = ? WHERE id = ? AND user_id = ?')
+                    ->execute([$n, $bid, $userId]);
+            } else {
+                db()->prepare('INSERT IGNORE INTO bases (user_id, name) VALUES (?,?)')
+                    ->execute([$userId, $n]);
+            }
             $notice = 'Standort gespeichert.';
         }
+    }
+    if ($action === 'base_default') {
+        $bid = (int)($_POST['id'] ?? 0);
+        db()->prepare('UPDATE bases SET is_default = 0 WHERE user_id = ?')->execute([$userId]);
+        db()->prepare('UPDATE bases SET is_default = 1 WHERE id = ? AND user_id = ?')
+            ->execute([$bid, $userId]);
+        $notice = 'Standard-Standort gesetzt.';
+    }
+    if ($action === 'ac_default') {
+        $aid = (int)($_POST['id'] ?? 0);
+        db()->prepare('UPDATE aircraft SET is_default = 0 WHERE user_id = ?')->execute([$userId]);
+        db()->prepare('UPDATE aircraft SET is_default = 1 WHERE id = ? AND user_id = ?')
+            ->execute([$aid, $userId]);
+        $notice = 'Standard-Maschine gesetzt.';
     }
     if ($action === 'base_del') {
         db()->prepare('DELETE FROM bases WHERE id = ? AND user_id = ?')
@@ -110,12 +212,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->execute([(int)($_POST['id'] ?? 0), $userId]);
         $notice = 'Hubschrauber gelöscht.';
     }
-    if ($action === 'crew_add') {
+    if ($action === 'crew_save') {
         $role = $_POST['role'] ?? '';
         $n = mb_substr(trim($_POST['name'] ?? ''), 0, 120);
+        $cid = (int)($_POST['id'] ?? 0);
         if ($n !== '' && in_array($role, ['p1','p2','hems','fr','other'], true)) {
-            db()->prepare('INSERT IGNORE INTO crew_presets (user_id, role, name) VALUES (?,?,?)')
-                ->execute([$userId, $role, $n]);
+            if ($cid > 0) {
+                db()->prepare('UPDATE crew_presets SET name = ? WHERE id = ? AND user_id = ?')
+                    ->execute([$n, $cid, $userId]);
+            } else {
+                db()->prepare('INSERT IGNORE INTO crew_presets (user_id, role, name) VALUES (?,?,?)')
+                    ->execute([$userId, $role, $n]);
+            }
             $notice = 'Eintrag gespeichert.';
         }
     }
@@ -124,10 +232,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->execute([(int)($_POST['id'] ?? 0), $userId]);
         $notice = 'Eintrag gelöscht.';
     }
-    if ($action === 'bw_add') {
+    if ($action === 'bw_save') {
         $n = mb_substr(trim($_POST['name'] ?? ''), 0, 120);
+        $wid = (int)($_POST['id'] ?? 0);
         if ($n !== '') {
-            db()->prepare('INSERT IGNORE INTO bw_units (user_id, name) VALUES (?,?)')->execute([$userId, $n]);
+            if ($wid > 0) {
+                db()->prepare('UPDATE bw_units SET name = ? WHERE id = ? AND user_id = ?')
+                    ->execute([$n, $wid, $userId]);
+            } else {
+                db()->prepare('INSERT IGNORE INTO bw_units (user_id, name) VALUES (?,?)')
+                    ->execute([$userId, $n]);
+            }
             $notice = 'Bereitschaft gespeichert.';
         }
     }
@@ -163,6 +278,8 @@ if ($tab === 'geraete') {
     <ul>
       <li><a href="einstellungen.php?t=profil" <?= $tab === 'profil' ? 'class="active"' : '' ?>>Profil</a></li>
       <li><a href="einstellungen.php?t=stammdaten" <?= $tab === 'stammdaten' ? 'class="active"' : '' ?>>Stammdaten</a></li>
+      <li><a href="einstellungen.php?t=pat" <?= $tab === 'pat' ? 'class="active"' : '' ?>>PatientInnendaten</a></li>
+      <li><a href="einstellungen.php?t=backup" <?= $tab === 'backup' ? 'class="active"' : '' ?>>Backup</a></li>
       <li><a href="einstellungen.php?t=geraete" <?= $tab === 'geraete' ? 'class="active"' : '' ?>>Geräte</a></li>
       <li><a href="logout.php">Abmelden</a></li>
     </ul>
@@ -185,71 +302,147 @@ if ($tab === 'geraete') {
     </form>
 
     <h2>Passwort ändern</h2>
-    <form method="post" class="settings-form">
+    <form method="post" class="settings-form" id="pwform">
       <?= csrf_field() ?><input type="hidden" name="action" value="password">
-      <label>Aktuelles Passwort <input type="password" name="old" required autocomplete="current-password"></label>
-      <label>Neues Passwort (mind. 10 Zeichen) <input type="password" name="new1" required minlength="10" autocomplete="new-password"></label>
-      <label>Neues Passwort wiederholen <input type="password" name="new2" required autocomplete="new-password"></label>
+      <input type="hidden" name="old_token" id="pw_oldtok">
+      <input type="hidden" name="new_token" id="pw_newtok">
+      <input type="hidden" name="new_salt" id="pw_newsalt">
+      <input type="hidden" name="wrap_pw" id="pw_wrap">
+      <label>Aktuelles Passwort <input type="password" name="old" id="pw_old" required autocomplete="current-password"></label>
+      <label>Neues Passwort (mind. 10 Zeichen) <input type="password" name="new1" id="pw_new1" required minlength="10" autocomplete="new-password"></label>
+      <label>Neues Passwort wiederholen <input type="password" name="new2" id="pw_new2" required autocomplete="new-password"></label>
       <button class="btn-primary">Passwort ändern</button>
+      <span class="muted" id="pwstate"></span>
     </form>
+    <script src="assets/crypto.js"></script>
+    <script>
+    const KDF_SALT = <?= json_encode($kdfSalt) ?>;
+    const KDF_VER = <?= (int)$kdfVer ?>;
+    const WRAP_PW = <?= json_encode($patWrapPw) ?>;
+    document.getElementById('pwform').addEventListener('submit', async ev => {
+      const f = ev.target;
+      if (f.dataset.ready === '1') return;
+      ev.preventDefault();
+      const st = document.getElementById('pwstate');
+      const oldPw = f.elements['old'].value, n1 = f.elements['new1'].value;
+      if (n1 !== f.elements['new2'].value) { st.textContent = 'Neue Passwörter ungleich.'; return; }
+      st.textContent = 'Schlüssel werden neu abgeleitet…';
+      try {
+        let oldDataKey = null;
+        if (KDF_VER === 1 && KDF_SALT) {
+          const ok = await EdCrypto.deriveKeys(oldPw, KDF_SALT);
+          document.getElementById('pw_oldtok').value = ok.authToken;
+          oldDataKey = ok.dataKeyHex;
+        }
+        const salt = EdCrypto.randomHex(16);
+        const nk = await EdCrypto.deriveKeys(n1, salt);
+        document.getElementById('pw_newtok').value = nk.authToken;
+        document.getElementById('pw_newsalt').value = salt;
+        // Inhaltsschluessel des Moduls in die neue Passwort-Huelle umpacken
+        if (WRAP_PW && oldDataKey) {
+          try {
+            const ck = await EdCrypto.decrypt(oldDataKey, WRAP_PW);
+            document.getElementById('pw_wrap').value = await EdCrypto.encrypt(nk.dataKeyHex, ck);
+          } catch (e) { /* Wrap passt nicht (Reset-Fall) — unveraendert lassen */ }
+        }
+        EdCrypto.setDataKey(nk.dataKeyHex);
+        f.dataset.ready = '1';
+        f.submit();
+      } catch (e) { st.textContent = 'Fehler bei der Schlüsselableitung.'; }
+    });
+    </script>
 
   <?php elseif ($tab === 'stammdaten'): ?>
     <?php
-      $bases = db()->prepare('SELECT id, name FROM bases WHERE user_id = ? ORDER BY name');
+      $bases = db()->prepare('SELECT id, name, is_default FROM bases WHERE user_id = ? ORDER BY name');
       $bases->execute([$userId]); $bases = $bases->fetchAll();
       $acs = db()->prepare('SELECT * FROM aircraft WHERE user_id = ? ORDER BY registration');
       $acs->execute([$userId]); $acs = $acs->fetchAll();
-      $crew = db()->prepare('SELECT id, role, name FROM crew_presets WHERE user_id = ? ORDER BY role, name');
+      $crew = db()->prepare('SELECT id, role, name FROM crew_presets WHERE user_id = ? ORDER BY name');
       $crew->execute([$userId]); $crew = $crew->fetchAll();
       $bw = db()->prepare('SELECT id, name FROM bw_units WHERE user_id = ? ORDER BY name');
       $bw->execute([$userId]); $bw = $bw->fetchAll();
-      $editAc = null;
-      if (isset($_GET['ac'])) {
-          foreach ($acs as $a) { if ((int)$a['id'] === (int)$_GET['ac']) { $editAc = $a; } }
-      }
+      $pick = function (array $rows, string $param) {
+          foreach ($rows as $r) { if ((int)$r['id'] === (int)($_GET[$param] ?? 0)) { return $r; } }
+          return null;
+      };
+      $editAc = $pick($acs, 'ac');    $editBase = $pick($bases, 'eb');
+      $editBw = $pick($bw, 'ew');
+      $editCrew = null;
+      foreach ($crew as $c) { if ((int)$c['id'] === (int)($_GET['ec'] ?? 0)) { $editCrew = $c; } }
     ?>
     <h1>Stammdaten</h1>
-    <p class="muted">Vorbelegungen für die Flugtag- und Einsatzdokumentation.
-       Löschen entfernt nur den Listeneintrag — bereits gespeicherte Flugtage bleiben unverändert.</p>
+    <p class="muted">Vorbelegungen für die Flugtag- und Einsatzdokumentation, alphabetisch
+       sortiert. Löschen entfernt nur den Listeneintrag — gespeicherte Flugtage bleiben
+       unverändert. ★ markiert die Vorbelegung neuer Flugtage.</p>
 
     <h2>Standorte</h2>
-    <ul class="chips">
+    <table class="data">
+      <thead><tr><th>Name</th><th>Standard</th><th class="th-act">Aktionen</th></tr></thead>
+      <tbody>
+      <?php if (!$bases): ?><tr><td colspan="3" class="muted">Noch keine Standorte.</td></tr><?php endif; ?>
       <?php foreach ($bases as $b): ?>
-        <li><?= e($b['name']) ?>
-          <form method="post" action="einstellungen.php?t=stammdaten">
-            <?= csrf_field() ?><input type="hidden" name="action" value="base_del">
-            <input type="hidden" name="id" value="<?= (int)$b['id'] ?>">
-            <button class="chip-x" title="Löschen">✕</button>
-          </form></li>
+        <tr>
+          <td><?= e($b['name']) ?></td>
+          <td class="checkcol"><?= (int)$b['is_default'] ? '★' : '' ?></td>
+          <td><div class="rowactions">
+            <?php if (!(int)$b['is_default']): ?>
+              <form method="post" action="einstellungen.php?t=stammdaten">
+                <?= csrf_field() ?><input type="hidden" name="action" value="base_default">
+                <input type="hidden" name="id" value="<?= (int)$b['id'] ?>">
+                <button class="btn-plain">Als Standard</button>
+              </form>
+            <?php endif; ?>
+            <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;eb=<?= (int)$b['id'] ?>">Bearbeiten</a>
+            <form method="post" action="einstellungen.php?t=stammdaten"
+                  onsubmit="return confirm('Standort löschen?')">
+              <?= csrf_field() ?><input type="hidden" name="action" value="base_del">
+              <input type="hidden" name="id" value="<?= (int)$b['id'] ?>">
+              <button class="btn-red">Löschen</button>
+            </form>
+          </div></td>
+        </tr>
       <?php endforeach; ?>
-    </ul>
+      </tbody>
+    </table>
     <form method="post" action="einstellungen.php?t=stammdaten" class="inline-form">
-      <?= csrf_field() ?><input type="hidden" name="action" value="base_add">
-      <input type="text" name="name" placeholder="z. B. Kempten" maxlength="120" required>
-      <button class="btn-primary">Standort hinzufügen</button>
+      <?= csrf_field() ?><input type="hidden" name="action" value="base_save">
+      <input type="hidden" name="id" value="<?= $editBase ? (int)$editBase['id'] : 0 ?>">
+      <input type="text" name="name" maxlength="120" required
+             placeholder="z. B. Kempten" value="<?= e($editBase['name'] ?? '') ?>">
+      <button class="btn-primary"><?= $editBase ? 'Änderung speichern' : 'Standort hinzufügen' ?></button>
+      <?php if ($editBase): ?><a class="add-link" href="einstellungen.php?t=stammdaten">abbrechen</a><?php endif; ?>
     </form>
 
     <h2>Hubschrauber</h2>
     <p class="muted">Die angehakten Rollen bestimmen, welche Besatzungsfelder am Flugtag erscheinen.</p>
     <table class="data">
-      <thead><tr><th>Kennung</th><th>Rollen</th><th></th></tr></thead>
+      <thead><tr><th>Kennung</th><th>Rollen</th><th>Standard</th><th class="th-act">Aktionen</th></tr></thead>
       <tbody>
-      <?php if (!$acs): ?><tr><td colspan="3" class="muted">Noch keine Hubschrauber.</td></tr><?php endif; ?>
+      <?php if (!$acs): ?><tr><td colspan="4" class="muted">Noch keine Hubschrauber.</td></tr><?php endif; ?>
       <?php foreach ($acs as $a): ?>
         <tr>
           <td><?= e($a['registration']) ?></td>
           <td><?php $r = [];
             foreach ($ROLE_LABELS as $k => $lbl) { if ((int)$a[$k]) { $r[] = $lbl; } }
             echo e($r ? implode(' · ', $r) : '–'); ?></td>
-          <td class="actions">
-            <a class="btn-danger" href="einstellungen.php?t=stammdaten&amp;ac=<?= (int)$a['id'] ?>">Bearbeiten</a>
+          <td class="checkcol"><?= (int)$a['is_default'] ? '★' : '' ?></td>
+          <td><div class="rowactions">
+            <?php if (!(int)$a['is_default']): ?>
+              <form method="post" action="einstellungen.php?t=stammdaten">
+                <?= csrf_field() ?><input type="hidden" name="action" value="ac_default">
+                <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+                <button class="btn-plain">Als Standard</button>
+              </form>
+            <?php endif; ?>
+            <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ac=<?= (int)$a['id'] ?>">Bearbeiten</a>
             <form method="post" action="einstellungen.php?t=stammdaten"
                   onsubmit="return confirm('Hubschrauber löschen?')">
               <?= csrf_field() ?><input type="hidden" name="action" value="ac_del">
               <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
-              <button class="btn-danger">Löschen</button>
+              <button class="btn-red">Löschen</button>
             </form>
-          </td>
+          </div></td>
         </tr>
       <?php endforeach; ?>
       </tbody>
@@ -276,45 +469,272 @@ if ($tab === 'geraete') {
     <p class="muted">Diese Namen erscheinen am Flugtag als Auswahl im jeweiligen Rollen-Dropdown.</p>
     <?php foreach ($ROLE_LABELS as $rk => $lbl): ?>
       <h3 class="rolehead"><?= e($lbl) ?></h3>
-      <ul class="chips">
-        <?php foreach ($crew as $c): if ($c['role'] !== $rk) continue; ?>
-          <li><?= e($c['name']) ?>
-            <form method="post" action="einstellungen.php?t=stammdaten">
-              <?= csrf_field() ?><input type="hidden" name="action" value="crew_del">
-              <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
-              <button class="chip-x" title="Löschen">✕</button>
-            </form></li>
+      <table class="data">
+        <tbody>
+        <?php $any = false; foreach ($crew as $c): if ($c['role'] !== $rk) continue; $any = true; ?>
+          <tr>
+            <td><?= e($c['name']) ?></td>
+            <td class="th-act"><div class="rowactions">
+              <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ec=<?= (int)$c['id'] ?>">Bearbeiten</a>
+              <form method="post" action="einstellungen.php?t=stammdaten"
+                    onsubmit="return confirm('Eintrag löschen?')">
+                <?= csrf_field() ?><input type="hidden" name="action" value="crew_del">
+                <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
+                <button class="btn-red">Löschen</button>
+              </form>
+            </div></td>
+          </tr>
         <?php endforeach; ?>
-      </ul>
+        <?php if (!$any): ?><tr><td class="muted">Noch keine Einträge.</td><td></td></tr><?php endif; ?>
+        </tbody>
+      </table>
       <form method="post" action="einstellungen.php?t=stammdaten" class="inline-form">
-        <?= csrf_field() ?><input type="hidden" name="action" value="crew_add">
+        <?= csrf_field() ?><input type="hidden" name="action" value="crew_save">
         <input type="hidden" name="role" value="<?= $rk ?>">
-        <input type="text" name="name" placeholder="Name" maxlength="120" required>
-        <button class="btn-primary">Hinzufügen</button>
+        <input type="hidden" name="id"
+               value="<?= ($editCrew && $editCrew['role'] === $rk) ? (int)$editCrew['id'] : 0 ?>">
+        <input type="text" name="name" placeholder="Name" maxlength="120" required
+               value="<?= ($editCrew && $editCrew['role'] === $rk) ? e($editCrew['name']) : '' ?>">
+        <button class="btn-primary"><?= ($editCrew && $editCrew['role'] === $rk) ? 'Änderung speichern' : 'Hinzufügen' ?></button>
+        <?php if ($editCrew && $editCrew['role'] === $rk): ?>
+          <a class="add-link" href="einstellungen.php?t=stammdaten">abbrechen</a><?php endif; ?>
       </form>
     <?php endforeach; ?>
 
     <h2>Bergwacht-Bereitschaften</h2>
-    <ul class="chips">
+    <table class="data">
+      <tbody>
+      <?php if (!$bw): ?><tr><td class="muted">Noch keine Bereitschaften.</td><td></td></tr><?php endif; ?>
       <?php foreach ($bw as $b): ?>
-        <li><?= e($b['name']) ?>
-          <form method="post" action="einstellungen.php?t=stammdaten">
-            <?= csrf_field() ?><input type="hidden" name="action" value="bw_del">
-            <input type="hidden" name="id" value="<?= (int)$b['id'] ?>">
-            <button class="chip-x" title="Löschen">✕</button>
-          </form></li>
+        <tr>
+          <td><?= e($b['name']) ?></td>
+          <td class="th-act"><div class="rowactions">
+            <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ew=<?= (int)$b['id'] ?>">Bearbeiten</a>
+            <form method="post" action="einstellungen.php?t=stammdaten"
+                  onsubmit="return confirm('Bereitschaft löschen?')">
+              <?= csrf_field() ?><input type="hidden" name="action" value="bw_del">
+              <input type="hidden" name="id" value="<?= (int)$b['id'] ?>">
+              <button class="btn-red">Löschen</button>
+            </form>
+          </div></td>
+        </tr>
       <?php endforeach; ?>
-    </ul>
+      </tbody>
+    </table>
     <form method="post" action="einstellungen.php?t=stammdaten" class="inline-form">
-      <?= csrf_field() ?><input type="hidden" name="action" value="bw_add">
-      <input type="text" name="name" placeholder="z. B. Bereitschaft Oberstdorf" maxlength="120" required>
-      <button class="btn-primary">Bereitschaft hinzufügen</button>
+      <?= csrf_field() ?><input type="hidden" name="action" value="bw_save">
+      <input type="hidden" name="id" value="<?= $editBw ? (int)$editBw['id'] : 0 ?>">
+      <input type="text" name="name" maxlength="120" required
+             placeholder="z. B. Bereitschaft Oberstdorf" value="<?= e($editBw['name'] ?? '') ?>">
+      <button class="btn-primary"><?= $editBw ? 'Änderung speichern' : 'Bereitschaft hinzufügen' ?></button>
+      <?php if ($editBw): ?><a class="add-link" href="einstellungen.php?t=stammdaten">abbrechen</a><?php endif; ?>
     </form>
+
+  <?php elseif ($tab === 'backup'): ?>
+    <h1>Backup</h1>
+    <p class="muted">Sichert <strong>alle</strong> deine Daten (Einsätze mit Phasen,
+       Reanimationen und Tracks, Ruhesegmente, Flugtage, Stammdaten sowie die
+       verschlüsselten PatientInnendaten samt Schlüssel-Hüllen) in eine einzelne,
+       mit deinem Wunsch-Passwort verschlüsselte Datei (<code>.edbak</code>,
+       AES-256-GCM). Format-Beschreibung: <code>docs/Backup-Format.md</code>.</p>
+    <?php if (($_GET['err'] ?? '') === 'pw'): ?>
+      <p class="alert">Passwörter ungleich oder kürzer als 8 Zeichen.</p>
+    <?php endif; ?>
+
+    <h2>Exportieren</h2>
+    <form method="post" action="export_backup.php" class="settings-form">
+      <?= csrf_field() ?>
+      <label>Backup-Passwort (mind. 8 Zeichen)
+        <input type="password" name="bpw1" required minlength="8" autocomplete="new-password"></label>
+      <label>Passwort wiederholen
+        <input type="password" name="bpw2" required autocomplete="new-password"></label>
+      <p class="muted">Ohne dieses Passwort ist die Datei wertlos — es wird nirgends
+         gespeichert. Es darf, muss aber nicht dein Login-Passwort sein.</p>
+      <button class="btn-primary">Backup herunterladen</button>
+    </form>
+
+    <h2>Importieren</h2>
+    <p class="muted">Spielt ein Backup in <strong>dieses</strong> Konto zurück. Bereits
+       vorhandene Einsätze, Tage und Stammdaten bleiben unangetastet (Erkennung über
+       interne Referenzen) — der Import ergänzt nur Fehlendes. Hinweis zu
+       PatientInnendaten: Die Blöcke bleiben verschlüsselt und sind nur lesbar, wenn
+       Login-Passwort bzw. Wiederherstellungsschlüssel zum Backup passen.</p>
+    <form method="post" action="einstellungen.php?t=backup" enctype="multipart/form-data" class="settings-form">
+      <?= csrf_field() ?><input type="hidden" name="action" value="backup_import">
+      <label>Backup-Datei (.edbak)
+        <input type="file" name="bfile" accept=".edbak" required></label>
+      <label>Backup-Passwort
+        <input type="password" name="ipw" required autocomplete="off"></label>
+      <button class="btn-primary">Backup importieren</button>
+    </form>
+
+  <?php elseif ($tab === 'pat'): ?>
+    <?php
+      $u = db()->prepare('SELECT pat_enabled, pat_fields, pat_wrap_pw, pat_wrap_rc FROM users WHERE id = ?');
+      $u->execute([$userId]); $u = $u->fetch();
+      $isOn = !empty($u['pat_enabled']);
+      $hasKeys = !empty($u['pat_wrap_pw']);
+      $sel = json_decode((string)($u['pat_fields'] ?? ''), true) ?: ['ln','fn','dx','dob','age'];
+      $PATF = ['ln' => 'Nachname', 'fn' => 'Vorname', 'dx' => 'Diagnose',
+               'dob' => 'Geburtsdatum', 'age' => 'Alter'];
+    ?>
+    <h1>PatientInnendaten</h1>
+    <p class="muted">Ende-zu-Ende-verschlüsselt: Die Felder werden <strong>im Browser</strong>
+       ver- und entschlüsselt (Schlüssel aus deinem Login-Passwort abgeleitet). Der Server
+       speichert nur Chiffretext und kann nichts lesen — deshalb gilt:
+       <strong>Passwort vergessen ohne Wiederherstellungsschlüssel = Daten unwiederbringlich weg.</strong>
+       Verschlüsselte Felder sind serverseitig nicht durchsuchbar.</p>
+
+    <?php if (!$hasKeys): ?>
+      <h2>Modul aktivieren</h2>
+      <p>Beim Aktivieren wird ein <strong>Wiederherstellungsschlüssel</strong> erzeugt und
+         <strong>nur dieses eine Mal</strong> angezeigt — ausdrucken oder sicher ablegen.
+         Nur mit ihm sind die Daten nach einem Passwort-Reset noch zu retten.</p>
+      <div class="patfields">
+        <?php foreach ($PATF as $k => $lbl): ?>
+          <label><input type="checkbox" class="pf-init" value="<?= $k ?>" checked> <?= e($lbl) ?></label>
+        <?php endforeach; ?>
+      </div>
+      <div id="rcbox" class="keybox" hidden>
+        <strong>Wiederherstellungsschlüssel — jetzt sichern!</strong>
+        <p class="codebig" id="rccode" style="font-size:1.35rem"></p>
+        <label class="checklabel"><input type="checkbox" id="rcok">
+          Ich habe den Schlüssel sicher notiert.</label>
+      </div>
+      <form method="post" action="einstellungen.php?t=pat" id="enableform">
+        <?= csrf_field() ?><input type="hidden" name="action" value="pat_enable">
+        <div id="enfields"></div>
+        <input type="hidden" name="wrap_pw" id="en_wp">
+        <input type="hidden" name="wrap_rc" id="en_wr">
+        <button class="btn-primary" id="enablebtn" style="width:auto">Modul aktivieren</button>
+        <span class="muted" id="enstate"></span>
+      </form>
+
+    <?php else: ?>
+      <h2>Status</h2>
+      <form method="post" action="einstellungen.php?t=pat" class="inline-form">
+        <?= csrf_field() ?><input type="hidden" name="action" value="pat_toggle">
+        <input type="hidden" name="on" value="<?= $isOn ? 0 : 1 ?>">
+        <p>Das Modul ist <strong><?= $isOn ? 'eingeschaltet' : 'ausgeschaltet' ?></strong>.
+           <?= $isOn ? '' : 'Die verschlüsselten Daten bleiben gespeichert.' ?></p>
+        <button class="btn-primary" style="width:auto"><?= $isOn ? 'Ausschalten' : 'Einschalten' ?></button>
+      </form>
+
+      <h2>Angezeigte Felder</h2>
+      <form method="post" action="einstellungen.php?t=pat">
+        <?= csrf_field() ?><input type="hidden" name="action" value="pat_fields">
+        <div class="patfields">
+          <?php foreach ($PATF as $k => $lbl): ?>
+            <label><input type="checkbox" name="pf[]" value="<?= $k ?>"
+              <?= in_array($k, $sel, true) ? 'checked' : '' ?>> <?= e($lbl) ?></label>
+          <?php endforeach; ?>
+        </div>
+        <p class="muted">Abgewählte Felder werden nur ausgeblendet — gespeicherte Inhalte bleiben erhalten.</p>
+        <button class="btn-primary" style="width:auto">Feldauswahl speichern</button>
+      </form>
+
+      <h2>Zugriff wiederherstellen</h2>
+      <p class="muted">Nach einem Passwort-Reset (durch Admin oder „Passwort vergessen") passt die
+         Passwort-Hülle des Inhaltsschlüssels nicht mehr. Mit dem Wiederherstellungsschlüssel
+         wird sie hier neu erzeugt.</p>
+      <form method="post" action="einstellungen.php?t=pat" id="rewrapform" class="inline-form">
+        <?= csrf_field() ?><input type="hidden" name="action" value="pat_rewrap">
+        <input type="hidden" name="wrap_pw" id="rw_wp">
+        <input type="text" id="rw_code" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" style="max-width:20rem">
+        <button class="btn-primary">Entsperren</button>
+        <span class="muted" id="rwstate"></span>
+      </form>
+    <?php endif; ?>
+
+    <script src="assets/crypto.js"></script>
+    <script>
+    const WRAP_RC = <?= json_encode($u['pat_wrap_rc'] ?? null) ?>;
+    const HASKEYS = <?= $hasKeys ? 'true' : 'false' ?>;
+
+    if (!HASKEYS) {
+      // Aktivierung: Schluessel im Browser erzeugen, RK EINMAL zeigen,
+      // erst nach Bestaetigung absenden.
+      const form = document.getElementById('enableform');
+      let generated = null;
+      form.addEventListener('submit', async ev => {
+        if (form.dataset.ready === '1') return;
+        ev.preventDefault();
+        const st = document.getElementById('enstate');
+        const dk = EdCrypto.getDataKey();
+        if (!dk) { st.textContent = 'Bitte einmal ab- und neu anmelden (Schlüssel fehlt in dieser Sitzung).'; return; }
+        if (!generated) {
+          const ck = EdCrypto.randomHex(32);
+          const rc = EdCrypto.newRecoveryCode();
+          const rk = await EdCrypto.recoveryKeyHex(rc);
+          generated = { ck, rc };
+          document.getElementById('en_wp').value = await EdCrypto.encrypt(dk, ck);
+          document.getElementById('en_wr').value = await EdCrypto.encrypt(rk, ck);
+          document.getElementById('rccode').textContent = rc;
+          document.getElementById('rcbox').hidden = false;
+          document.getElementById('enablebtn').textContent = 'Aktivierung abschließen';
+          st.textContent = 'Wiederherstellungsschlüssel sichern, Haken setzen, dann abschließen.';
+          return;
+        }
+        if (!document.getElementById('rcok').checked) {
+          st.textContent = 'Bitte bestätigen, dass der Schlüssel notiert ist.'; return;
+        }
+        const wrap = document.getElementById('enfields');
+        wrap.innerHTML = '';
+        document.querySelectorAll('.pf-init:checked').forEach(cb => {
+          const h = document.createElement('input');
+          h.type = 'hidden'; h.name = 'pf[]'; h.value = cb.value;
+          wrap.appendChild(h);
+        });
+        sessionStorage.setItem('pck', generated.ck);   // Sitzung gleich nutzbar
+        form.dataset.ready = '1';
+        form.submit();
+      });
+    } else if (document.getElementById('rewrapform')) {
+      // Recovery: RK -> Inhaltsschluessel auspacken -> neu mit Passwort-Schluessel packen
+      document.getElementById('rewrapform').addEventListener('submit', async ev => {
+        const f = ev.target;
+        if (f.dataset.ready === '1') return;
+        ev.preventDefault();
+        const st = document.getElementById('rwstate');
+        const dk = EdCrypto.getDataKey();
+        if (!dk) { st.textContent = 'Bitte einmal ab- und neu anmelden.'; return; }
+        try {
+          const rk = await EdCrypto.recoveryKeyHex(document.getElementById('rw_code').value);
+          const ck = await EdCrypto.decrypt(rk, WRAP_RC);
+          document.getElementById('rw_wp').value = await EdCrypto.encrypt(dk, ck);
+          sessionStorage.setItem('pck', ck);
+          f.dataset.ready = '1';
+          f.submit();
+        } catch (e) { st.textContent = 'Schlüssel passt nicht.'; }
+      });
+    }
+    </script>
 
   <?php else: ?>
     <h1>Geräte</h1>
     <p class="muted">Jedes Gerät (Uhr) bekommt eigene Zugangsdaten für den Upload.
        Deaktivieren sperrt den Schlüssel — bereits hochgeladene Daten bleiben erhalten.</p>
+
+    <h2>Uhr koppeln (empfohlen)</h2>
+    <p class="muted">Erzeuge einen Code und gib ihn auf der Uhr ein
+       (Startbildschirm → <strong>UP halten</strong> → Code eintippen).
+       Die Uhr holt sich ihre Zugangsdaten dann selbst — kein Abtippen langer
+       Schlüssel. Der Code ist <strong>60 Minuten</strong> gültig und
+       <strong>einmal</strong> verwendbar.</p>
+    <?php if ($pairCode): ?>
+      <div class="keybox paircode">
+        <strong>Kopplungscode</strong>
+        <p class="codebig"><?= e($pairCode) ?></p>
+        <p class="muted">Gültig bis <?= e(fmt_local(gmdate('Y-m-d H:i:s', time() + 3600), 'H:i')) ?> Uhr.
+           Das Gerät erscheint nach der Kopplung unten in der Liste.</p>
+      </div>
+    <?php endif; ?>
+    <form method="post" action="einstellungen.php?t=geraete">
+      <?= csrf_field() ?><input type="hidden" name="action" value="pair_code">
+      <button class="btn-primary" style="width:auto">Kopplungscode erzeugen</button>
+    </form>
+
+    <h2>Manuell anlegen (Alternative)</h2>
 
     <?php if ($newKey): ?>
       <div class="keybox">

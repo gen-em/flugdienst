@@ -6,11 +6,13 @@ require_once __DIR__ . '/auth_guard.php';
 
 // Gewaehlter Tag: ?day=YYYY-MM-DD, sonst der neueste
 // Stammdaten fuer die Flugtag-Dropdowns
-$SD_BASES = db()->prepare('SELECT id, name FROM bases WHERE user_id = ? ORDER BY name');
+$SD_BASES = db()->prepare('SELECT id, name, is_default FROM bases WHERE user_id = ? ORDER BY name');
 $SD_BASES->execute([$userId]); $SD_BASES = $SD_BASES->fetchAll();
-$SD_AC = db()->prepare('SELECT id, registration, p1, p2, hems, fr, other FROM aircraft
+$SD_AC = db()->prepare('SELECT id, registration, p1, p2, hems, fr, other, is_default FROM aircraft
                         WHERE user_id = ? ORDER BY registration');
 $SD_AC->execute([$userId]); $SD_AC = $SD_AC->fetchAll();
+$DEF_AC = 0; $DEF_BASE = 0;
+foreach ($SD_AC as $a) { if ((int)($a['is_default'] ?? 0)) { $DEF_AC = (int)$a['id']; } }
 $SD_CREW = db()->prepare('SELECT role, name FROM crew_presets WHERE user_id = ? ORDER BY name');
 $SD_CREW->execute([$userId]);
 $SD_PRESETS = ['p1' => [], 'p2' => [], 'hems' => [], 'fr' => [], 'other' => []];
@@ -87,7 +89,19 @@ if ($selDay === null) {
     </details>
     <div id="map" class="map"></div>
     <table class="data" id="missions">
-      <thead><tr><th></th><th>Beginn</th><th>Dauer</th><th>Kilometer</th></tr></thead>
+      <thead><tr>
+        <th></th>
+        <th class="sortable" data-key="no">Nr.</th>
+        <th class="sortable" data-key="start">Beginn</th>
+        <th class="sortable" data-key="dur">Dauer</th>
+        <th class="sortable" data-key="site">Einsatzort</th>
+        <?php if ($patEnabled && in_array('ln', $patFields, true)): ?>
+          <th class="sortable" data-key="pat">Nachname</th>
+        <?php endif; ?>
+        <th class="sortable" data-key="winch">Winde</th>
+        <th class="sortable" data-key="bw">Bergwacht</th>
+        <th class="sortable" data-key="km">Kilometer</th>
+      </tr></thead>
       <tbody></tbody>
     </table>
     <p id="empty" class="muted" hidden>Für diesen Tag sind keine Einsätze dokumentiert.</p>
@@ -96,10 +110,15 @@ if ($selDay === null) {
   </main>
 </div>
 
+<script src="assets/crypto.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const CSRF = '<?= e($_SESSION['csrf']) ?>';
 const SEL_DAY = <?= json_encode($selDay) ?>;
+const DEF_AC = <?= (int)$DEF_AC ?>;
+const PAT_ON = <?= ($patEnabled && in_array('ln', $patFields, true)) ? 'true' : 'false' ?>;
+const PAT_WRAP = <?= json_encode($patEnabled ? $patWrapPw : null) ?>;
+const DEF_BASE = <?php $d = 0; foreach ($SD_BASES as $b) { if ((int)($b['is_default'] ?? 0)) $d = (int)$b['id']; } echo $d; ?>;
 const COLORS = ['#FF8F1F','#4280E5','#D63338','#1A2E4D','#0C8599','#9C36B5','#2F9E44','#8A5A00'];
 let currentDay = null;
 
@@ -111,7 +130,59 @@ map.setView([48.5, 10.5], 7); // Fallback, bis Daten da sind
 let layerGroup = L.layerGroup().addTo(map);
 
 function fmtDay(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y}`; }
-function fmtDur(s){ if(s==null) return 'läuft'; const h=Math.floor(s/3600),m=Math.round(s%3600/60);
+let dayMissions = [];
+let sortKey = 'start', sortDir = 1;
+
+function sortVal(m, key){
+  switch (key) {
+    case 'no':
+    case 'start': return m._no;
+    case 'dur':   return m.duration_s == null ? -1 : m.duration_s;
+    case 'site':  return (m.site_desc || '').toLowerCase();
+    case 'pat':   return (m._pat || '').toLowerCase();
+    case 'winch': return m.winch ? 1 : 0;
+    case 'bw':    return m.bergwacht ? 1 : 0;
+    case 'km':    return m.distance_m == null ? -1 : m.distance_m;
+  }
+  return 0;
+}
+
+function renderMissionTable(){
+  const tbody = document.querySelector('#missions tbody');
+  tbody.innerHTML = '';
+  const list = [...dayMissions].sort((a, b) => {
+    const va = sortVal(a, sortKey), vb = sortVal(b, sortKey);
+    return (va < vb ? -1 : va > vb ? 1 : a._no - b._no) * sortDir;
+  });
+  list.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="swatch" style="background:${m._col}"></span></td>
+      <td class="mono">${m._no}</td>
+      <td class="mono">${m.start_hhmm}</td>
+      <td>${fmtDur(m.duration_s)}</td>
+      <td>${m.site_desc ? esc(m.site_desc) : '–'}</td>
+      ${PAT_ON ? `<td>${m._pat ? esc(m._pat) : '–'}</td>` : ''}
+      <td class="checkcol">${m.winch ? '✓' : ''}</td>
+      <td class="checkcol">${m.bergwacht ? '✓' : ''}</td>
+      <td class="mono">${fmtKm(m.distance_m)}</td>`;
+    tr.addEventListener('click', () => location.href = 'einsatz.php?id=' + m.id);
+    tbody.appendChild(tr);
+  });
+  document.querySelectorAll('#missions th.sortable').forEach(th => {
+    th.classList.toggle('sorted', th.dataset.key === sortKey);
+    th.querySelector('.arrow')?.remove();
+    if (th.dataset.key === sortKey) {
+      const a = document.createElement('span');
+      a.className = 'arrow';
+      a.textContent = sortDir > 0 ? ' ▲' : ' ▼';
+      th.appendChild(a);
+    }
+  });
+}
+
+function esc(t){ const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+function fmtDur(s){ if(s==null) return 'kein Ende'; const h=Math.floor(s/3600),m=Math.round(s%3600/60);
   return h? `${h} h ${String(m).padStart(2,'0')} min` : `${m} min`; }
 function fmtKm(m){ return m==null ? '–' : (m/1000).toFixed(1).replace('.',',')+' km'; }
 
@@ -123,8 +194,11 @@ async function loadDay(day){
 
   // Flugtag-Felder befuellen
   const f = document.getElementById('dayform');
-  f.elements['aircraft_id'].value = (d.meta && d.meta.aircraft_id) ? d.meta.aircraft_id : '';
-  f.elements['base_id'].value     = (d.meta && d.meta.base_id) ? d.meta.base_id : '';
+  // Vorbelegung: ohne gespeicherten Wert greifen Standard-Maschine/-Standort
+  f.elements['aircraft_id'].value = (d.meta && d.meta.aircraft_id)
+    ? d.meta.aircraft_id : (DEF_AC || '');
+  f.elements['base_id'].value = (d.meta && d.meta.base_id)
+    ? d.meta.base_id : (DEF_BASE || '');
   ['p1','p2','hems','fr','other'].forEach(r => {
     f.elements['crew_' + r].value = (d.meta && d.meta['crew_' + r]) ? d.meta['crew_' + r] : '';
   });
@@ -155,22 +229,41 @@ async function loadDay(day){
   });
 
   // Einsaetze: je eigene Farbe
-  const tbody = document.querySelector('#missions tbody');
-  tbody.innerHTML = '';
-  d.missions.forEach((m,i) => {
-    const col = COLORS[i % COLORS.length];
+  // Einsaetze: Nummer + Farbe stabil nach Alarmierungszeit vergeben
+  // (API liefert aufsteigend nach Beginn), danach frei sortierbar.
+  dayMissions = d.missions.map((m, i) => {
+    m._no = i + 1;
+    m._col = COLORS[i % COLORS.length];
+    return m;
+  });
+  d.missions.forEach(m => {
     if (m.track.length > 1) {
-      layerGroup.addLayer(L.polyline(m.track, { color: col, weight: 4 }));
+      layerGroup.addLayer(L.polyline(m.track, { color: m._col, weight: 4 }));
       m.track.forEach(p => bounds.push(p));
     }
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td><span class="swatch" style="background:${col}"></span></td>
-      <td class="mono">${m.start_hhmm}</td>
-      <td>${fmtDur(m.duration_s)}</td>
-      <td class="mono">${fmtKm(m.distance_m)}</td>`;
-    tr.addEventListener('click', () => location.href = 'einsatz.php?id=' + m.id);
-    tbody.appendChild(tr);
+    if (m.loc) {
+      layerGroup.addLayer(L.marker([m.loc.lat, m.loc.lon])
+        .bindPopup(`Einsatz ${m._no}` + (m.loc.addr ? '<br>' + m.loc.addr : '')));
+      bounds.push([m.loc.lat, m.loc.lon]);
+    }
   });
+  renderMissionTable();
+  if (PAT_ON && PAT_WRAP) {
+    (async () => {
+      const ck = await EdCrypto.getContentKey(PAT_WRAP);
+      if (!ck) return;
+      let changed = false;
+      for (const m of dayMissions) {
+        if (!m.pat_blob) continue;
+        try {
+          const o = JSON.parse(await EdCrypto.decrypt(ck, m.pat_blob)) || {};
+          if (o.ln) { m._pat = o.ln; changed = true; }
+        } catch (e) { }
+      }
+      if (changed) renderMissionTable();
+    })();
+  }
+
   document.getElementById('empty').hidden = d.missions.length > 0;
   document.getElementById('missions').hidden = d.missions.length === 0;
 
@@ -193,6 +286,13 @@ function updateCrewFields(){
 
 async function init(){
   document.getElementById('acsel').addEventListener('change', updateCrewFields);
+  document.querySelectorAll('#missions th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      if (sortKey === th.dataset.key) { sortDir = -sortDir; }
+      else { sortKey = th.dataset.key; sortDir = 1; }
+      renderMissionTable();
+    });
+  });
   document.getElementById('dayform').addEventListener('submit', async ev => {
     ev.preventDefault();
     if (!currentDay) return;

@@ -23,7 +23,6 @@ module Model {
     var restSegment as Lang.Dictionary or Null = null;
     var pendingRest as Lang.Array = [];
     var dayMissions as Lang.Number = 0;   // Einsaetze des Tages (inkl. laufendem)
-    var dayAlarms as Lang.Number = 0;     // alle Phase-2-Zeitstempel des Tages
 
     function load() as Void {
         var s = Storage.getValue(Const.K_STATE);
@@ -36,7 +35,6 @@ module Model {
             pendingMissions = s["pm"] != null ? s["pm"] : [];
             pendingRest     = s["pr"] != null ? s["pr"] : [];
             dayMissions = s["dm"] != null ? s["dm"] : 0;
-            dayAlarms   = s["da"] != null ? s["da"] : 0;
         }
     }
 
@@ -45,7 +43,7 @@ module Model {
             "svc" => serviceActive, "day" => day, "ph" => phase,
             "mis" => mission, "rest" => restSegment,
             "pm" => pendingMissions, "pr" => pendingRest,
-            "dm" => dayMissions, "da" => dayAlarms
+            "dm" => dayMissions
         });
     }
 
@@ -56,7 +54,6 @@ module Model {
         day = Util.localDay();
         phase = 1;
         dayMissions = 0;
-        dayAlarms = 0;
         _startRestSegment();
         save();
         Track.startPositioning();
@@ -93,7 +90,6 @@ module Model {
         var pos = Track.lastLatLon();
         // [phase, isoUTC, lat, lon, lokaleAnzeige]
         (mission["phases"] as Lang.Array).add([p, Util.isoNow(), pos[0], pos[1], Util.localHHMM()]);
-        if (p == 2) { dayAlarms += 1; }
         phase = p;
         Util.vibrateShort();
         save();

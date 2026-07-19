@@ -6,6 +6,79 @@ jedem Änderungspaket oben dazu.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- **Backup (Export/Import):** Einstellungs-Reiter „Backup" sichert alle
+  eigenen Daten (Einsätze inkl. Phasen/Reanimationen/Tracks, Ruhesegmente,
+  Flugtage, Stammdaten, verschlüsselte PatientInnendaten samt
+  Schlüssel-Hüllen) in eine einzelne `.edbak`-Datei — verschlüsselt mit frei
+  wählbarem Passwort (AES-256-GCM, PBKDF2 200 000 Runden, manipulationssicher
+  per GCM-Tag). Import ergänzt nur Fehlendes (Dubletten-Schutz über interne
+  Referenzen), überschreibt nie. Formatbeschreibung: `docs/Backup-Format.md`.
+- **PatientInnendaten-Modul (Ende-zu-Ende-verschlüsselt):** Felder Nachname,
+  Vorname, Diagnose, Geburtsdatum, Alter (Alter automatisch aus Geburtsdatum,
+  Stichtag Einsatzdatum; auch allein ausfüllbar). Ver- und Entschlüsselung
+  ausschließlich im Browser (AES-256-GCM); der Login wurde auf
+  Browser-Schlüsselableitung umgestellt (PBKDF2, 310 000 Runden) — der Server
+  sieht das Passwort nie mehr und speichert nur Chiffretext. Eigener
+  Einstellungs-Reiter: Aktivierung mit einmalig angezeigtem
+  **Wiederherstellungsschlüssel**, Feldauswahl (Abwählen blendet nur aus),
+  Modul an/aus, Zugriff-Wiederherstellen nach Passwort-Reset. Nachname-Spalte
+  in der Tagesübersicht (lokal entschlüsselt, sortierbar). Bestehende Konten
+  werden beim ersten Login transparent umgestellt.
+- **Geräte-Kopplung per Kurzcode:** Im Web (Einstellungen → Geräte) einen
+  5-Zeichen-Code erzeugen (60 Minuten gültig, einmal verwendbar), auf der Uhr
+  am Startbildschirm **UP halten** und den Code eintippen — die Uhr holt sich
+  ihre Zugangsdaten selbst und speichert sie dauerhaft. Geräte-ID und
+  API-Schlüssel müssen nie mehr abgetippt werden; als einzige Einstellung
+  bleibt die Server-Domain. Der bisherige Weg (manuell anlegen) bleibt als
+  Alternative bestehen.
+- **Stammdaten vereinheitlicht:** Alle vier Bereiche als helle Tabellen mit
+  Aktionen in einer Zeile — Bearbeiten (gelb) und Löschen (rot); auch
+  Besatzungs-Einträge sind jetzt umbenennbar; alles alphabetisch sortiert.
+- **Standard-Maschine und Standard-Standort** (★): per „Als Standard" gesetzt;
+  Flugtage ohne gespeicherte Auswahl werden damit vorbelegt.
+- Kopfleiste: ⚙ ist jetzt ein Direktlink zu den Einstellungen (kein
+  Aufklappmenü); mehr Abstand um Logo und Titel.
+- **Sicherheit:** Automatische Abmeldung nach 30 Minuten Inaktivität (mit
+  Hinweis auf der Login-Seite).
+- **Einsatzfelder-Ausbau:** Feldsystem mit neuen Typen (Checkbox, Dropdown,
+  bedingte Unterfelder, Tagesspalten-Flag). Neue Felder: Transportziel,
+  Beschreibung Einsatzort, Windeneinsatz (Cycles 0–8, Cycles mit Patient,
+  Luftverladung), Bergwacht (Bereitschaft aus Stammdaten + Namen/Infos),
+  Anderer Notarzt, Weitere Rettungsmittel — alle als echte DB-Spalten.
+- **Tagestabelle:** Spalten Nr./Einsatzort/Winde/Bergwacht, klickbare
+  Spaltensortierung (Standard: Alarmierungszeit); Dauer strikt aus Phase 9 —
+  ohne Phase 9 steht dort „kein Ende". Einsatz-Titel „Einsatz N · Zeit"
+  (N = Tagesnummer nach Alarmierungszeit).
+- **Einsatz löschen:** Button mit Bestätigung in der Einsatzansicht; Sperrliste
+  verhindert Wiederanlage durch gepufferte Uhr-Daten (Einträge verfallen nach
+  90 Tagen über den Aufräumjob).
+- **Einsatzort:** Adressfeld mit Photon-Autocomplete (OSM, kostenlos, ohne
+  Schlüssel) im Formular — auch für Uhr-Einsätze; Pin auf Einsatz- und
+  Tageskarte.
+- **Phasen-Marker:** Phasennummern an der GPS-Position auf dem Einsatz-Track
+  (Kachel-Design, zoomfest, gestapelte versetzt), Umschalter unter der Karte;
+  Hover-/Tipp-Kopplung in beide Richtungen zwischen Phasen-Tabelle und Karte.
+- CSS-Fix: `hidden`-Attribut greift jetzt überall (u. a. Rollenfelder am
+  Flugtag verschwinden korrekt).
+
+### Behoben (Uhr)
+- **Absturz bei Ablauf des 2:00-Timers:** Das 5×-Vibrationsmuster überschritt
+  Garmins Hardware-Limit von 8 Vibrationsprofilen. Muster jetzt gesplittet
+  (3 + 2 Pulse); alle Vibrationsaufrufe zusätzlich abgesichert.
+- **Karte:** Eigene Zoom-Steuerung statt des unzuverlässigen System-Browse-
+  Modus — kurz START = Zoom-Modus, UP/DOWN zoomen um die Position, BACK
+  zurück zum Track-Fit.
+- **Sync-Diagnose:** Startbildschirm und Statistik-Seite zeigen den konkreten
+  Fehlergrund („Keine Server-URL", „Zugangsdaten fehlen", HTTP-Codes) statt
+  nur „Sync ausstehend".
+
+### Geändert (Uhr)
+- Statistik-Seite zeigt nur noch die Einsätze des Tages (Alarmierungs-Zähler
+  entfernt); Zahl deutlich größer.
+- Jeder Neustart des 2:00-Zyklus (Rhythmuskontrolle, manuell, Rea-Start)
+  bestätigt mit 2× Vibration.
+
 ### Geändert
 - **Administration:** Klick auf eine NutzerIn öffnet die Editierseite (Rolle,
   E-Mail, neues Passwort, verbundene Geräte mit Aktivieren/Deaktivieren und

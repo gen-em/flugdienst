@@ -12,24 +12,51 @@ if (!$m) json_out(['error' => 'not_found'], 404);
 // Zusatzfelder generisch aus der zentralen Definition (mission_fields.php)
 $FIELDS = require __DIR__ . '/../mission_fields.php';
 $fields = [];
-foreach ($FIELDS as $col => $f) {
-    if (isset($m[$col]) && $m[$col] !== null && $m[$col] !== '') {
-        $fields[] = ['label' => $f['label'], 'value' => (string)$m[$col]];
+$collect = function (string $col, array $f) use (&$collect, &$fields, $m) {
+    $type = $f['type'] ?? 'text';
+    $v = $m[$col] ?? null;
+    if ($type === 'checkbox') {
+        if ((int)$v === 1) {
+            $fields[] = ['label' => $f['label'], 'value' => 'Ja'];
+            foreach (($f['children'] ?? []) as $cc => $cf) { $collect($cc, $cf); }
+        }
+        return;
     }
+    if ($v !== null && $v !== '') {
+        $fields[] = ['label' => $f['label'], 'value' => (string)$v];
+    }
+};
+foreach ($FIELDS as $col => $f) { $collect($col, $f); }
+if (!empty($m['loc_addr'])) {
+    $fields[] = ['label' => 'Einsatzort', 'value' => (string)$m['loc_addr']];
 }
+
+// Tagesnummer nach Alarmierungszeit (frueheste = 1)
+$no = db()->prepare('SELECT COUNT(*) + 1 FROM missions
+                     WHERE user_id = ? AND day = ? AND started_at < ?');
+$no->execute([$userId, $m['day'], $m['started_at']]);
+$dayNo = (int)$no->fetchColumn();
+
+// Phase 9 vorhanden? (Basis fuer Ende/Dauer)
+$p9 = db()->prepare('SELECT MAX(occurred_at) FROM mission_phases
+                     WHERE mission_id = ? AND phase = 9');
+$p9->execute([$id]);
+$p9at = $p9->fetchColumn() ?: null;
 
 $pt = db()->prepare('SELECT lat, lon FROM track_points
                      WHERE owner_type = \'mission\' AND owner_id = ? ORDER BY seq');
 $pt->execute([$id]);
 $track = array_map(fn($p) => [(float)$p['lat'], (float)$p['lon']], $pt->fetchAll());
 
-$ph = db()->prepare('SELECT phase, occurred_at FROM mission_phases
+$ph = db()->prepare('SELECT phase, occurred_at, lat, lon FROM mission_phases
                      WHERE mission_id = ? ORDER BY occurred_at');
 $ph->execute([$id]);
 $phases = array_map(fn($p) => [
     'phase' => (int)$p['phase'],
     'label' => PHASE_LABELS[(int)$p['phase']] ?? ('Phase ' . $p['phase']),
     'time'  => fmt_local($p['occurred_at']),
+    'lat'   => $p['lat'] !== null ? (float)$p['lat'] : null,
+    'lon'   => $p['lon'] !== null ? (float)$p['lon'] : null,
 ], $ph->fetchAll());
 
 $resus = null;
@@ -59,6 +86,14 @@ json_out([
     'distance_m' => $m['distance_m'] !== null ? (int)$m['distance_m'] : null,
     'ascent_m'   => $m['ascent_m']   !== null ? (int)$m['ascent_m']   : null,
     'manual'     => (int)($m['manual'] ?? 0) === 1,
+    'day_no'     => $dayNo,
+    'has_p9'     => $p9at !== null,
+    'loc'        => ($m['loc_lat'] !== null && $m['loc_lon'] !== null)
+                    ? ['lat' => (float)$m['loc_lat'], 'lon' => (float)$m['loc_lon'],
+                       'addr' => (string)($m['loc_addr'] ?? '')] : null,
     'fields'     => $fields,
+    'pat_blob'   => ($patEnabled && !empty($m['pat_blob'])) ? (string)$m['pat_blob'] : null,
+    'pat_wrap'   => $patEnabled ? $patWrapPw : null,
+    'pat_fields' => $patEnabled ? $patFields : [],
     'track' => $track, 'phases' => $phases, 'resus' => $resus,
 ]);

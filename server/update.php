@@ -209,6 +209,91 @@ $MIGRATIONS = [
                FOREIGN KEY (base_id) REFERENCES bases(id) ON DELETE SET NULL",
         ],
     ],
+    [
+        'id'    => '2026_07_20_einsatzfelder_ort',
+        'label' => 'Einsatzfelder-Ausbau (Winde, Bergwacht, Transportziel …), Einsatzort mit Koordinaten, Lösch-Sperrliste',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.columns
+                              WHERE table_schema = DATABASE()
+                                AND table_name = 'missions' AND column_name = 'winch'");
+            return (int)$q->fetchColumn() > 0;
+        },
+        'sql'   => [
+            "ALTER TABLE missions ADD COLUMN transport_dest VARCHAR(190) NULL AFTER mission_no",
+            "ALTER TABLE missions ADD COLUMN site_desc VARCHAR(190) NULL AFTER transport_dest",
+            "ALTER TABLE missions ADD COLUMN winch TINYINT(1) NOT NULL DEFAULT 0 AFTER site_desc",
+            "ALTER TABLE missions ADD COLUMN winch_cycles TINYINT NULL AFTER winch",
+            "ALTER TABLE missions ADD COLUMN winch_cycles_pat TINYINT NULL AFTER winch_cycles",
+            "ALTER TABLE missions ADD COLUMN winch_airload TINYINT(1) NOT NULL DEFAULT 0 AFTER winch_cycles_pat",
+            "ALTER TABLE missions ADD COLUMN bergwacht TINYINT(1) NOT NULL DEFAULT 0 AFTER winch_airload",
+            "ALTER TABLE missions ADD COLUMN bw_unit VARCHAR(120) NULL AFTER bergwacht",
+            "ALTER TABLE missions ADD COLUMN bw_info VARCHAR(190) NULL AFTER bw_unit",
+            "ALTER TABLE missions ADD COLUMN other_ema VARCHAR(190) NULL AFTER bw_info",
+            "ALTER TABLE missions ADD COLUMN other_resources VARCHAR(190) NULL AFTER other_ema",
+            "ALTER TABLE missions ADD COLUMN loc_addr VARCHAR(255) NULL AFTER other_resources",
+            "ALTER TABLE missions ADD COLUMN loc_lat DOUBLE NULL AFTER loc_addr",
+            "ALTER TABLE missions ADD COLUMN loc_lon DOUBLE NULL AFTER loc_lat",
+            "CREATE TABLE deleted_refs (
+               id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+               device_id INT UNSIGNED NOT NULL,
+               client_ref VARCHAR(64) NOT NULL,
+               deleted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+               UNIQUE KEY uq_dev_ref (device_id, client_ref)
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+        ],
+    ],
+    [
+        'id'    => '2026_07_20_stammdaten_defaults',
+        'label' => 'Standard-Maschine und Standard-Standort (Flugtag-Vorbelegung)',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.columns
+                              WHERE table_schema = DATABASE()
+                                AND table_name = 'aircraft' AND column_name = 'is_default'");
+            return (int)$q->fetchColumn() > 0;
+        },
+        'sql'   => [
+            "ALTER TABLE aircraft ADD COLUMN is_default TINYINT(1) NOT NULL DEFAULT 0",
+            "ALTER TABLE bases ADD COLUMN is_default TINYINT(1) NOT NULL DEFAULT 0",
+        ],
+    ],
+    [
+        'id'    => '2026_07_20_kopplung',
+        'label' => 'Geräte-Kopplung per Kurzcode (5 Zeichen, 60 Minuten gültig)',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.tables
+                              WHERE table_schema = DATABASE() AND table_name = 'pair_codes'");
+            return (int)$q->fetchColumn() > 0;
+        },
+        'sql'   => [
+            "CREATE TABLE pair_codes (
+               id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+               user_id INT UNSIGNED NOT NULL,
+               code VARCHAR(8) NOT NULL UNIQUE,
+               created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+               used_at TIMESTAMP NULL,
+               FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+        ],
+    ],
+    [
+        'id'    => '2026_07_20_patientinnendaten',
+        'label' => 'PatientInnendaten-Modul: Ende-zu-Ende-Verschlüsselung (Schlüsselableitung, Modul-Einstellungen, Datenblob)',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.columns
+                              WHERE table_schema = DATABASE()
+                                AND table_name = 'users' AND column_name = 'kdf_salt'");
+            return (int)$q->fetchColumn() > 0;
+        },
+        'sql'   => [
+            "ALTER TABLE users ADD COLUMN kdf_salt VARCHAR(64) NULL",
+            "ALTER TABLE users ADD COLUMN kdf_ver TINYINT NOT NULL DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN pat_enabled TINYINT(1) NOT NULL DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN pat_fields VARCHAR(190) NULL",
+            "ALTER TABLE users ADD COLUMN pat_wrap_pw TEXT NULL",
+            "ALTER TABLE users ADD COLUMN pat_wrap_rc TEXT NULL",
+            "ALTER TABLE missions ADD COLUMN pat_blob TEXT NULL",
+        ],
+    ],
     // Naechste Migration hier anhaengen.
 ];
 

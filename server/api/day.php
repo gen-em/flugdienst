@@ -75,15 +75,20 @@ $meta = $mt->fetch() ?: null;
 $pt = db()->prepare('SELECT lat, lon, ts FROM track_points
                      WHERE owner_type = ? AND owner_id = ? ORDER BY seq');
 
-$st = db()->prepare('SELECT id, started_at, ended_at, distance_m, final
+$st = db()->prepare('SELECT id, started_at, ended_at, distance_m, final,
+                       site_desc, winch, bergwacht, loc_lat, loc_lon, loc_addr, pat_blob,
+                       (SELECT MAX(occurred_at) FROM mission_phases p
+                        WHERE p.mission_id = missions.id AND p.phase = 9) AS p9_at
                      FROM missions WHERE user_id = ? AND day = ? ORDER BY started_at');
 $st->execute([$userId, $day]);
 $missions = [];
 foreach ($st->fetchAll() as $m) {
     $pt->execute(['mission', (int)$m['id']]);
+    // Dauer = Alarmierung bis Phase 9; ohne Phase 9 bewusst null
+    // (Anzeige "kein Ende" — auch bei abgeschlossenen Einsaetzen ohne 9er)
     $dur = null;
-    if ($m['ended_at'] !== null) {
-        $dur = (new DateTime($m['ended_at']))->getTimestamp() - (new DateTime($m['started_at']))->getTimestamp();
+    if ($m['p9_at'] !== null) {
+        $dur = (new DateTime($m['p9_at']))->getTimestamp() - (new DateTime($m['started_at']))->getTimestamp();
     }
     $missions[] = [
         'id'         => (int)$m['id'],
@@ -91,6 +96,14 @@ foreach ($st->fetchAll() as $m) {
         'duration_s' => $dur,
         'distance_m' => $m['distance_m'] !== null ? (int)$m['distance_m'] : null,
         'final'      => (bool)$m['final'],
+        'has_p9'     => $m['p9_at'] !== null,
+        'site_desc'  => $m['site_desc'] !== null ? (string)$m['site_desc'] : null,
+        'winch'      => (int)$m['winch'] === 1,
+        'bergwacht'  => (int)$m['bergwacht'] === 1,
+        'pat_blob'   => ($patEnabled && !empty($m['pat_blob'])) ? (string)$m['pat_blob'] : null,
+        'loc'        => ($m['loc_lat'] !== null && $m['loc_lon'] !== null)
+                        ? ['lat' => (float)$m['loc_lat'], 'lon' => (float)$m['loc_lon'],
+                           'addr' => (string)($m['loc_addr'] ?? '')] : null,
         'track'      => array_map(fn($p) => [(float)$p['lat'], (float)$p['lon']], $pt->fetchAll()),
     ];
 }

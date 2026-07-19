@@ -38,6 +38,16 @@ $pdo = db();
 $pdo->beginTransaction();
 try {
     if ($kind === 'mission') {
+        // Im Web geloeschte Einsaetze nicht wieder anlegen (Sperrliste):
+        // wir bestaetigen der Uhr den Empfang, verwerfen aber die Daten.
+        $bl = $pdo->prepare('SELECT 1 FROM deleted_refs WHERE device_id = ? AND client_ref = ?');
+        $bl->execute([$dev['id'], $clientRef]);
+        if ($bl->fetchColumn()) {
+            $pdo->commit();
+            json_out(['ok' => true, 'id' => 0, 'stored_points' => 0,
+                      'next_seq' => $seqFrom + count($points)]);
+        }
+
         // Manuell bearbeitete Einsaetze schuetzen: Uhr-Uploads duerfen
         // Metadaten/Phasen/Rea nicht mehr ueberschreiben; Trackpunkte werden
         // weiterhin ergaenzt (Append-only, unkritisch).

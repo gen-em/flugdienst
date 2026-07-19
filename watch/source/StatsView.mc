@@ -1,6 +1,5 @@
 // Einsatzdoku — Oberflaeche: Statistik des laufenden Einsatztags
-// Einsaetze = Anzahl Einsaetze des Tages (inkl. laufendem)
-// Alarmierungen = Anzahl aller Phase-2-Zeitstempel des Tages
+// Einsaetze = Anzahl begonnener Einsaetze des Tages (inkl. laufendem)
 using Toybox.WatchUi;
 using Toybox.Graphics;
 using Toybox.Lang;
@@ -19,23 +18,21 @@ class StatsView extends WatchUi.View {
         dc.drawText(cx, 26, Graphics.FONT_TINY, "Heute",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Einsaetze
+        // Einsaetze des Tages (inkl. laufendem)
         dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy - 42, Graphics.FONT_NUMBER_MEDIUM,
+        dc.drawText(cx, cy - 12, Graphics.FONT_NUMBER_HOT,
             Model.dayMissions.toString(),
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy - 6, Graphics.FONT_SMALL, "Einsätze",
+        dc.drawText(cx, cy + 40, Graphics.FONT_MEDIUM, "Einsätze",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Alarmierungen
-        dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 52, Graphics.FONT_NUMBER_MEDIUM,
-            Model.dayAlarms.toString(),
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 86, Graphics.FONT_SMALL, "Alarmierungen",
-            Graphics.TEXT_JUSTIFY_CENTER);
+        // Diagnose: konkreter Sync-Status
+        if (Uploader.lastError != null) {
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
+                "Sync: " + Uploader.lastError, Graphics.TEXT_JUSTIFY_CENTER);
+        }
 
         if (Cpr.active) {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
