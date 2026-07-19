@@ -16,8 +16,6 @@ Historie: `CHANGELOG.md` · Ursprüngliche Spezifikation: `archiv/Anforderungen_
 ┌─────────────────┐  HTTPS (Session-Login)    │  update.php   (Migration)│
 │ Browser         │ ────────────────────────► │  install.php  (Setup)    │
 └─────────────────┘                           └──────────────────────────┘
-
-GitHub-Repo ── push ──► GitHub Actions ── FTPS ──► Webspace (nur server/)
 ```
 
 Grundsätze: Der Server ist **geräteneutral** (kennt nur den JSON-Vertrag);
