@@ -6,6 +6,14 @@ jedem Änderungspaket oben dazu.
 
 ## [Unveröffentlicht]
 
+### Geändert (Uhr)
+- **Geräte-Kopplung umgezogen:** Die Code-Eingabe liegt jetzt auf der
+  Sync-/Versionsseite und startet mit **START gedrückt halten** (1 s) — die
+  frühere „UP halten"-Geste auf dem Startbildschirm löste auf dem Gerät nicht
+  zuverlässig aus. Der Startbildschirm zeigt ungekoppelt den Hinweis
+  „Nicht gekoppelt — DOWN drücken"; die Kopplungs-Rückmeldung („Gekoppelt ✓")
+  erscheint auf der Sync-Seite.
+
 ### Hinzugefügt
 - **Backup (Export/Import):** Einstellungs-Reiter „Backup" sichert alle
   eigenen Daten (Einsätze inkl. Phasen/Reanimationen/Tracks, Ruhesegmente,

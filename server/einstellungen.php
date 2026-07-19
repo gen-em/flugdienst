@@ -720,7 +720,8 @@ if ($tab === 'geraete') {
 
     <h2>Uhr koppeln (empfohlen)</h2>
     <p class="muted">Erzeuge einen Code und gib ihn auf der Uhr ein
-       (Startbildschirm → <strong>UP halten</strong> → Code eintippen).
+       (Sync-Seite der Uhr → <strong>START gedrückt halten</strong> → Code eintippen;
+       die Sync-Seite erreichst du vom Startbildschirm mit DOWN).
        Die Uhr holt sich ihre Zugangsdaten dann selbst — kein Abtippen langer
        Schlüssel. Der Code ist <strong>60 Minuten</strong> gültig und
        <strong>einmal</strong> verwendbar.</p>

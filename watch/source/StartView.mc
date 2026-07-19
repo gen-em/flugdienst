@@ -43,17 +43,11 @@ class StartView extends WatchUi.View {
         dc.drawText(cx, cy + 40, Graphics.FONT_TINY, "START drücken",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Kopplung: Hinweis solange keine Zugangsdaten da sind, sonst Status
-        if (Pair.status != null) {
-            var ok = Pair.status.substring(0, 3).equals("Gek");
-            dc.setColor(ok ? Graphics.COLOR_GREEN : Graphics.COLOR_YELLOW,
-                Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
-                Pair.status, Graphics.TEXT_JUSTIFY_CENTER);
-        } else if (!Uploader.hasCredentials()) {
+        // Noch nicht gekoppelt? Einrichtung liegt auf der Sync-Seite (DOWN)
+        if (!Uploader.hasCredentials()) {
             dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
-                "UP halten: Gerät koppeln", Graphics.TEXT_JUSTIFY_CENTER);
+                "Nicht gekoppelt — DOWN drücken", Graphics.TEXT_JUSTIFY_CENTER);
         }
 
     }
@@ -62,12 +56,6 @@ class StartView extends WatchUi.View {
 class StartDelegate extends WatchUi.BehaviorDelegate {
 
     function initialize() { BehaviorDelegate.initialize(); }
-
-    // lang UP: Geraet koppeln (Code-Eingabe)
-    function onMenu() as Lang.Boolean {
-        Pair.openInput();
-        return true;
-    }
 
     // DOWN: Sync-Status & App-Version anzeigen
     function onNextPage() as Lang.Boolean {

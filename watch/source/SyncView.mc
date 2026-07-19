@@ -7,6 +7,7 @@ using Toybox.WatchUi;
 using Toybox.Graphics;
 using Toybox.Lang;
 using Toybox.Timer;
+using Toybox.Application.Storage;
 
 class SyncView extends WatchUi.View {
 
@@ -65,10 +66,24 @@ class SyncView extends WatchUi.View {
                 Uploader.lastError as Lang.String, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
+        // Kopplungs-Rueckmeldung (nach Code-Eingabe)
+        if (Pair.status != null) {
+            var ok = Pair.status.substring(0, 3).equals("Gek");
+            dc.setColor(ok ? Graphics.COLOR_GREEN : Graphics.COLOR_YELLOW,
+                Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, cy + 52, Graphics.FONT_XTINY,
+                Pair.status, Graphics.TEXT_JUSTIFY_CENTER);
+        }
+
+        // eine Zeile: REA-Warnung vor Einrichtungs-Hinweis
         if (Cpr.active) {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
                 "REA läuft", Graphics.TEXT_JUSTIFY_CENTER);
+        } else {
+            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
+                "START halten: Gerät koppeln", Graphics.TEXT_JUSTIFY_CENTER);
         }
 
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
@@ -80,10 +95,45 @@ class SyncView extends WatchUi.View {
 class SyncDelegate extends WatchUi.BehaviorDelegate {
 
     var _fromStart as Lang.Boolean;
+    var _timer as Timer.Timer or Null = null;
+    var _holding as Lang.Boolean = false;
+    var _longFired as Lang.Boolean = false;
 
     function initialize(fromStart as Lang.Boolean) {
         BehaviorDelegate.initialize();
         _fromStart = fromStart;
+    }
+
+    // START halten (1 s): Geraete-Kopplung — Code-Eingabe oeffnen.
+    // Gleiches Haltemuster wie auf der Hauptanzeige (ClockDelegate).
+    function onKeyPressed(evt as WatchUi.KeyEvent) as Lang.Boolean {
+        if (evt.getKey() == WatchUi.KEY_ENTER) {
+            _holding = true;
+            _longFired = false;
+            if (_timer == null) { _timer = new Timer.Timer(); }
+            _timer.start(method(:onHoldTimeout), Const.LONG_PRESS_MS, false);
+            return true;
+        }
+        return false;
+    }
+
+    function onHoldTimeout() as Void {
+        if (!_holding) { return; }
+        _longFired = true;
+        Pair.openInput();
+    }
+
+    function onKeyReleased(evt as WatchUi.KeyEvent) as Lang.Boolean {
+        if (evt.getKey() != WatchUi.KEY_ENTER) { return false; }
+        if (!_holding) { return false; }
+        _holding = false;
+        if (_timer != null) { _timer.stop(); }
+        if (_longFired) { _longFired = false; }
+        return true;                               // kurz START: keine Aktion
+    }
+
+    function onKey(evt as WatchUi.KeyEvent) as Lang.Boolean {
+        return evt.getKey() == WatchUi.KEY_ENTER;  // ENTER selbst verarbeiten
     }
 
     function onNextPage() as Lang.Boolean {
