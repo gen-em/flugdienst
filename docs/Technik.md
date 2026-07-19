@@ -7,7 +7,7 @@ Historie: `CHANGELOG.md` · Ursprüngliche Spezifikation: `archiv/Anforderungen_
 
 ```
 ┌─────────────────┐  HTTPS POST /ingest.php   ┌──────────────────────────┐
-│ Garmin Fenix 6  │  JSON (Vertrag v1.1)      │  Webspace (luftrettung.net)
+│ Garmin Fenix 6  │  JSON (Vertrag v1.1)      │  Webspace                │
 │ Connect-IQ-App  │ ────────────────────────► │  PHP ≥ 8.1  + MySQL      │
 │ (Monkey C)      │  X-Device-Id / X-Api-Key  │                          │
 └─────────────────┘                           │  ingest.php   (Uhr-API)  │
