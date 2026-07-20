@@ -154,14 +154,38 @@ class FinishConfirmDelegate extends WatchUi.ConfirmationDelegate {
     }
 }
 
+// Rueckruf fuer den verzoegerten Ansichtswechsel (siehe EndDay.begin)
+class EndDayCb {
+    function initialize() {}
+    function fire() as Void { EndDay.show(); }
+}
+
+module EndDay {
+    var _t as Timer.Timer or Null = null;
+    var _cb as EndDayCb or Null = null;
+
+    // Dienst beenden und die Sende-Ansicht zeigen. Der Ansichtswechsel darf
+    // NICHT direkt in onResponse passieren: Die Bestaetigung schliesst danach
+    // ihre eigene Ansicht und nimmt die neue gleich wieder mit — die App blieb
+    // dadurch offen. Deshalb minimal verzoegert.
+    function begin() as Void {
+        Cpr.stop();
+        Model.endService();
+        if (_cb == null) { _cb = new EndDayCb(); }
+        if (_t == null) { _t = new Timer.Timer(); }
+        _t.start(_cb.method(:fire), 100, false);
+    }
+
+    function show() as Void {
+        if (_t != null) { _t.stop(); }
+        WatchUi.switchToView(new SendingView(), new SendingDelegate(), WatchUi.SLIDE_DOWN);
+    }
+}
+
 class EndDayConfirmDelegate extends WatchUi.ConfirmationDelegate {
     function initialize() { ConfirmationDelegate.initialize(); }
     function onResponse(response) as Lang.Boolean {
-        if (response == WatchUi.CONFIRM_YES) {
-            Cpr.stop();
-            Model.endService();
-            WatchUi.switchToView(new SendingView(), new SendingDelegate(), WatchUi.SLIDE_DOWN);
-        }
+        if (response == WatchUi.CONFIRM_YES) { EndDay.begin(); }
         return true;
     }
 }
@@ -196,7 +220,7 @@ class SendingView extends WatchUi.View {
         _ticks += 1;
         if (_ticks >= Const.END_SYNC_WAIT_S) {
             if (_timer != null) { _timer.stop(); }
-            var dlg = new WatchUi.Confirmation("Noch nicht alles gesendet. Trotzdem beenden?");
+            var dlg = new WatchUi.Confirmation("Sync unvollständig – trotzdem beenden?");
             WatchUi.pushView(dlg, new QuitConfirmDelegate(), WatchUi.SLIDE_LEFT);
             return;
         }
@@ -210,10 +234,12 @@ class SendingView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy - 14, Graphics.FONT_MEDIUM, "Sende Daten…",
+        dc.drawText(cx, cy - 20, Graphics.FONT_MEDIUM, "Synchronisiere…",
             Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 26, Graphics.FONT_TINY,
+        dc.drawText(cx, cy + 18, Graphics.FONT_TINY, "vor dem Beenden",
+            Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, cy + 44, Graphics.FONT_XTINY,
             (Model.pendingMissions.size() + Model.pendingRest.size()).toString() + " offen",
             Graphics.TEXT_JUSTIFY_CENTER);
     }
@@ -223,7 +249,7 @@ class SendingDelegate extends WatchUi.BehaviorDelegate {
     function initialize() { BehaviorDelegate.initialize(); }
     // Waehrend des Sendens keine Aktionen — BACK ueberspringt das Warten
     function onBack() as Lang.Boolean {
-        var dlg = new WatchUi.Confirmation("Noch nicht alles gesendet. Trotzdem beenden?");
+        var dlg = new WatchUi.Confirmation("Sync unvollständig – trotzdem beenden?");
         WatchUi.pushView(dlg, new QuitConfirmDelegate(), WatchUi.SLIDE_LEFT);
         return true;
     }

@@ -92,7 +92,17 @@ module Model {
     function endService() as Void {
         _closeRestSegment();
         if (mission != null) { _finishMission(); }   // Sicherheitsnetz
+
+        // Frischer Start beim naechsten Oeffnen: Zaehler, Phase und Tag
+        // zuruecksetzen. Die Warteschlange (pendingMissions/pendingRest)
+        // bleibt bewusst erhalten — sonst gingen noch nicht bestaetigte
+        // Einsaetze verloren; sie wird beim naechsten Start weiter gesendet.
         serviceActive = false;
+        phase         = 1;
+        day           = null;
+        mission       = null;
+        restSegment   = null;
+        dayMissions   = 0;
         save();
         Track.stopPositioning();
         Uploader.syncAll();

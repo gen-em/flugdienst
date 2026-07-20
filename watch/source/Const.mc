@@ -3,7 +3,7 @@ using Toybox.Lang;
 
 module Const {
 
-    const APP_VERSION = "1.3.1";      // bei jedem Release erhoehen
+    const APP_VERSION = "1.3.2";      // bei jedem Release erhoehen
 
     // Phasen 1..9 (Index 0 unbenutzt). Der Einsatz-Abschluss ist KEIN
     // Zeitstempel mehr, sondern eine bestaetigte Aktion (Phase 10 entfaellt).
@@ -47,7 +47,7 @@ module Const {
     // Reanimation
     const CPR_CYCLE_S = 120;         // 2:00-Countdown
     const LONG_PRESS_MS = 1000;
-    const END_SYNC_WAIT_S = 10;       // Dienstende: so lange auf Sende-Bestaetigung warten       // Aktion feuert nach 1 s Halten (nicht erst beim Loslassen)
+    const END_SYNC_WAIT_S = 3;       // Dienstende: so lange senden, dann fragen
 
     // Storage-Schluessel
     const K_STATE = "state";         // Dienst-/Einsatz-/Rea-Zustand
