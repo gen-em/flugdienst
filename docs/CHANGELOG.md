@@ -6,6 +6,53 @@ jedem Änderungspaket oben dazu.
 
 ## [Unveröffentlicht]
 
+### Geändert (Web — Pflicht-Verschlüsselung)
+- **Verschlüsselung ist jetzt Pflicht:** kein Modul-Schalter, keine
+  Feldauswahl mehr — der Einstellungs-Reiter „PatientInnendaten" entfällt.
+  Beim ersten Anmelden erzwingt das System die **Ersteinrichtung** mit
+  einmalig angezeigtem Wiederherstellungsschlüssel (einrichtung.php); dieselbe
+  Seite entsperrt nach einem Passwort-Reset per Wiederherstellungsschlüssel.
+- Verschlüsselte Felder sind **Diagnose und Alter** (Nachname, Vorname und
+  Geburtsdatum entfallen); der **Einsatzort** (Adresse + Koordinaten) wandert
+  ebenfalls in den verschlüsselten Block — Klartext-Altbestände wurden per
+  Migration verworfen (Spalten entfernt).
+- Tagesübersicht: Spalten Nr. · Beginn · Dauer · **Einsatzort (Ortschaft aus
+  der Adresse)** · **Alter** · **Diagnose** · Winde · Bergwacht · Kilometer;
+  sortierbar außer Winde/Bergwacht. Karten-Pins entstehen jetzt aus den lokal
+  entschlüsselten Koordinaten; Sperr-Banner mit Entsperr-Link nach Reset.
+- **Admin-Passwortvergabe entfernt** (würde verschlüsselte Daten unlesbar
+  machen); Hinweis auf „Passwort vergessen" + Wiederherstellungsschlüssel.
+- Backup: exportiert die Schlüssel-Hüllen ohne Modul-Schalter; Alt-Backups
+  mit Klartext-Ort werden beim Import toleriert (Ort wird verworfen).
+
+### Behoben / Geändert (Web)
+- **Einsatzansicht komplett neu gebaut:** Bearbeiten-Link führt wieder zum
+  richtigen Einsatz (die Seite hatte die Einsatz-ID verloren), volle Breite
+  wie die Flugtag-Übersicht, Aktionsleiste nebeneinander.
+- **Karten:** Einsatzort-Pins in der Farbe des jeweiligen Einsatzes (Ring in
+  Trackfarbe); Tracklinien werden beim Rauszoomen dicker und nicht mehr
+  vereinfacht — kurze Tracks bleiben auf der Tagesübersicht sichtbar.
+- Überall „Flugtag" statt „Betriebstag" (Titel, Formular, Doku).
+- Flugtag-**Notizen** stehen sichtbar im zugeklappten „Flugtag-Daten"-Kästchen.
+- Standortdaten (vorher „Stammdaten", umbenannt): Hinweis „Rollen auf dem
+  Hubschrauber:" vor den Häkchen.
+- **Geräte umbenennbar** (gelber Bearbeiten-Button je Zeile).
+- Administration: Name als eigene Spalte, ganze Zeile reagiert auf
+  Hover/Klick; Abmelden fragt nach Bestätigung.
+
+### Geändert (Uhr — v1.2.0)
+- **Rea-Menü neu:** groß umrahmte Felder (~4 je Seite, größere Schrift),
+  Gruppen mit dünnen Trennlinien (Rhythmuskontrolle/Defibrillation ·
+  Adrenalin/Amiodaron · **Zugang** [neues Ereignis]/Intubation/Sonographie ·
+  ROSC/Tod · Übersicht), dicke Linie vor **„Rea BEENDEN"** (vorher „ENDE").
+  Server und Doku kennen den Ereignistyp `zugang`.
+- **Einsatzzähler:** Die Statistik zählt nur noch abgeschlossene Einsätze
+  (Alarmierung + dokumentiertes Ende); der laufende zählt nicht mehr mit.
+- **Sync-Seite:** Grün „Sync vollständig ✓", sobald kein Rückstand besteht —
+  das konstruktionsbedingt immer offene laufende Ruhesegment zählt nicht mehr
+  als „offenes Paket". Der Koppel-Hinweis erscheint nur noch ungekoppelt.
+- App-Version 1.2.0 (Sync-Seite).
+
 ### Geändert (Uhr)
 - **Geräte-Kopplung umgezogen:** Die Code-Eingabe liegt jetzt auf der
   Sync-/Versionsseite und startet mit **START gedrückt halten** (1 s) — die

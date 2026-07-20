@@ -157,9 +157,9 @@ angezeigt, also sofort notieren bzw. eintragen. **Deaktivieren** sperrt den
 Upload sofort (z. B. bei Verlust); alle bereits hochgeladenen Daten bleiben
 erhalten, und **Aktivieren** schaltet dasselbe Gerät wieder frei.
 
-### 3.5a Stammdaten
+### 3.5a Standortdaten
 
-Unter **⚙ Einstellungen → „Stammdaten"** pflegst du Vorbelegungen: Standorte,
+Unter **⚙ Einstellungen → „Standortdaten"** pflegst du Vorbelegungen: Standorte,
 Hubschrauber (Kennung plus Häkchen, welche Rollen an Bord sind) sowie
 Namenslisten je Rolle und Bergwacht-Bereitschaften. Am Flugtag wählst du
 Maschine und Standort dann per Dropdown; die beim Hubschrauber angehakten
@@ -178,30 +178,35 @@ bestehen).
 Nach Code-Updates mit Datenbank-Änderungen einmal **`update.php`** aufrufen
 (siehe Technik-Doku, Betrieb).
 
-### 3.7 PatientInnendaten (Ende-zu-Ende-verschlüsselt)
+### 3.7 Verschlüsselte Angaben (Pflicht)
 
-Unter **⚙ Einstellungen → „PatientInnendaten"** aktivierst du das Modul. Die
-Felder (Nachname, Vorname, Diagnose, Geburtsdatum, Alter) werden **im
-Browser** ver- und entschlüsselt; der Server speichert nur Chiffretext. Der
-Schlüssel entsteht aus deinem Login-Passwort — es gibt kein zweites Passwort.
+Diagnose, Alter und Einsatzort sind **Ende-zu-Ende-verschlüsselt**: Der
+Browser ver- und entschlüsselt mit einem Schlüssel aus deinem Login-Passwort;
+der Server speichert nur Chiffretext. Es gibt kein zweites Passwort und
+keinen Schalter — die Verschlüsselung ist Pflicht.
+
+**Ersteinrichtung:** Beim ersten Anmelden führt das System einmalig auf die
+Einrichtungsseite. Dort wird dein **Wiederherstellungsschlüssel** erzeugt und
+**nur dieses eine Mal** angezeigt — ausdrucken und sicher ablegen, dann per
+Haken bestätigen.
 
 **Unbedingt wissen:**
-- Bei der Aktivierung erscheint **einmalig** ein Wiederherstellungsschlüssel —
-  ausdrucken und sicher ablegen. Nach einem Passwort-Reset („vergessen" oder
-  durch Admin) ist er der **einzige** Weg zu den Daten; ohne ihn sind sie
-  unwiederbringlich verloren. Normales Passwort-Ändern (mit altem Passwort)
-  ist dagegen völlig unkritisch.
-- Verschlüsselte Felder sind serverseitig **nicht durchsuchbar** und nur für
-  dich lesbar (kein Teilen).
-- Der Schutz wirkt gegen Datenbank-Diebstahl, Backups und Mitleser — nicht
-  gegen einen vollständig übernommenen Server, der verändertes JavaScript
-  ausliefern könnte (prinzipbedingte Grenze aller Web-E2E-Lösungen).
+- Normales Passwort-Ändern (mit altem Passwort) ist völlig unkritisch — die
+  Daten bleiben ohne Zutun lesbar.
+- Nach „Passwort vergessen" sind die verschlüsselten Angaben gesperrt, bis du
+  sie auf der Einrichtungsseite mit dem Wiederherstellungsschlüssel
+  entsperrst. **Ohne ihn sind sie unwiederbringlich verloren** — auch Admins
+  können nicht helfen (deshalb gibt es keine Admin-Passwortvergabe).
+- Verschlüsselte Felder sind serverseitig nicht durchsuchbar; der Schutz
+  wirkt gegen Datenbank-Diebstahl und Mitleser, prinzipbedingt nicht gegen
+  einen vollständig übernommenen Server.
 
-Im Einsatzformular erscheinen die gewählten Felder; das Alter wird aus dem
-Geburtsdatum berechnet (Stichtag = Einsatzdatum, Berechnung gewinnt), kann
-aber auch allein eingetragen werden. In der Tagesübersicht gibt es eine
-sortierbare Nachname-Spalte. Zeigt eine Seite „gesperrt", genügt ab- und
-neu anmelden.
+**Im Alltag:** Das Einsatzformular bündelt Diagnose, Alter und den
+Einsatzort (mit Adressvorschlägen; ein gewählter Vorschlag setzt die
+Karten-Pins) in einem verschlüsselten Block. Die Tagesübersicht zeigt die
+Spalten Einsatzort (Ortschaft aus der Adresse), Alter und Diagnose — lokal
+entschlüsselt und sortierbar. Zeigt eine Seite „gesperrt", genügt ab- und
+neu anmelden bzw. der Entsperr-Link.
 
 ### 3.8 Backup
 

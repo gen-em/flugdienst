@@ -301,6 +301,23 @@ $MIGRATIONS = [
             "ALTER TABLE missions ADD COLUMN pat_blob TEXT NULL",
         ],
     ],
+    [
+        'id'    => '2026_07_21_pflicht_e2e',
+        'label' => 'Pflicht-Verschlüsselung: Einsatzort wandert in den verschlüsselten Block (Klartext-Altdaten entfallen), Felder Diagnose/Alter, Modul-Schalter entfallen',
+        'skip'  => function (PDO $pdo): bool {
+            $q = $pdo->query("SELECT COUNT(*) FROM information_schema.columns
+                              WHERE table_schema = DATABASE()
+                                AND table_name = 'missions' AND column_name = 'loc_addr'");
+            return (int)$q->fetchColumn() === 0;
+        },
+        'sql'   => [
+            "ALTER TABLE missions DROP COLUMN loc_addr",
+            "ALTER TABLE missions DROP COLUMN loc_lat",
+            "ALTER TABLE missions DROP COLUMN loc_lon",
+            "ALTER TABLE users DROP COLUMN pat_enabled",
+            "ALTER TABLE users DROP COLUMN pat_fields",
+        ],
+    ],
     // Naechste Migration hier anhaengen.
 ];
 

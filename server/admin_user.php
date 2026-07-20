@@ -30,15 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (PDOException $ex) { $error = 'Diese E-Mail-Adresse wird bereits verwendet.'; }
         }
     }
-    if ($action === 'password') {
-        $new = (string)($_POST['new1'] ?? '');
-        if (strlen($new) < 10) { $error = 'Das neue Passwort braucht mindestens 10 Zeichen.'; }
-        else {
-            db()->prepare('UPDATE users SET password_hash = ? WHERE id = ?')
-                ->execute([password_hash($new, PASSWORD_DEFAULT), $uid]);
-            $notice = 'Neues Passwort gesetzt. Bitte der Person sicher mitteilen.';
-        }
-    }
     if ($action === 'device_toggle') {
         db()->prepare('UPDATE devices SET active = 1 - active WHERE id = ? AND user_id = ?')
             ->execute([(int)($_POST['dev'] ?? 0), $uid]);
@@ -101,13 +92,10 @@ $devices = $dv->fetchAll();
     <button class="btn-primary">E-Mail speichern</button>
   </form>
 
-  <h2>Neues Passwort vergeben</h2>
-  <form method="post" class="inline-form">
-    <?= csrf_field() ?><input type="hidden" name="action" value="password">
-    <input type="hidden" name="id" value="<?= $uid ?>">
-    <input type="password" name="new1" required minlength="10" placeholder="mind. 10 Zeichen" autocomplete="new-password">
-    <button class="btn-primary">Passwort setzen</button>
-  </form>
+  <p class="muted">Ein Passwort kann hier nicht gesetzt werden: Die Daten sind mit dem
+     Passwort der Person Ende-zu-Ende-verschlüsselt. Bei vergessenem Passwort den Weg
+     „Passwort vergessen" auf der Login-Seite nutzen — der Zugriff auf verschlüsselte
+     Angaben wird danach mit dem Wiederherstellungsschlüssel der Person entsperrt.</p>
 
   <h2>Verbundene Geräte</h2>
   <table class="data">

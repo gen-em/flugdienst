@@ -27,9 +27,6 @@ $collect = function (string $col, array $f) use (&$collect, &$fields, $m) {
     }
 };
 foreach ($FIELDS as $col => $f) { $collect($col, $f); }
-if (!empty($m['loc_addr'])) {
-    $fields[] = ['label' => 'Einsatzort', 'value' => (string)$m['loc_addr']];
-}
 
 // Tagesnummer nach Alarmierungszeit (frueheste = 1)
 $no = db()->prepare('SELECT COUNT(*) + 1 FROM missions
@@ -88,12 +85,8 @@ json_out([
     'manual'     => (int)($m['manual'] ?? 0) === 1,
     'day_no'     => $dayNo,
     'has_p9'     => $p9at !== null,
-    'loc'        => ($m['loc_lat'] !== null && $m['loc_lon'] !== null)
-                    ? ['lat' => (float)$m['loc_lat'], 'lon' => (float)$m['loc_lon'],
-                       'addr' => (string)($m['loc_addr'] ?? '')] : null,
     'fields'     => $fields,
-    'pat_blob'   => ($patEnabled && !empty($m['pat_blob'])) ? (string)$m['pat_blob'] : null,
-    'pat_wrap'   => $patEnabled ? $patWrapPw : null,
-    'pat_fields' => $patEnabled ? $patFields : [],
+    'pat_blob'   => !empty($m['pat_blob']) ? (string)$m['pat_blob'] : null,
+    'pat_wrap'   => $patWrapPw,
     'track' => $track, 'phases' => $phases, 'resus' => $resus,
 ]);

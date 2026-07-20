@@ -55,7 +55,7 @@ hems/
 | `users` | Login (E-Mail = Username), Rolle `user`/`admin`; Löschen kaskadiert alles |
 | `password_resets` | Token-Hashes (sha256), 1 h gültig; Aufräumjob entsorgt Altbestand |
 | `devices` | Upload-Zugang je Gerät: `device_id` (öffentlich) + `api_key_hash`; **`active`-Flag** (deaktivieren statt löschen); virtuelle Geräte `manual-<userId>` für Handeinträge (dauerhaft inaktiv, aus Listen gefiltert) |
-| `missions` | Einsatz; `UNIQUE(device_id, client_ref)` = Idempotenz-Anker; `day` = Betriebstag; **`manual`-Marker** (Schutz vor Uhr-Überschreiben); Zusatzfelder lt. `mission_fields.php` (derzeit `mission_no`, `notes`) |
+| `missions` | Einsatz; `UNIQUE(device_id, client_ref)` = Idempotenz-Anker; `day` = Flugtag; **`manual`-Marker** (Schutz vor Uhr-Überschreiben); Zusatzfelder lt. `mission_fields.php` (derzeit `mission_no`, `notes`) |
 | `mission_phases` | Phasen-Zeitstempel (2–10, Mehrfach-Einträge erlaubt) inkl. Position |
 | `resus_sessions` / `resus_events` | Reanimationen: **mehrere Sitzungen je Einsatz**, Ereignisse typisiert |
 | `rest_segments` | Ruhe-Track-Segmente (gleiches Idempotenz-Schema wie Einsätze) |

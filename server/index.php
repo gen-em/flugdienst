@@ -96,11 +96,10 @@ if ($selDay === null) {
         <th class="sortable" data-key="start">Beginn</th>
         <th class="sortable" data-key="dur">Dauer</th>
         <th class="sortable" data-key="site">Einsatzort</th>
-        <?php if ($patEnabled && in_array('ln', $patFields, true)): ?>
-          <th class="sortable" data-key="pat">Nachname</th>
-        <?php endif; ?>
-        <th class="sortable" data-key="winch">Winde</th>
-        <th class="sortable" data-key="bw">Bergwacht</th>
+        <th class="sortable" data-key="age">Alter</th>
+        <th class="sortable" data-key="dx">Diagnose</th>
+        <th>Winde</th>
+        <th>Bergwacht</th>
         <th class="sortable" data-key="km">Kilometer</th>
       </tr></thead>
       <tbody></tbody>
@@ -117,8 +116,7 @@ if ($selDay === null) {
 const CSRF = '<?= e($_SESSION['csrf']) ?>';
 const SEL_DAY = <?= json_encode($selDay) ?>;
 const DEF_AC = <?= (int)$DEF_AC ?>;
-const PAT_ON = <?= ($patEnabled && in_array('ln', $patFields, true)) ? 'true' : 'false' ?>;
-const PAT_WRAP = <?= json_encode($patEnabled ? $patWrapPw : null) ?>;
+const PAT_WRAP = <?= json_encode($patWrapPw) ?>;
 const DEF_BASE = <?php $d = 0; foreach ($SD_BASES as $b) { if ((int)($b['is_default'] ?? 0)) $d = (int)$b['id']; } echo $d; ?>;
 const COLORS = ['#FF8F1F','#4280E5','#D63338','#1A2E4D','#0C8599','#9C36B5','#2F9E44','#8A5A00'];
 let currentDay = null;
@@ -139,8 +137,9 @@ function sortVal(m, key){
     case 'no':
     case 'start': return m._no;
     case 'dur':   return m.duration_s == null ? -1 : m.duration_s;
-    case 'site':  return (m.site_desc || '').toLowerCase();
-    case 'pat':   return (m._pat || '').toLowerCase();
+    case 'site':  return (m._ort || '').toLowerCase();
+    case 'age':   return m._age == null ? -1 : m._age;
+    case 'dx':    return (m._dx || '').toLowerCase();
     case 'winch': return m.winch ? 1 : 0;
     case 'bw':    return m.bergwacht ? 1 : 0;
     case 'km':    return m.distance_m == null ? -1 : m.distance_m;
@@ -161,8 +160,9 @@ function renderMissionTable(){
       <td class="mono">${m._no}</td>
       <td class="mono">${m.start_hhmm}</td>
       <td>${fmtDur(m.duration_s)}</td>
-      <td>${m.site_desc ? esc(m.site_desc) : '–'}</td>
-      ${PAT_ON ? `<td>${m._pat ? esc(m._pat) : '–'}</td>` : ''}
+      <td>${m._ort ? esc(m._ort) : '–'}</td>
+      <td class="mono">${m._age != null ? m._age : '–'}</td>
+      <td>${m._dx ? esc(m._dx) : '–'}</td>
       <td class="checkcol">${m.winch ? '✓' : ''}</td>
       <td class="checkcol">${m.bergwacht ? '✓' : ''}</td>
       <td class="mono">${fmtKm(m.distance_m)}</td>`;
@@ -179,6 +179,13 @@ function renderMissionTable(){
       th.appendChild(a);
     }
   });
+}
+
+function extractOrt(addr){
+  const parts = addr.split(',');
+  let last = parts[parts.length - 1].trim();
+  last = last.replace(/^\d{4,5}\s+/, '');
+  return last;
 }
 
 function esc(t){ const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
@@ -247,27 +254,36 @@ async function loadDay(day){
       trackLines.push(line);
       m.track.forEach(p => bounds.push(p));
     }
-    if (m.loc) {
-      layerGroup.addLayer(L.circleMarker([m.loc.lat, m.loc.lon],
-        { radius: 8, color: m._col, weight: 3, fillColor: '#fff', fillOpacity: .9 })
-        .bindPopup(`Einsatz ${m._no}` + (m.loc.addr ? '<br>' + esc(m.loc.addr) : '')));
-      bounds.push([m.loc.lat, m.loc.lon]);
-    }
   });
   renderMissionTable();
-  if (PAT_ON && PAT_WRAP) {
+  if (PAT_WRAP) {
     (async () => {
       const ck = await EdCrypto.getContentKey(PAT_WRAP);
-      if (!ck) return;
+      const banner = document.getElementById('lockbanner');
+      if (!ck) { if (banner) banner.hidden = !dayMissions.some(m => m.pat_blob); return; }
+      if (banner) banner.hidden = true;
       let changed = false;
+      const pinBounds = [];
       for (const m of dayMissions) {
         if (!m.pat_blob) continue;
         try {
           const o = JSON.parse(await EdCrypto.decrypt(ck, m.pat_blob)) || {};
-          if (o.ln) { m._pat = o.ln; changed = true; }
+          if (o.dx != null) { m._dx = o.dx; changed = true; }
+          if (o.age != null) { m._age = o.age; changed = true; }
+          if (o.loc && o.loc.addr) {
+            m._ort = extractOrt(o.loc.addr);
+            changed = true;
+            if (o.loc.lat != null) {
+              layerGroup.addLayer(L.circleMarker([o.loc.lat, o.loc.lon],
+                { radius: 8, color: m._col, weight: 3, fillColor: '#fff', fillOpacity: .9 })
+                .bindPopup(`Einsatz ${m._no}<br>` + esc(o.loc.addr)));
+              pinBounds.push([o.loc.lat, o.loc.lon]);
+            }
+          }
         } catch (e) { }
       }
       if (changed) renderMissionTable();
+      if (pinBounds.length && !mapHasBounds) { map.fitBounds(pinBounds, { padding: [30, 30] }); }
     })();
   }
 

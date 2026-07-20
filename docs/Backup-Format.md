@@ -42,8 +42,6 @@ $json = gzdecode(openssl_decrypt(substr($b, 52), 'aes-256-gcm', $key,
   // PatientInnendaten-Modul: Schlüssel-Hüllen (selbst Chiffretext!).
   // null, wenn das Modul nie aktiviert wurde.
   "pat_module": {
-    "enabled": 1,
-    "fields": ["ln","fn","dx","dob","age"],
     "wrap_pw": "base64…",               // Inhaltsschlüssel, passwortverpackt
     "wrap_rc": "base64…"                // Inhaltsschlüssel, wiederherstellungsverpackt
   },
@@ -78,8 +76,8 @@ $json = gzdecode(openssl_decrypt(substr($b, 52), 'aes-256-gcm', $key,
     "winch": 0, "winch_cycles": null, "winch_cycles_pat": null,
     "winch_airload": 0, "bergwacht": 0, "bw_unit": null, "bw_info": null,
     "other_ema": null, "other_resources": null, "notes": null,
-    "loc_addr": "…", "loc_lat": 47.72, "loc_lon": 10.31,
-    "pat_blob": "base64…",              // E2E-Chiffretext, bleibt verschlüsselt
+    "pat_blob": "base64…",              // E2E-Chiffretext (Diagnose, Alter,
+                                        // Einsatzort), bleibt verschlüsselt
     "phases": [ { "phase": 2, "occurred_at": "2026-07-19 08:15:00",
                   "lat": 47.72, "lon": 10.31 } ],
     "resus": [ { "started_at": "2026-07-19 08:40:00",

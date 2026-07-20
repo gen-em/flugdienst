@@ -3,7 +3,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/auth_guard.php';
 
 $tab = $_GET['t'] ?? 'profil';
-if (!in_array($tab, ['profil', 'geraete', 'stammdaten', 'pat', 'backup'], true)) { $tab = 'profil'; }
+if (!in_array($tab, ['profil', 'geraete', 'stammdaten', 'backup'], true)) { $tab = 'profil'; }
 $notice = null; $error = null; $newKey = null; $pairCode = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -58,34 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    /* ---- PatientInnendaten-Modul --------------------------------------- */
-    if ($action === 'pat_enable') {
-        $fields = array_values(array_intersect((array)($_POST['pf'] ?? []), ['ln','fn','dx','dob','age']));
-        $wp = (string)($_POST['wrap_pw'] ?? '');
-        $wr = (string)($_POST['wrap_rc'] ?? '');
-        if ($wp === '' || $wr === '' || !$fields) {
-            $error = 'Aktivierung unvollständig (JavaScript nötig).';
-        } else {
-            db()->prepare('UPDATE users SET pat_enabled = 1, pat_fields = ?,
-                             pat_wrap_pw = ?, pat_wrap_rc = ? WHERE id = ?')
-                ->execute([json_encode($fields), mb_substr($wp, 0, 4000),
-                           mb_substr($wr, 0, 4000), $userId]);
-            $notice = 'Modul aktiviert. Der Wiederherstellungsschlüssel wurde nur EINMAL angezeigt.';
-            $patEnabled = true;
-        }
-    }
-    if ($action === 'pat_fields') {
-        $fields = array_values(array_intersect((array)($_POST['pf'] ?? []), ['ln','fn','dx','dob','age']));
-        db()->prepare('UPDATE users SET pat_fields = ? WHERE id = ?')
-            ->execute([$fields ? json_encode($fields) : null, $userId]);
-        $notice = 'Feldauswahl gespeichert.';
-    }
-    if ($action === 'pat_toggle') {
-        $on = (int)($_POST['on'] ?? 0) === 1 ? 1 : 0;
-        db()->prepare('UPDATE users SET pat_enabled = ? WHERE id = ?')
-            ->execute([$on, $userId]);
-        $notice = $on ? 'Modul eingeschaltet.' : 'Modul ausgeschaltet — die Daten bleiben gespeichert.';
-    }
     if ($action === 'backup_import') {
         require_once __DIR__ . '/backup_lib.php';
         $pw = (string)($_POST['ipw'] ?? '');
@@ -108,15 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
-    if ($action === 'pat_rewrap') {
-        $wp = (string)($_POST['wrap_pw'] ?? '');
-        if (preg_match('/^[A-Za-z0-9+\/=]{20,4000}$/', $wp)) {
-            db()->prepare('UPDATE users SET pat_wrap_pw = ? WHERE id = ?')
-                ->execute([$wp, $userId]);
-            $notice = 'Zugriff wiederhergestellt.';
-        }
-    }
-
     /* ---- Geräte (Selbstverwaltung) ------------------------------------- */
     if ($action === 'add') {
         $label = trim($_POST['label'] ?? '');
@@ -287,7 +250,6 @@ if ($tab === 'geraete') {
     <ul>
       <li><a href="einstellungen.php?t=profil" <?= $tab === 'profil' ? 'class="active"' : '' ?>>Profil</a></li>
       <li><a href="einstellungen.php?t=stammdaten" <?= $tab === 'stammdaten' ? 'class="active"' : '' ?>>Standortdaten</a></li>
-      <li><a href="einstellungen.php?t=pat" <?= $tab === 'pat' ? 'class="active"' : '' ?>>PatientInnendaten</a></li>
       <li><a href="einstellungen.php?t=backup" <?= $tab === 'backup' ? 'class="active"' : '' ?>>Backup</a></li>
       <li><a href="einstellungen.php?t=geraete" <?= $tab === 'geraete' ? 'class="active"' : '' ?>>Geräte</a></li>
       <li><a href="logout.php" onclick="return confirm('Wirklich abmelden?')">Abmelden</a></li>
@@ -580,148 +542,6 @@ if ($tab === 'geraete') {
         <input type="password" name="ipw" required autocomplete="off"></label>
       <button class="btn-primary">Backup importieren</button>
     </form>
-
-  <?php elseif ($tab === 'pat'): ?>
-    <?php
-      $u = db()->prepare('SELECT pat_enabled, pat_fields, pat_wrap_pw, pat_wrap_rc FROM users WHERE id = ?');
-      $u->execute([$userId]); $u = $u->fetch();
-      $isOn = !empty($u['pat_enabled']);
-      $hasKeys = !empty($u['pat_wrap_pw']);
-      $sel = json_decode((string)($u['pat_fields'] ?? ''), true) ?: ['ln','fn','dx','dob','age'];
-      $PATF = ['ln' => 'Nachname', 'fn' => 'Vorname', 'dx' => 'Diagnose',
-               'dob' => 'Geburtsdatum', 'age' => 'Alter'];
-    ?>
-    <h1>PatientInnendaten</h1>
-    <p class="muted">Ende-zu-Ende-verschlüsselt: Die Felder werden <strong>im Browser</strong>
-       ver- und entschlüsselt (Schlüssel aus deinem Login-Passwort abgeleitet). Der Server
-       speichert nur Chiffretext und kann nichts lesen — deshalb gilt:
-       <strong>Passwort vergessen ohne Wiederherstellungsschlüssel = Daten unwiederbringlich weg.</strong>
-       Verschlüsselte Felder sind serverseitig nicht durchsuchbar.</p>
-
-    <?php if (!$hasKeys): ?>
-      <h2>Modul aktivieren</h2>
-      <p>Beim Aktivieren wird ein <strong>Wiederherstellungsschlüssel</strong> erzeugt und
-         <strong>nur dieses eine Mal</strong> angezeigt — ausdrucken oder sicher ablegen.
-         Nur mit ihm sind die Daten nach einem Passwort-Reset noch zu retten.</p>
-      <div class="patfields">
-        <?php foreach ($PATF as $k => $lbl): ?>
-          <label><input type="checkbox" class="pf-init" value="<?= $k ?>" checked> <?= e($lbl) ?></label>
-        <?php endforeach; ?>
-      </div>
-      <div id="rcbox" class="keybox" hidden>
-        <strong>Wiederherstellungsschlüssel — jetzt sichern!</strong>
-        <p class="codebig" id="rccode" style="font-size:1.35rem"></p>
-        <label class="checklabel"><input type="checkbox" id="rcok">
-          Ich habe den Schlüssel sicher notiert.</label>
-      </div>
-      <form method="post" action="einstellungen.php?t=pat" id="enableform">
-        <?= csrf_field() ?><input type="hidden" name="action" value="pat_enable">
-        <div id="enfields"></div>
-        <input type="hidden" name="wrap_pw" id="en_wp">
-        <input type="hidden" name="wrap_rc" id="en_wr">
-        <button class="btn-primary" id="enablebtn" style="width:auto">Modul aktivieren</button>
-        <span class="muted" id="enstate"></span>
-      </form>
-
-    <?php else: ?>
-      <h2>Status</h2>
-      <form method="post" action="einstellungen.php?t=pat" class="inline-form">
-        <?= csrf_field() ?><input type="hidden" name="action" value="pat_toggle">
-        <input type="hidden" name="on" value="<?= $isOn ? 0 : 1 ?>">
-        <p>Das Modul ist <strong><?= $isOn ? 'eingeschaltet' : 'ausgeschaltet' ?></strong>.
-           <?= $isOn ? '' : 'Die verschlüsselten Daten bleiben gespeichert.' ?></p>
-        <button class="btn-primary" style="width:auto"><?= $isOn ? 'Ausschalten' : 'Einschalten' ?></button>
-      </form>
-
-      <h2>Angezeigte Felder</h2>
-      <form method="post" action="einstellungen.php?t=pat">
-        <?= csrf_field() ?><input type="hidden" name="action" value="pat_fields">
-        <div class="patfields">
-          <?php foreach ($PATF as $k => $lbl): ?>
-            <label><input type="checkbox" name="pf[]" value="<?= $k ?>"
-              <?= in_array($k, $sel, true) ? 'checked' : '' ?>> <?= e($lbl) ?></label>
-          <?php endforeach; ?>
-        </div>
-        <p class="muted">Abgewählte Felder werden nur ausgeblendet — gespeicherte Inhalte bleiben erhalten.</p>
-        <button class="btn-primary" style="width:auto">Feldauswahl speichern</button>
-      </form>
-
-      <h2>Zugriff wiederherstellen</h2>
-      <p class="muted">Nach einem Passwort-Reset (durch Admin oder „Passwort vergessen") passt die
-         Passwort-Hülle des Inhaltsschlüssels nicht mehr. Mit dem Wiederherstellungsschlüssel
-         wird sie hier neu erzeugt.</p>
-      <form method="post" action="einstellungen.php?t=pat" id="rewrapform" class="inline-form">
-        <?= csrf_field() ?><input type="hidden" name="action" value="pat_rewrap">
-        <input type="hidden" name="wrap_pw" id="rw_wp">
-        <input type="text" id="rw_code" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" style="max-width:20rem">
-        <button class="btn-primary">Entsperren</button>
-        <span class="muted" id="rwstate"></span>
-      </form>
-    <?php endif; ?>
-
-    <script src="assets/crypto.js"></script>
-    <script>
-    const WRAP_RC = <?= json_encode($u['pat_wrap_rc'] ?? null) ?>;
-    const HASKEYS = <?= $hasKeys ? 'true' : 'false' ?>;
-
-    if (!HASKEYS) {
-      // Aktivierung: Schluessel im Browser erzeugen, RK EINMAL zeigen,
-      // erst nach Bestaetigung absenden.
-      const form = document.getElementById('enableform');
-      let generated = null;
-      form.addEventListener('submit', async ev => {
-        if (form.dataset.ready === '1') return;
-        ev.preventDefault();
-        const st = document.getElementById('enstate');
-        const dk = EdCrypto.getDataKey();
-        if (!dk) { st.textContent = 'Bitte einmal ab- und neu anmelden (Schlüssel fehlt in dieser Sitzung).'; return; }
-        if (!generated) {
-          const ck = EdCrypto.randomHex(32);
-          const rc = EdCrypto.newRecoveryCode();
-          const rk = await EdCrypto.recoveryKeyHex(rc);
-          generated = { ck, rc };
-          document.getElementById('en_wp').value = await EdCrypto.encrypt(dk, ck);
-          document.getElementById('en_wr').value = await EdCrypto.encrypt(rk, ck);
-          document.getElementById('rccode').textContent = rc;
-          document.getElementById('rcbox').hidden = false;
-          document.getElementById('enablebtn').textContent = 'Aktivierung abschließen';
-          st.textContent = 'Wiederherstellungsschlüssel sichern, Haken setzen, dann abschließen.';
-          return;
-        }
-        if (!document.getElementById('rcok').checked) {
-          st.textContent = 'Bitte bestätigen, dass der Schlüssel notiert ist.'; return;
-        }
-        const wrap = document.getElementById('enfields');
-        wrap.innerHTML = '';
-        document.querySelectorAll('.pf-init:checked').forEach(cb => {
-          const h = document.createElement('input');
-          h.type = 'hidden'; h.name = 'pf[]'; h.value = cb.value;
-          wrap.appendChild(h);
-        });
-        sessionStorage.setItem('pck', generated.ck);   // Sitzung gleich nutzbar
-        form.dataset.ready = '1';
-        form.submit();
-      });
-    } else if (document.getElementById('rewrapform')) {
-      // Recovery: RK -> Inhaltsschluessel auspacken -> neu mit Passwort-Schluessel packen
-      document.getElementById('rewrapform').addEventListener('submit', async ev => {
-        const f = ev.target;
-        if (f.dataset.ready === '1') return;
-        ev.preventDefault();
-        const st = document.getElementById('rwstate');
-        const dk = EdCrypto.getDataKey();
-        if (!dk) { st.textContent = 'Bitte einmal ab- und neu anmelden.'; return; }
-        try {
-          const rk = await EdCrypto.recoveryKeyHex(document.getElementById('rw_code').value);
-          const ck = await EdCrypto.decrypt(rk, WRAP_RC);
-          document.getElementById('rw_wp').value = await EdCrypto.encrypt(dk, ck);
-          sessionStorage.setItem('pck', ck);
-          f.dataset.ready = '1';
-          f.submit();
-        } catch (e) { st.textContent = 'Schlüssel passt nicht.'; }
-      });
-    }
-    </script>
 
   <?php else: ?>
     <h1>Geräte</h1>

@@ -50,16 +50,24 @@ $row = $u->fetch();
 $userEmail = $row ? (string)$row['email'] : '';
 $userName  = ($row && isset($row['name'])) ? $row['name'] : null;
 
-// PatientInnendaten-Modul (Spalten existieren erst nach Migration)
-$patEnabled = $row && !empty($row['pat_enabled']);
-$patFields  = [];
-if ($patEnabled && !empty($row['pat_fields'])) {
-    $pf = json_decode((string)$row['pat_fields'], true);
-    if (is_array($pf)) { $patFields = array_values(array_intersect($pf, ['ln','fn','dx','dob','age'])); }
-}
+// Pflicht-Verschlüsselung: aktiv, sobald der Inhaltsschluessel verpackt
+// vorliegt. Ohne Huelle wird die Ersteinrichtung erzwungen (unten).
 $patWrapPw = ($row && isset($row['pat_wrap_pw'])) ? $row['pat_wrap_pw'] : null;
+$patReady  = $patWrapPw !== null;
 $kdfSalt   = ($row && isset($row['kdf_salt'])) ? $row['kdf_salt'] : null;
 $kdfVer    = ($row && isset($row['kdf_ver'])) ? (int)$row['kdf_ver'] : 0;
+
+// Erzwungene Ersteinrichtung: Konto ist auf Browser-Schluessel umgestellt,
+// hat aber noch keinen Inhaltsschluessel -> zuerst einrichtung.php.
+// Ausgenommen: die Einrichtung selbst, Abmelden, Wartung und die JSON-APIs.
+if ($kdfVer === 1 && !$patReady) {
+    $script = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $isApi = strpos((string)($_SERVER['SCRIPT_NAME'] ?? ''), '/api/') !== false;
+    if (!$isApi && !in_array($script, ['einrichtung.php', 'logout.php', 'update.php'], true)) {
+        header('Location: einrichtung.php');
+        exit;
+    }
+}
 require_once __DIR__ . '/ui.php';
 
 run_cleanup_if_due();   // taegliche Wartung, huckepack auf Web-Anfragen

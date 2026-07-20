@@ -169,12 +169,6 @@ async function init(){
       .addTo(map).bindPopup('Ende');
     m.track.forEach(p => bounds.push(p));
   }
-  if (m.loc) {
-    L.circleMarker([m.loc.lat, m.loc.lon],
-      { radius: 8, color: '#FF8F1F', weight: 3, fillColor: '#fff', fillOpacity: .9 })
-      .addTo(map).bindPopup('Einsatzort' + (m.loc.addr ? '<br>' + esc(m.loc.addr) : ''));
-    bounds.push([m.loc.lat, m.loc.lon]);
-  }
   if (bounds.length) { map.fitBounds(bounds, { padding: [30, 30] }); }
   else { map.setView([47.7, 10.3], 9); document.getElementById('map').classList.add('map-empty'); }
 
@@ -213,24 +207,32 @@ async function init(){
     });
   }
 
-  // PatientInnendaten lokal entschluesseln und an die Feldliste haengen
+  // Verschluesselte Angaben (Diagnose, Alter, Einsatzort) lokal entschluesseln
   if (m.pat_blob && m.pat_wrap) {
-    const PATF = { ln:'Nachname', fn:'Vorname', dx:'Diagnose', dob:'Geburtsdatum', age:'Alter' };
     const ck = await EdCrypto.getContentKey(m.pat_wrap);
     if (ck) {
       try {
         const o = JSON.parse(await EdCrypto.decrypt(ck, m.pat_blob)) || {};
-        Object.keys(PATF).forEach(k => {
-          if (o[k] == null) return;
-          let v = String(o[k]);
-          if (k === 'dob') { const p = v.split('-'); if (p.length === 3) v = `${p[2]}.${p[1]}.${p[0]}`; }
-          dl.insertAdjacentHTML('beforeend', `<dt>${PATF[k]} 🔒</dt><dd>${esc(v)}</dd>`);
-          dl.hidden = false;
-        });
+        if (o.dx != null) {
+          dl.insertAdjacentHTML('beforeend', `<dt>Diagnose 🔒</dt><dd>${esc(String(o.dx))}</dd>`);
+        }
+        if (o.age != null) {
+          dl.insertAdjacentHTML('beforeend', `<dt>Alter 🔒</dt><dd>${esc(String(o.age))}</dd>`);
+        }
+        if (o.loc && o.loc.addr) {
+          dl.insertAdjacentHTML('beforeend', `<dt>Einsatzort 🔒</dt><dd>${esc(o.loc.addr)}</dd>`);
+          if (o.loc.lat != null) {
+            L.circleMarker([o.loc.lat, o.loc.lon],
+              { radius: 8, color: '#FF8F1F', weight: 3, fillColor: '#fff', fillOpacity: .9 })
+              .addTo(map).bindPopup('Einsatzort<br>' + esc(o.loc.addr));
+            if (!bounds.length) { map.setView([o.loc.lat, o.loc.lon], 13); }
+          }
+        }
+        dl.hidden = dl.children.length === 0;
       } catch (e) { /* Blob passt nicht zum Schluessel */ }
     } else {
       dl.insertAdjacentHTML('beforeend',
-        '<dt>PatientInnendaten 🔒</dt><dd class="muted">gesperrt — bitte neu anmelden</dd>');
+        '<dt>Verschlüsselt 🔒</dt><dd class="muted">gesperrt — <a href="einrichtung.php">entsperren</a> oder neu anmelden</dd>');
       dl.hidden = false;
     }
   }

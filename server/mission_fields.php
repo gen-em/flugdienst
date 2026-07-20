@@ -22,7 +22,7 @@ declare(strict_types=1);
  *   'placeholder'
  *
  * Der Einsatzort (Adresse + Koordinaten, Photon-Autocomplete) ist bewusst
- * KEIN Eintrag hier — er hat ein eigenes Widget (loc_addr/loc_lat/loc_lon).
+ * KEIN Eintrag hier — er liegt Ende-zu-Ende-verschlüsselt im pat_blob.
  */
 return [
     'mission_no' => [
@@ -35,8 +35,7 @@ return [
     ],
     'site_desc' => [
         'label' => 'Beschreibung Einsatzort', 'type' => 'text', 'max' => 190,
-        'day_col' => true, 'day_label' => 'Einsatzort',
-        'placeholder' => 'kurz, erscheint in der Tagesübersicht',
+        'placeholder' => 'kurze Beschreibung (Detailansicht)',
     ],
     'winch' => [
         'label' => 'Windeneinsatz', 'type' => 'checkbox',

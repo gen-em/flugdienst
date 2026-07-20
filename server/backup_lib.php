@@ -59,7 +59,7 @@ function edbak_build(int $userId): string {
         $st = $pdo->prepare($sql); $st->execute($p); return $st->fetchAll(PDO::FETCH_ASSOC);
     };
 
-    $u = $q('SELECT email, name, pat_enabled, pat_fields, pat_wrap_pw, pat_wrap_rc
+    $u = $q('SELECT email, name, pat_wrap_pw, pat_wrap_rc
              FROM users WHERE id = ?', [$userId])[0];
 
     $tracks = function (string $type, int $id) use ($q): array {
@@ -119,8 +119,6 @@ function edbak_build(int $userId): string {
         'app' => 'einsatzdoku-luftrettung',
         'user' => ['email' => $u['email'], 'name' => $u['name']],
         'pat_module' => $u['pat_wrap_pw'] !== null ? [
-            'enabled' => (int)$u['pat_enabled'],
-            'fields'  => json_decode((string)$u['pat_fields'], true) ?: [],
             'wrap_pw' => $u['pat_wrap_pw'],
             'wrap_rc' => $u['pat_wrap_rc'],
         ] : null,
@@ -216,7 +214,7 @@ function edbak_restore(int $userId, array $data): array {
             }
         };
         $collectCols($FIELDS);
-        $extraCols = array_merge($extraCols, ['loc_addr', 'loc_lat', 'loc_lon', 'pat_blob']);
+        $extraCols = array_merge($extraCols, ['pat_blob']);   // Alt-Backups: loc_* wird ignoriert
 
         foreach (($data['missions'] ?? []) as $m) {
             $exists->execute([$userId, (string)($m['client_ref'] ?? '')]);
@@ -284,10 +282,8 @@ function edbak_restore(int $userId, array $data): array {
             $cur = $pdo->prepare('SELECT pat_wrap_pw FROM users WHERE id = ?');
             $cur->execute([$userId]);
             if ($cur->fetchColumn() === null) {
-                $pdo->prepare('UPDATE users SET pat_enabled = ?, pat_fields = ?,
-                                 pat_wrap_pw = ?, pat_wrap_rc = ? WHERE id = ?')
-                    ->execute([(int)$pm['enabled'], json_encode($pm['fields'] ?? []),
-                               $pm['wrap_pw'], $pm['wrap_rc'] ?? null, $userId]);
+                $pdo->prepare('UPDATE users SET pat_wrap_pw = ?, pat_wrap_rc = ? WHERE id = ?')
+                    ->execute([$pm['wrap_pw'], $pm['wrap_rc'] ?? null, $userId]);
                 $stats['pat_module'] = 'übernommen';
             }
         }

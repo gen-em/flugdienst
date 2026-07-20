@@ -8,9 +8,7 @@ CREATE TABLE users (
   password_hash VARCHAR(255) NULL,                   -- Hash des Auth-Tokens (kdf_ver 1) bzw. Passworts (0)
   kdf_salt      VARCHAR(64) NULL,                    -- Salt der Browser-Schluesselableitung
   kdf_ver       TINYINT NOT NULL DEFAULT 0,          -- 0 = Alt (Klartext-Login), 1 = abgeleitetes Token
-  pat_enabled   TINYINT(1) NOT NULL DEFAULT 0,       -- PatientInnendaten-Modul an/aus
-  pat_fields    VARCHAR(190) NULL,                   -- JSON: sichtbare Felder
-  pat_wrap_pw   TEXT NULL,                           -- Inhaltsschluessel, mit Passwort-Schluessel verpackt
+  pat_wrap_pw   TEXT NULL,                           -- Inhaltsschluessel, passwortverpackt (Pflicht-Verschlüsselung)
   pat_wrap_rc   TEXT NULL,                           -- Inhaltsschluessel, mit Wiederherstellungsschluessel verpackt
   role          ENUM('user','admin') NOT NULL DEFAULT 'user',
   created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -43,7 +41,7 @@ CREATE TABLE missions (
   user_id    INT UNSIGNED NOT NULL,
   device_id  INT UNSIGNED NULL,               -- NULL = Geraet geloescht (Daten bleiben)
   client_ref VARCHAR(64) NOT NULL,
-  day        DATE NOT NULL,                          -- Betriebstag (Datum Dienstbeginn)
+  day        DATE NOT NULL,                          -- Flugtag (Datum Dienstbeginn)
   started_at DATETIME NOT NULL,                      -- UTC
   ended_at   DATETIME NULL,                          -- UTC, NULL solange final=0
   distance_m INT UNSIGNED NULL,
@@ -62,10 +60,7 @@ CREATE TABLE missions (
   bw_info    VARCHAR(190) NULL,
   other_ema  VARCHAR(190) NULL,
   other_resources VARCHAR(190) NULL,
-  loc_addr   VARCHAR(255) NULL,                       -- Einsatzort (Photon)
-  loc_lat    DOUBLE NULL,
-  loc_lon    DOUBLE NULL,
-  pat_blob   TEXT NULL,                              -- E2E-verschluesselte PatientInnendaten (Server: nur Chiffretext)
+  pat_blob   TEXT NULL,                              -- E2E-verschluesselt: Diagnose, Alter, Einsatzort (Server: nur Chiffretext)
   notes      TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_dev_ref (device_id, client_ref),
@@ -158,7 +153,7 @@ CREATE TABLE bw_units (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Flugtage: editierbare Metadaten je Betriebstag. Verknuepfung zu Einsaetzen
+-- Flugtage: editierbare Metadaten je Flugtag. Verknuepfung zu Einsaetzen
 -- und Ruhe-Segmenten ueber den natuerlichen Schluessel (user_id, day).
 CREATE TABLE days (
   id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

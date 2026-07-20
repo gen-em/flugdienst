@@ -76,7 +76,7 @@ $pt = db()->prepare('SELECT lat, lon, ts FROM track_points
                      WHERE owner_type = ? AND owner_id = ? ORDER BY seq');
 
 $st = db()->prepare('SELECT id, started_at, ended_at, distance_m, final,
-                       site_desc, winch, bergwacht, loc_lat, loc_lon, loc_addr, pat_blob,
+                       site_desc, winch, bergwacht, pat_blob,
                        (SELECT MAX(occurred_at) FROM mission_phases p
                         WHERE p.mission_id = missions.id AND p.phase = 9) AS p9_at
                      FROM missions WHERE user_id = ? AND day = ? ORDER BY started_at');
@@ -100,10 +100,7 @@ foreach ($st->fetchAll() as $m) {
         'site_desc'  => $m['site_desc'] !== null ? (string)$m['site_desc'] : null,
         'winch'      => (int)$m['winch'] === 1,
         'bergwacht'  => (int)$m['bergwacht'] === 1,
-        'pat_blob'   => ($patEnabled && !empty($m['pat_blob'])) ? (string)$m['pat_blob'] : null,
-        'loc'        => ($m['loc_lat'] !== null && $m['loc_lon'] !== null)
-                        ? ['lat' => (float)$m['loc_lat'], 'lon' => (float)$m['loc_lon'],
-                           'addr' => (string)($m['loc_addr'] ?? '')] : null,
+        'pat_blob'   => !empty($m['pat_blob']) ? (string)$m['pat_blob'] : null,
         'track'      => array_map(fn($p) => [(float)$p['lat'], (float)$p['lon']], $pt->fetchAll()),
     ];
 }

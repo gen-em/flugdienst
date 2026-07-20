@@ -66,7 +66,7 @@ Regeln:
 - `ended_at` ist `null`, solange `final: false`.
 - `phases[]` enthält **alle bisher gesetzten** Phasen-Zeitstempel (vollständige Liste, kein Delta) — der Server ersetzt die Phasenliste des Einsatzes bei jedem Upload. Mehrfache Einträge derselben Phasennummer sind erlaubt (erneutes Setzen einer früheren Phase, siehe Anforderungen 1.2).
 - `resus_sessions` ist eine **Liste** — jede Reanimation des Einsatzes ist ein Eintrag (mehrere pro Einsatz möglich; „Aufzeichnung beenden" auf der Uhr schließt eine Sitzung, ein erneuter Start eröffnet die nächste). Fehlt oder leer = keine Reanimation. Vollständige Liste, Server ersetzt. Das ältere Einzelobjekt `resus` wird aus Kompatibilität weiterhin akzeptiert.
-- `events[].type` ∈ `adrenalin`, `rhythmuskontrolle`, `defibrillation`, `intubation`, `amiodaron`, `sonographie`, `rosc`, `tod`.
+- `events[].type` ∈ `adrenalin`, `rhythmuskontrolle`, `defibrillation`, `intubation`, `amiodaron`, `sonographie`, `zugang`, `rosc`, `tod`.
 - `track.points`: Array aus `[lat, lon, ele_m, epoch_s]`. `ele_m` darf `null` sein. Die Sequenznummer des i-ten Punkts ist `seq_from + i`.
 - `distance_m` / `ascent_m` werden von der Uhr fortlaufend berechnet und beim `final`-Upload als verbindlich übernommen.
 

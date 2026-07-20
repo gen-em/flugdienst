@@ -97,21 +97,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         };
         foreach ($FIELDS as $col => $f) { $readField($col, $f); }
 
-        // Einsatzort (Photon): Adresse + Koordinaten
-        $locAddr = mb_substr(trim((string)($_POST['loc_addr'] ?? '')), 0, 255) ?: null;
-        $locLat = $locLon = null;
-        if ($locAddr !== null && is_numeric($_POST['loc_lat'] ?? '') && is_numeric($_POST['loc_lon'] ?? '')) {
-            $locLat = (float)$_POST['loc_lat'];
-            $locLon = (float)$_POST['loc_lon'];
-            if ($locLat < -90 || $locLat > 90 || $locLon < -180 || $locLon > 180) { $locLat = $locLon = null; }
-        }
-        $fieldCols[] = 'loc_addr'; $fieldVals[] = $locAddr;
-        $fieldCols[] = 'loc_lat';  $fieldVals[] = $locLat;
-        $fieldCols[] = 'loc_lon';  $fieldVals[] = $locLon;
 
         // PatientInnendaten: der Browser liefert NUR Chiffretext (pat_blob).
         // Leerer Wert = Blob nicht anfassen (z. B. Sitzung nicht entsperrt).
-        if ($patEnabled) {
+        if ($patReady) {
             $pb = (string)($_POST['pat_blob'] ?? '');
             if ($pb !== '' && preg_match('/^[A-Za-z0-9+\/=]{16,8000}$/', $pb)) {
                 $fieldCols[] = 'pat_blob'; $fieldVals[] = $pb;
@@ -218,41 +207,24 @@ function fieldValue(string $col) {
     <div id="phaserows"></div>
     <p><a href="#" id="addrow" class="add-link">+ Phase hinzufügen</a></p>
 
-    <?php if ($patEnabled && $patFields): ?>
-    <h2>PatientInnendaten <span class="muted" style="font-weight:400">(Ende-zu-Ende-verschlüsselt)</span></h2>
+    <h2>PatientInnendaten &amp; Einsatzort
+      <span class="muted" style="font-weight:400">(Ende-zu-Ende-verschlüsselt)</span></h2>
     <input type="hidden" name="pat_blob" id="pat_blob">
     <div id="patlocked" class="alert" hidden>Entschlüsselung nicht möglich —
-      bitte einmal ab- und neu anmelden. Vorhandene PatientInnendaten bleiben unverändert.</div>
+      bitte einmal ab- und neu anmelden. Vorhandene verschlüsselte Angaben bleiben unverändert.</div>
     <div id="patfields">
-      <?php $PATF = ['ln' => 'Nachname', 'fn' => 'Vorname', 'dx' => 'Diagnose',
-                     'dob' => 'Geburtsdatum', 'age' => 'Alter']; ?>
-      <?php foreach ($patFields as $pf): ?>
-        <label><?= e($PATF[$pf]) ?>
-          <?php if ($pf === 'dob'): ?>
-            <input type="date" id="pat_dob">
-          <?php elseif ($pf === 'age'): ?>
-            <input type="number" id="pat_age" min="0" max="120" step="1">
-          <?php elseif ($pf === 'dx'): ?>
-            <input type="text" id="pat_dx" maxlength="190">
-          <?php else: ?>
-            <input type="text" id="pat_<?= $pf ?>" maxlength="120">
-          <?php endif; ?>
+      <label>Diagnose <input type="text" id="pat_dx" maxlength="190"></label>
+      <label>Alter <input type="number" id="pat_age" min="0" max="120" step="1"></label>
+      <div class="loc-widget">
+        <label>Adresse Einsatzort
+          <input type="text" id="locaddr" maxlength="255" autocomplete="off"
+                 placeholder="tippen für Vorschläge, z. B. Ringstr. 18, Enger">
         </label>
-      <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
-
-    <h2>Einsatzort</h2>
-    <div class="loc-widget">
-      <label>Adresse Einsatzort
-        <input type="text" id="locaddr" name="loc_addr" maxlength="255" autocomplete="off"
-               placeholder="tippen für Vorschläge, z. B. Ringstr. 18, Enger"
-               value="<?= e($mission['loc_addr'] ?? ($_POST['loc_addr'] ?? '')) ?>">
-      </label>
-      <input type="hidden" name="loc_lat" id="loclat" value="<?= e((string)($mission['loc_lat'] ?? ($_POST['loc_lat'] ?? ''))) ?>">
-      <input type="hidden" name="loc_lon" id="loclon" value="<?= e((string)($mission['loc_lon'] ?? ($_POST['loc_lon'] ?? ''))) ?>">
-      <ul id="locsuggest" class="loc-suggest" hidden></ul>
-      <p class="muted" id="locstate"></p>
+        <input type="hidden" id="loclat">
+        <input type="hidden" id="loclon">
+        <ul id="locsuggest" class="loc-suggest" hidden></ul>
+        <p class="muted" id="locstate"></p>
+      </div>
     </div>
 
     <h2>Weitere Angaben</h2>
@@ -344,14 +316,10 @@ function addRow(no, time) {
   return sel;
 }
 
-<?php if ($patEnabled && $patFields): ?>
-// ---- PatientInnendaten: lokale Ver-/Entschluesselung -------------------
+// ---- PatientInnendaten & Einsatzort: lokale Ver-/Entschluesselung ------
 const PAT_WRAP = <?= json_encode($patWrapPw) ?>;
 const PAT_PREV = <?= json_encode($mission['pat_blob'] ?? null) ?>;
-const PAT_FIELDS = <?= json_encode($patFields) ?>;
-const MISSION_DAY = <?= json_encode($day) ?>;
 let PAT_CK = null;
-let PAT_PREV_OBJ = {};
 
 (async () => {
   PAT_CK = await EdCrypto.getContentKey(PAT_WRAP);
@@ -361,48 +329,42 @@ let PAT_PREV_OBJ = {};
     return;
   }
   if (PAT_PREV) {
-    try { PAT_PREV_OBJ = JSON.parse(await EdCrypto.decrypt(PAT_CK, PAT_PREV)) || {}; }
-    catch (e) { PAT_PREV_OBJ = {}; }
-    PAT_FIELDS.forEach(k => {
-      const el = document.getElementById('pat_' + k);
-      if (el && PAT_PREV_OBJ[k] != null) el.value = PAT_PREV_OBJ[k];
-    });
+    let o = {};
+    try { o = JSON.parse(await EdCrypto.decrypt(PAT_CK, PAT_PREV)) || {}; } catch (e) { }
+    if (o.dx != null) document.getElementById('pat_dx').value = o.dx;
+    if (o.age != null) document.getElementById('pat_age').value = o.age;
+    if (o.loc) {
+      document.getElementById('locaddr').value = o.loc.addr || '';
+      if (o.loc.lat != null) {
+        document.getElementById('loclat').value = o.loc.lat;
+        document.getElementById('loclon').value = o.loc.lon;
+      }
+    }
   }
+  locSetState();
 })();
 
-// Alter aus Geburtsdatum, Stichtag = Einsatzdatum (Berechnung gewinnt)
-function patCalcAge() {
-  const dob = document.getElementById('pat_dob');
-  const age = document.getElementById('pat_age');
-  if (!dob || !age || !dob.value) return;
-  const b = new Date(dob.value), r = new Date(MISSION_DAY);
-  let a = r.getFullYear() - b.getFullYear();
-  if (r.getMonth() < b.getMonth()
-      || (r.getMonth() === b.getMonth() && r.getDate() < b.getDate())) a--;
-  if (a >= 0 && a <= 120) age.value = a;
-}
-document.getElementById('pat_dob')?.addEventListener('change', patCalcAge);
-
-document.getElementById('missionform')
-  .addEventListener('submit', async ev => {
+document.getElementById('missionform').addEventListener('submit', async ev => {
   const f = ev.target;
   if (f.dataset.patDone === '1' || !PAT_CK) return;   // gesperrt: Blob bleibt
   ev.preventDefault();
-  patCalcAge();
-  const obj = Object.assign({}, PAT_PREV_OBJ);        // ausgeblendete behalten
-  PAT_FIELDS.forEach(k => {
-    const el = document.getElementById('pat_' + k);
-    if (!el) return;
-    const v = el.value.trim();
-    if (v === '') { delete obj[k]; } else { obj[k] = k === 'age' ? parseInt(v, 10) : v; }
-  });
-  const empty = Object.keys(obj).length === 0;
+  const o = {};
+  const dx = document.getElementById('pat_dx').value.trim();
+  const age = document.getElementById('pat_age').value.trim();
+  if (dx !== '') o.dx = dx;
+  if (age !== '') o.age = parseInt(age, 10);
+  const addr = document.getElementById('locaddr').value.trim();
+  if (addr !== '') {
+    o.loc = { addr };
+    const la = document.getElementById('loclat').value;
+    const lo = document.getElementById('loclon').value;
+    if (la !== '' && lo !== '') { o.loc.lat = parseFloat(la); o.loc.lon = parseFloat(lo); }
+  }
   document.getElementById('pat_blob').value =
-    empty ? '__CLEAR__' : await EdCrypto.encrypt(PAT_CK, JSON.stringify(obj));
+    Object.keys(o).length === 0 ? '__CLEAR__' : await EdCrypto.encrypt(PAT_CK, JSON.stringify(o));
   f.dataset.patDone = '1';
   f.submit();
 });
-<?php endif; ?>
 
 // Unterfelder ein-/ausblenden, wenn der zugehoerige Haken wechselt
 document.querySelectorAll('.parentcheck').forEach(cb => {
