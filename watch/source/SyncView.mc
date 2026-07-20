@@ -44,10 +44,12 @@ class SyncView extends WatchUi.View {
         dc.drawText(cx, 26, Graphics.FONT_TINY, "Sync",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        var open = Model.pendingMissions.size() + Model.pendingRest.size();
-        if (Uploader.allSynced()) {
+        // Rueckstand = nur abgeschlossene, unbestaetigte Pakete — das immer
+        // offene laufende Ruhesegment zaehlt nicht als Rueckstand.
+        var open = Model.backlogCount();
+        if (open == 0) {
             dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, cy - 24, Graphics.FONT_LARGE, "Alles gesendet ✓",
+            dc.drawText(cx, cy - 24, Graphics.FONT_LARGE, "Sync vollständig ✓",
                 Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         } else {
             dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
@@ -80,8 +82,8 @@ class SyncView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
                 "REA läuft", Graphics.TEXT_JUSTIFY_CENTER);
-        } else {
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        } else if (!Uploader.hasCredentials()) {
+            dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
                 "START halten: Gerät koppeln", Graphics.TEXT_JUSTIFY_CENTER);
         }

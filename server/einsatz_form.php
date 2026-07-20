@@ -208,7 +208,7 @@ function fieldValue(string $col) {
     <?= csrf_field() ?>
     <?php if ($editing): ?><input type="hidden" name="id" value="<?= $id ?>"><?php endif; ?>
 
-    <label>Betriebstag
+    <label>Flugtag
       <input type="date" name="day" value="<?= e($day) ?>" required <?= $editing ? 'readonly' : '' ?>>
     </label>
 

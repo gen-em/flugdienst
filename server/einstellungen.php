@@ -145,6 +145,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (PDOException $ex) { /* Kollision -> neuer Versuch */ }
         }
     }
+    if ($action === 'rename') {
+        $lbl = mb_substr(trim($_POST['label'] ?? ''), 0, 120);
+        db()->prepare('UPDATE devices SET label = ? WHERE id = ? AND user_id = ?')
+            ->execute([$lbl !== '' ? $lbl : null, (int)($_POST['id'] ?? 0), $userId]);
+        $notice = 'Bezeichnung gespeichert.';
+    }
     if ($action === 'delete') {
         // FK setzt device_id in Einsaetzen/Segmenten auf NULL -> Daten bleiben
         db()->prepare('DELETE FROM devices WHERE id = ? AND user_id = ?')
@@ -256,12 +262,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $ROLE_LABELS = ['p1' => 'Pilot 1', 'p2' => 'Pilot 2', 'hems' => 'HEMS',
                 'fr' => 'Flugretter', 'other' => 'Sonstige'];
 
-$devices = [];
+$devices = []; $editDev = null;
 if ($tab === 'geraete') {
     $st = db()->prepare('SELECT id, device_id, label, active, last_seen FROM devices
                          WHERE user_id = ? AND device_id NOT LIKE \'manual-%\' ORDER BY created_at');
     $st->execute([$userId]);
     $devices = $st->fetchAll();
+    foreach ($devices as $d) {
+        if ((int)$d['id'] === (int)($_GET['ed'] ?? 0)) { $editDev = $d; }
+    }
 }
 ?><!doctype html>
 <html lang="de">
@@ -277,11 +286,11 @@ if ($tab === 'geraete') {
     <h2>Einstellungen</h2>
     <ul>
       <li><a href="einstellungen.php?t=profil" <?= $tab === 'profil' ? 'class="active"' : '' ?>>Profil</a></li>
-      <li><a href="einstellungen.php?t=stammdaten" <?= $tab === 'stammdaten' ? 'class="active"' : '' ?>>Stammdaten</a></li>
+      <li><a href="einstellungen.php?t=stammdaten" <?= $tab === 'stammdaten' ? 'class="active"' : '' ?>>Standortdaten</a></li>
       <li><a href="einstellungen.php?t=pat" <?= $tab === 'pat' ? 'class="active"' : '' ?>>PatientInnendaten</a></li>
       <li><a href="einstellungen.php?t=backup" <?= $tab === 'backup' ? 'class="active"' : '' ?>>Backup</a></li>
       <li><a href="einstellungen.php?t=geraete" <?= $tab === 'geraete' ? 'class="active"' : '' ?>>Geräte</a></li>
-      <li><a href="logout.php">Abmelden</a></li>
+      <li><a href="logout.php" onclick="return confirm('Wirklich abmelden?')">Abmelden</a></li>
     </ul>
   </aside>
 
@@ -371,7 +380,7 @@ if ($tab === 'geraete') {
       $editCrew = null;
       foreach ($crew as $c) { if ((int)$c['id'] === (int)($_GET['ec'] ?? 0)) { $editCrew = $c; } }
     ?>
-    <h1>Stammdaten</h1>
+    <h1>Standortdaten</h1>
     <p class="muted">Vorbelegungen für die Flugtag- und Einsatzdokumentation, alphabetisch
        sortiert. Löschen entfernt nur den Listeneintrag — gespeicherte Flugtage bleiben
        unverändert. ★ markiert die Vorbelegung neuer Flugtage.</p>
@@ -459,6 +468,7 @@ if ($tab === 'geraete') {
         <?php if ($editAc): ?><a class="btn-red" href="einstellungen.php?t=stammdaten">Abbrechen</a><?php endif; ?>
       </div>
       <div class="rolechecks">
+        <span class="rolechecks-hint">Rollen auf dem Hubschrauber:</span>
         <?php foreach ($ROLE_LABELS as $k => $lbl): ?>
           <label><input type="checkbox" name="<?= $k ?>"
             <?= ($editAc && (int)$editAc[$k]) ? 'checked' : '' ?>> <?= e($lbl) ?></label>
@@ -738,6 +748,17 @@ if ($tab === 'geraete') {
       <button class="btn-primary" style="width:auto">Kopplungscode erzeugen</button>
     </form>
 
+    <?php if ($editDev): ?>
+      <form method="post" action="einstellungen.php?t=geraete" class="inline-form">
+        <?= csrf_field() ?><input type="hidden" name="action" value="rename">
+        <input type="hidden" name="id" value="<?= (int)$editDev['id'] ?>">
+        <input type="text" name="label" maxlength="120" placeholder="Bezeichnung"
+               value="<?= e($editDev['label'] ?? '') ?>">
+        <button class="btn-primary">Bezeichnung speichern</button>
+        <a class="btn-red" href="einstellungen.php?t=geraete">Abbrechen</a>
+      </form>
+    <?php endif; ?>
+
     <h2>Manuell anlegen (Alternative)</h2>
 
     <?php if ($newKey): ?>
@@ -763,6 +784,7 @@ if ($tab === 'geraete') {
           <td><?= (int)$d['active'] ? 'aktiv' : '<span class="muted">deaktiviert</span>' ?></td>
           <td><?= e($d['last_seen'] ? fmt_local($d['last_seen'], 'd.m.Y H:i') : 'nie') ?></td>
           <td class="actions">
+            <a class="btn-yellow" href="einstellungen.php?t=geraete&amp;ed=<?= (int)$d['id'] ?>">Bearbeiten</a>
             <form method="post" action="einstellungen.php?t=geraete">
               <?= csrf_field() ?><input type="hidden" name="action" value="toggle">
               <input type="hidden" name="id" value="<?= (int)$d['id'] ?>">

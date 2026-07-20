@@ -61,12 +61,12 @@ $users   = db()->query('SELECT id, email, name, role, created_at FROM users ORDE
   <section>
     <h2>NutzerInnen</h2>
     <table class="data">
-      <thead><tr><th>E-Mail</th><th>Rolle</th><th>Seit</th><th></th></tr></thead>
+      <thead><tr><th>E-Mail</th><th>Name</th><th>Rolle</th><th>Seit</th><th></th></tr></thead>
       <tbody>
       <?php foreach ($users as $u): ?>
         <tr class="rowlink" onclick="location.href='admin_user.php?id=<?= (int)$u['id'] ?>'">
-          <td><a href="admin_user.php?id=<?= (int)$u['id'] ?>"><?= e($u['email']) ?></a><?php
-            if (!empty($u['name'])): ?> <span class="muted">(<?= e($u['name']) ?>)</span><?php endif; ?></td>
+          <td><a href="admin_user.php?id=<?= (int)$u['id'] ?>"><?= e($u['email']) ?></a></td>
+          <td><?= e($u['name'] ?? '–') ?></td>
           <td><?= e($u['role']) ?></td>
           <td><?= e(fmt_local($u['created_at'], 'd.m.Y')) ?></td>
           <td>

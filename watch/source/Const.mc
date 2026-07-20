@@ -3,7 +3,7 @@ using Toybox.Lang;
 
 module Const {
 
-    const APP_VERSION = "1.1.0";      // bei jedem Release erhoehen
+    const APP_VERSION = "1.2.0";      // bei jedem Release erhoehen
 
     // Phasen 1..9 (Index 0 unbenutzt). Der Einsatz-Abschluss ist KEIN
     // Zeitstempel mehr, sondern eine bestaetigte Aktion (Phase 10 entfaellt).
@@ -20,6 +20,7 @@ module Const {
     const R_INTUBATION  = "intubation";
     const R_AMIODARON   = "amiodaron";
     const R_SONO        = "sonographie";
+    const R_ZUGANG      = "zugang";
     const R_ROSC        = "rosc";
     const R_TOD         = "tod";
 
@@ -27,6 +28,7 @@ module Const {
         "adrenalin" => "Adrenalin", "rhythmuskontrolle" => "Rhythmuskontrolle",
         "defibrillation" => "Defibrillation", "intubation" => "Intubation",
         "amiodaron" => "Amiodaron", "sonographie" => "Sonographie",
+        "zugang" => "Zugang",
         "rosc" => "ROSC", "tod" => "Tod"
     };
 

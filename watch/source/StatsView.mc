@@ -1,5 +1,5 @@
 // Einsatzdoku — Oberflaeche: Statistik des laufenden Einsatztags
-// Einsaetze = Anzahl begonnener Einsaetze des Tages (inkl. laufendem)
+// Einsaetze = abgeschlossene Einsaetze des Tages (Alarmierung + Ende)
 using Toybox.WatchUi;
 using Toybox.Graphics;
 using Toybox.Lang;
@@ -18,7 +18,7 @@ class StatsView extends WatchUi.View {
         dc.drawText(cx, 26, Graphics.FONT_TINY, "Heute",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Einsaetze des Tages (inkl. laufendem)
+        // abgeschlossene Einsaetze des Tages
         dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, cy - 12, Graphics.FONT_NUMBER_HOT,
             Model.dayMissions.toString(),

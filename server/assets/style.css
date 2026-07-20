@@ -286,3 +286,14 @@ th.sortable .arrow{color:var(--accent-dark)}
 hr.sep{border:0;border-top:1px solid var(--line);margin:2rem 0 1.4rem}
 h3.rolehead{margin-top:1.6rem;padding-top:1.1rem;border-top:1px dashed var(--line)}
 h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
+
+/* Flugtag-Notizen sichtbar im zugeklappten Kästchen */
+.metanotes{display:block;margin:.35rem 0 0 1.1rem;color:var(--muted);
+  font-size:.9rem;white-space:pre-line}
+.metanotes:empty{display:none}
+
+/* Rollen-Hinweis in den Standortdaten */
+.rolechecks-hint{color:var(--muted);font-size:.9rem;margin-right:.3rem}
+
+/* Admin: ganze Zeile als Hover-Ziel */
+.rowlink:hover td{background:var(--accent-light)}

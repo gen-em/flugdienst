@@ -1,7 +1,14 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/auth_guard.php';
-$id = (int)($_GET['id'] ?? 0);
+
+// Einsatz-ID einlesen und Eigentum pruefen (liefert auch den Tag fuer die
+// Einsatztage-Leiste). Ohne Treffer: sauberes 404.
+$mid = (int)($_GET['id'] ?? 0);
+$mq = db()->prepare('SELECT day FROM missions WHERE id = ? AND user_id = ?');
+$mq->execute([$mid, $userId]);
+$missionDay = $mq->fetchColumn();
+if ($missionDay === false) { http_response_code(404); exit('Einsatz nicht gefunden.'); }
 ?><!doctype html>
 <html lang="de">
 <head>
@@ -17,18 +24,20 @@ $id = (int)($_GET['id'] ?? 0);
 <div class="layout">
   <?php ui_days_sidebar($missionDay); ?>
 
-<main class="page page-center">
+  <main class="page">
   <h1 id="title">Einsatz</h1>
   <p id="meta" class="muted"></p>
   <div class="actionbar">
     <a class="btn-edit" href="einsatz_form.php?id=<?= $mid ?>">Bearbeiten</a>
-    <form method="post" action="einsatz_loeschen.php" style="display:inline"
+    <form method="post" action="einsatz_loeschen.php"
           onsubmit="return confirm('Diesen Einsatz endgültig löschen? Phasen, Reanimationen und Track werden mit entfernt.')">
       <?= csrf_field() ?><input type="hidden" name="id" value="<?= $mid ?>">
-      <button class="btn-danger">Löschen</button>
+      <button class="btn-red">Löschen</button>
     </form>
   </div>
-  <dl id="fieldlist" class="fieldlist" hidden></dl>
+
+  <dl class="fieldlist" id="fieldlist" hidden></dl>
+
   <div id="map" class="map map-tall"></div>
   <p><button id="phasetoggle" class="btn-danger" hidden>Phasen ausblenden</button></p>
 
@@ -43,26 +52,47 @@ $id = (int)($_GET['id'] ?? 0);
   <section id="resus-section" hidden>
     <div id="resus-tables"></div>
   </section>
-<?php ui_footer(); ?>
-</main>
+
+  <?php ui_footer(); ?>
+  </main>
 </div>
 
 <script src="assets/crypto.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+const MID = <?= $mid ?>;
+
 function esc(t){ const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function fmtDay(d){ const p = d.split('-'); return `${p[2]}.${p[1]}.${p[0]}`; }
+function fmtKm(m){ return m == null ? '–' : (m / 1000).toFixed(1).replace('.', ',') + ' km'; }
+
 const map = L.map('map');
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+
+// Tracklinien: Staerke waechst beim Rauszoomen, damit kurze Tracks auf der
+// Uebersicht sichtbar bleiben (smoothFactor 0: keine Wegvereinfachung).
+const trackLines = [];
+function trackWeight(){
+  const z = map.getZoom();
+  return z >= 14 ? 4 : z >= 12 ? 5 : z >= 10 ? 6 : 7;
+}
+map.on('zoomend', () => {
+  const w = trackWeight();
+  trackLines.forEach(l => l.setStyle({ weight: w }));
+});
+
 let phaseMarkers = [];        // [{marker, idx}]
 let phasesVisible = true;
 
 function buildPhaseMarkers(phases){
-  // Marker an der GPS-Position des Zeitstempels; Kachel-Design wie in der
-  // Tabelle, pixelfest beim Zoomen. Gestapelte (gleicher Ort) leicht versetzt.
+  // Kachel an der GPS-Position des Zeitstempels (nur wo die Uhr Fix hatte);
+  // gestapelte gleiche Positionen leicht nebeneinander versetzt.
   const groups = {};
   phases.forEach((p, idx) => {
     if (p.lat == null || p.lon == null) return;
     const key = p.lat.toFixed(4) + ',' + p.lon.toFixed(4);
-    (groups[key] = groups[key] || []).push({p, idx});
+    (groups[key] = groups[key] || []).push({ p, idx });
   });
   Object.values(groups).forEach(list => {
     list.forEach((e2, k) => {
@@ -70,11 +100,10 @@ function buildPhaseMarkers(phases){
         className: 'phase-marker',
         html: `<span class="chip pm-chip" data-idx="${e2.idx}">${e2.p.phase}</span>`,
         iconSize: [24, 24],
-        iconAnchor: [12 - k * 20, 12]          // Stapel: nebeneinander versetzt
+        iconAnchor: [12 - k * 20, 12]
       });
       const mk = L.marker([e2.p.lat, e2.p.lon], { icon, keyboard: false }).addTo(map);
       phaseMarkers.push({ marker: mk, idx: e2.idx });
-      mk.on('add', () => bindMarkerHover(mk, e2.idx));
       bindMarkerHover(mk, e2.idx);
     });
   });
@@ -110,77 +139,92 @@ function hlPhase(idx, on){
     if (pm) pm.marker.setZIndexOffset(on ? 1000 : 0);
   }
 }
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
-map.setView([48.5, 10.5], 7);
-
-function fmtKm(m){ return m==null ? '–' : (m/1000).toFixed(1).replace('.',',')+' km'; }
-function fmtDay(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y}`; }
 
 async function init(){
-  const res = await fetch('api/mission.php?id=<?= $id ?>');
+  const res = await fetch('api/mission.php?id=' + MID);
   if (!res.ok) { document.getElementById('title').textContent = 'Einsatz nicht gefunden'; return; }
   const m = await res.json();
 
   document.getElementById('title').textContent =
     `Einsatz ${m.day_no} · ${m.start_hhmm} Uhr`;
   document.getElementById('meta').innerHTML =
-    `${fmtDay(m.day)} · ${m.start_hhmm}–${m.has_p9 ? m.end_hhmm : 'kein Ende'} Uhr · ${fmtKm(m.distance_m)}`
-    + (m.ascent_m != null ? ` · ${m.ascent_m} Hm` : '')
+    esc(`${fmtDay(m.day)} · ${m.start_hhmm}–${m.has_p9 ? m.end_hhmm : 'kein Ende'} Uhr · ${fmtKm(m.distance_m)}`)
     + (m.manual ? ' · <span class="badge-manual">manuell</span>' : '');
 
-  // Zusatzfelder generisch anzeigen (Definition: mission_fields.php)
-  if (m.fields && m.fields.length) {
-    const dl = document.getElementById('fieldlist');
-    dl.hidden = false;
-    m.fields.forEach(f => {
-      const dt = document.createElement('dt'); dt.textContent = f.label;
-      const dd = document.createElement('dd'); dd.textContent = f.value;
-      dl.append(dt, dd);
-    });
-  }
+  // Zusatzfelder (Server liefert nur befuellte)
+  const dl = document.getElementById('fieldlist');
+  m.fields.forEach(f => {
+    dl.insertAdjacentHTML('beforeend', `<dt>${esc(f.label)}</dt><dd>${esc(f.value)}</dd>`);
+  });
+  dl.hidden = dl.children.length === 0;
 
+  // Karte: Track (Start gruen, Ende rot), Einsatzort-Pin in Trackfarbe
+  const bounds = [];
   if (m.track.length > 1) {
-    const line = L.polyline(m.track, { color:'#FF8F1F', weight:4 }).addTo(map);
-    const px = map.getSize();
-    map.fitBounds(line.getBounds(), { padding: [px.y*0.125, px.x*0.125] });
-    L.circleMarker(m.track[0], {radius:6, color:'#2F9E44', fillOpacity:1}).addTo(map).bindTooltip('Start');
-    L.circleMarker(m.track[m.track.length-1], {radius:6, color:'#E03131', fillOpacity:1}).addTo(map).bindTooltip('Ende');
+    const line = L.polyline(m.track, { color: '#FF8F1F', weight: trackWeight(), smoothFactor: 0 }).addTo(map);
+    trackLines.push(line);
+    L.circleMarker(m.track[0], { radius: 6, color: '#1B8A3A', fillColor: '#1B8A3A', fillOpacity: 1 })
+      .addTo(map).bindPopup('Start');
+    L.circleMarker(m.track[m.track.length - 1], { radius: 6, color: '#C62828', fillColor: '#C62828', fillOpacity: 1 })
+      .addTo(map).bindPopup('Ende');
+    m.track.forEach(p => bounds.push(p));
   }
+  if (m.loc) {
+    L.circleMarker([m.loc.lat, m.loc.lon],
+      { radius: 8, color: '#FF8F1F', weight: 3, fillColor: '#fff', fillOpacity: .9 })
+      .addTo(map).bindPopup('Einsatzort' + (m.loc.addr ? '<br>' + esc(m.loc.addr) : ''));
+    bounds.push([m.loc.lat, m.loc.lon]);
+  }
+  if (bounds.length) { map.fitBounds(bounds, { padding: [30, 30] }); }
+  else { map.setView([47.7, 10.3], 9); document.getElementById('map').classList.add('map-empty'); }
 
-  const pb = document.querySelector('#phases tbody');
+  // Phasen-Tabelle mit Hover-/Tipp-Kopplung zur Karte
+  const pb = document.getElementById('phasebody');
   m.phases.forEach((p, idx) => {
     const tr = document.createElement('tr');
     tr.dataset.idx = idx;
-    tr.innerHTML = `<td><span class="chip">${p.phase}</span></td><td>${p.label}</td><td class="mono">${p.time}</td>`;
+    tr.innerHTML = `<td><span class="chip">${p.phase}</span></td><td>${esc(p.label)}</td><td class="mono">${p.time}</td>`;
     tr.addEventListener('mouseenter', () => hlPhase(idx, true));
     tr.addEventListener('mouseleave', () => hlPhase(idx, false));
-    tr.addEventListener('click', () => hlPhase(idx, 'toggle'));   // mobil: Tipp
+    tr.addEventListener('click', () => hlPhase(idx, 'toggle'));
     pb.appendChild(tr);
   });
-
-  // Einsatzort-Pin
-  if (m.loc) {
-    L.marker([m.loc.lat, m.loc.lon]).addTo(map)
-      .bindPopup('Einsatzort' + (m.loc.addr ? '<br>' + m.loc.addr : ''));
-  }
-
   buildPhaseMarkers(m.phases);
 
-  // PatientInnendaten lokal entschluesseln und in die Feldliste haengen
+  // Reanimationen: eine Zeiten-Tabelle je Sitzung
+  if (m.resus && m.resus.length) {
+    document.getElementById('resus-section').hidden = false;
+    const wrap = document.getElementById('resus-tables');
+    m.resus.forEach((events, i) => {
+      const h = document.createElement('h2');
+      h.textContent = m.resus.length > 1 ? `Reanimation ${i + 1}` : 'Reanimation';
+      wrap.appendChild(h);
+      const t = document.createElement('table');
+      t.className = 'data';
+      t.innerHTML = '<thead><tr><th>Ereignis</th><th>Uhrzeit</th></tr></thead>';
+      const tb = document.createElement('tbody');
+      events.forEach(e2 => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(e2.label)}</td><td class="mono">${e2.time}</td>`;
+        tb.appendChild(tr);
+      });
+      t.appendChild(tb);
+      wrap.appendChild(t);
+    });
+  }
+
+  // PatientInnendaten lokal entschluesseln und an die Feldliste haengen
   if (m.pat_blob && m.pat_wrap) {
     const PATF = { ln:'Nachname', fn:'Vorname', dx:'Diagnose', dob:'Geburtsdatum', age:'Alter' };
     const ck = await EdCrypto.getContentKey(m.pat_wrap);
-    const dl = document.getElementById('fieldlist');
     if (ck) {
       try {
         const o = JSON.parse(await EdCrypto.decrypt(ck, m.pat_blob)) || {};
-        m.pat_fields.forEach(k => {
+        Object.keys(PATF).forEach(k => {
           if (o[k] == null) return;
-          let v = o[k];
-          if (k === 'dob') { const p = String(v).split('-'); if (p.length === 3) v = `${p[2]}.${p[1]}.${p[0]}`; }
-          dl.insertAdjacentHTML('beforeend',
-            `<dt>${PATF[k]} 🔒</dt><dd>${esc(String(v))}</dd>`);
+          let v = String(o[k]);
+          if (k === 'dob') { const p = v.split('-'); if (p.length === 3) v = `${p[2]}.${p[1]}.${p[0]}`; }
+          dl.insertAdjacentHTML('beforeend', `<dt>${PATF[k]} 🔒</dt><dd>${esc(v)}</dd>`);
           dl.hidden = false;
         });
       } catch (e) { /* Blob passt nicht zum Schluessel */ }
@@ -189,26 +233,6 @@ async function init(){
         '<dt>PatientInnendaten 🔒</dt><dd class="muted">gesperrt — bitte neu anmelden</dd>');
       dl.hidden = false;
     }
-  }
-
-  if (m.resus && m.resus.length) {
-    document.getElementById('resus-section').hidden = false;
-    const wrap = document.getElementById('resus-tables');
-    m.resus.forEach((session, idx) => {
-      const h = document.createElement('h2');
-      h.textContent = m.resus.length > 1 ? `Reanimation ${idx + 1}` : 'Reanimation';
-      wrap.appendChild(h);
-      const table = document.createElement('table');
-      table.className = 'data';
-      table.innerHTML = '<thead><tr><th>Ereignis</th><th>Uhrzeit</th></tr></thead><tbody></tbody>';
-      const tb = table.querySelector('tbody');
-      session.forEach(e => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${e.label}</td><td class="mono">${e.time}</td>`;
-        tb.appendChild(tr);
-      });
-      wrap.appendChild(table);
-    });
   }
 }
 init();

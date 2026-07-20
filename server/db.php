@@ -51,6 +51,7 @@ const PHASE_LABELS = [
 ];
 
 const RESUS_LABELS = [
+    'zugang' => 'Zugang',
     'beginn' => 'Reanimationsbeginn', 'adrenalin' => 'Adrenalingabe',
     'rhythmuskontrolle' => 'Rhythmuskontrolle', 'defibrillation' => 'Defibrillation',
     'intubation' => 'Intubation', 'amiodaron' => 'Amiodaron',

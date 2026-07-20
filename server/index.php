@@ -46,7 +46,8 @@ if ($selDay === null) {
   <main class="page">
     <h1 id="daytitle">–</h1>
     <details class="daymeta" id="daymeta">
-      <summary>Flugtag-Daten <span id="metahint" class="muted"></span></summary>
+      <summary>Flugtag-Daten <span id="metahint" class="muted"></span>
+        <span id="metanotes" class="metanotes"></span></summary>
       <form id="dayform" class="meta-form">
         <label>Maschine
           <select name="aircraft_id" id="acsel">
@@ -190,7 +191,7 @@ async function loadDay(day){
   const res = await fetch('api/day.php?day='+encodeURIComponent(day));
   const d = await res.json();
   currentDay = d.day;
-  document.getElementById('daytitle').textContent = 'Betriebstag ' + fmtDay(d.day);
+  document.getElementById('daytitle').textContent = 'Flugtag ' + fmtDay(d.day);
 
   // Flugtag-Felder befuellen
   const f = document.getElementById('dayform');
@@ -214,10 +215,13 @@ async function loadDay(day){
     }
   }
   document.getElementById('metahint').textContent = parts.length ? '— ' + parts.join(' · ') : '';
+  document.getElementById('metanotes').textContent =
+    (d.meta && d.meta.notes) ? d.meta.notes : '';
   document.getElementById('savestate').textContent = '';
   document.getElementById('addmission').href = 'einsatz_form.php?day=' + d.day;
 
   layerGroup.clearLayers();
+  trackLines.length = 0;
   const bounds = [];
 
   // Ruhe-Track: schwarz, dezent
@@ -238,12 +242,15 @@ async function loadDay(day){
   });
   d.missions.forEach(m => {
     if (m.track.length > 1) {
-      layerGroup.addLayer(L.polyline(m.track, { color: m._col, weight: 4 }));
+      const line = L.polyline(m.track, { color: m._col, weight: trackWeight(), smoothFactor: 0 });
+      layerGroup.addLayer(line);
+      trackLines.push(line);
       m.track.forEach(p => bounds.push(p));
     }
     if (m.loc) {
-      layerGroup.addLayer(L.marker([m.loc.lat, m.loc.lon])
-        .bindPopup(`Einsatz ${m._no}` + (m.loc.addr ? '<br>' + m.loc.addr : '')));
+      layerGroup.addLayer(L.circleMarker([m.loc.lat, m.loc.lon],
+        { radius: 8, color: m._col, weight: 3, fillColor: '#fff', fillOpacity: .9 })
+        .bindPopup(`Einsatz ${m._no}` + (m.loc.addr ? '<br>' + esc(m.loc.addr) : '')));
       bounds.push([m.loc.lat, m.loc.lon]);
     }
   });

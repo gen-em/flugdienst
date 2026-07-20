@@ -22,7 +22,21 @@ module Model {
     // Aktives Ruhe-Segment: null oder { "ref", "startedAt", "endedAt", "final" }
     var restSegment as Lang.Dictionary or Null = null;
     var pendingRest as Lang.Array = [];
-    var dayMissions as Lang.Number = 0;   // Einsaetze des Tages (inkl. laufendem)
+
+    // Sende-Rueckstand: nur ABGESCHLOSSENE, noch unbestaetigte Pakete.
+    // Das laufende Segment/der laufende Einsatz zaehlt bewusst nicht mit.
+    function backlogCount() as Lang.Number {
+        var n = 0;
+        for (var i = 0; i < pendingMissions.size(); i++) {
+            if (pendingMissions[i]["final"]) { n += 1; }
+        }
+        for (var j = 0; j < pendingRest.size(); j++) {
+            if (pendingRest[j]["final"]) { n += 1; }
+        }
+        return n;
+    }
+    var dayMissions as Lang.Number = 0;   // ABGESCHLOSSENE Einsaetze des Tages
+                                          // (Alarmierung + dokumentiertes Ende)
 
     function load() as Void {
         var s = Storage.getValue(Const.K_STATE);
@@ -102,7 +116,6 @@ module Model {
     }
 
     function _startMission() as Void {
-        dayMissions += 1;
         _closeRestSegment();
         mission = {
             "ref" => "m-" + Util.epochNow().toString(),
@@ -128,6 +141,7 @@ module Model {
         mission["dist"] = Track.distanceM.toNumber();
         mission["asc"]  = Track.ascentM.toNumber();
         mission["final"] = true;
+        dayMissions += 1;                  // zaehlt erst mit bestaetigtem Ende
         Track.endMissionTrack();
         pendingMissions.add(mission);
         mission = null;
