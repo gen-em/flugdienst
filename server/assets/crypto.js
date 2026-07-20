@@ -105,7 +105,80 @@ const EdCrypto = (() => {
   }
   const clearSession = () => { sessionStorage.removeItem(S_DK); sessionStorage.removeItem(S_CK); };
 
+  /* ---- Backup-Container (.edbak v2) -----------------------------------
+   * Aufbau:  "EDBAK2" 0x00 0x02 | Flag(1) | Salt(16) | IV(12) | AES-GCM
+   * Flag:    1 = Inhalt gzip-komprimiert, 0 = roh
+   * Schlüssel: PBKDF2-SHA256(Backup-Passwort, Salt, 310 000, 256 Bit)
+   * AAD:     die ersten 9 Bytes (Magie + Flag) — Kopfmanipulation fliegt auf.
+   * Der Inhalt ist bereits KLARTEXT: Der Browser entschlüsselt vor dem
+   * Versiegeln, damit sich das Backup in jedes Konto einspielen lässt.
+   */
+  const MAGIC2 = new Uint8Array([69, 68, 66, 65, 75, 50, 0, 2]);   // "EDBAK2"
+
+  async function fileKey(password, salt) {
+    const base = await crypto.subtle.importKey('raw', te.encode(password),
+      'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt, iterations: ITER, hash: 'SHA-256' }, base, 256);
+    return crypto.subtle.importKey('raw', bits, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
+
+  async function gzip(bytes) {
+    if (typeof CompressionStream === 'undefined') return null;
+    const s = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+    return new Uint8Array(await new Response(s).arrayBuffer());
+  }
+  async function gunzip(bytes) {
+    const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return new Uint8Array(await new Response(s).arrayBuffer());
+  }
+
+  async function sealBackup(password, jsonText) {
+    const raw = te.encode(jsonText);
+    const packed = await gzip(raw);
+    const flag = packed ? 1 : 0;
+    const body = packed || raw;
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const head = new Uint8Array(9);
+    head.set(MAGIC2, 0); head[8] = flag;
+    const key = await fileKey(password, salt);
+    const ct = new Uint8Array(await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv, additionalData: head }, key, body));
+    const out = new Uint8Array(9 + 16 + 12 + ct.length);
+    out.set(head, 0); out.set(salt, 9); out.set(iv, 25); out.set(ct, 37);
+    return out;
+  }
+
+  async function openBackup(password, bytes) {
+    const head = bytes.slice(0, 9);
+    for (let i = 0; i < 8; i++) {
+      if (head[i] !== MAGIC2[i]) throw new Error('Keine .edbak-Datei (Version 2).');
+    }
+    const key = await fileKey(password, bytes.slice(9, 25));
+    let body;
+    try {
+      body = new Uint8Array(await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: bytes.slice(25, 37), additionalData: head },
+        key, bytes.slice(37)));
+    } catch (e) { throw new Error('Passwort falsch oder Datei beschädigt.'); }
+    if (head[8] === 1) { body = await gunzip(body); }
+    return JSON.parse(td.decode(body));
+  }
+
+  /** Version des Containers erkennen: 1 (serverseitig) oder 2 (portabel) */
+  function backupVersion(bytes) {
+    const v1 = [69, 68, 66, 65, 75, 49];      // "EDBAK1"
+    let is1 = true, is2 = true;
+    for (let i = 0; i < 6; i++) {
+      if (bytes[i] !== v1[i]) is1 = false;
+      if (bytes[i] !== MAGIC2[i]) is2 = false;
+    }
+    return is1 ? 1 : (is2 ? 2 : 0);
+  }
+
   return { deriveKeys, encrypt, decrypt, randomHex,
            newRecoveryCode, recoveryKeyHex,
-           setDataKey, getDataKey, getContentKey, clearSession };
+           setDataKey, getDataKey, getContentKey, clearSession,
+           sealBackup, openBackup, backupVersion };
 })();

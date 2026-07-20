@@ -231,9 +231,22 @@ neu anmelden bzw. der Entsperr-Link.
 Unter **⚙ Einstellungen → „Backup"** lädst du alle deine Daten als einzelne
 verschlüsselte Datei (`.edbak`) herunter — Passwort frei wählbar, mindestens
 8 Zeichen, wird nirgends gespeichert (ohne Passwort ist die Datei wertlos).
-Der Import spielt ein Backup ins eigene Konto zurück und ergänzt dabei nur,
-was fehlt; Vorhandenes bleibt unangetastet. PatientInnendaten bleiben auch im
-Backup verschlüsselt. Details zum Dateiaufbau: `docs/Backup-Format.md`.
+
+Ver- und Entschlüsselung passieren **in deinem Browser**; der Server sieht die
+Inhalte nie. Deshalb lässt sich ein Backup auch **in ein anderes Konto**
+einspielen: Beim Import werden die geschützten Angaben automatisch mit dem
+Schlüssel des Zielkontos neu verschlüsselt.
+
+Der Import ergänzt nur, was fehlt — Vorhandenes bleibt unangetastet, und
+mehrfaches Einspielen derselben Datei ist gefahrlos. Während Export und Import
+zeigt eine Statuszeile den Fortschritt und am Ende die Zahl der übernommenen
+Einsätze, Ruhesegmente und Flugtage.
+
+Ältere Backups (vor dieser Fassung erstellt) werden weiterhin erkannt und
+eingespielt. Bei ihnen bleiben allerdings nur die unverschlüsselten Daten
+nutzbar, wenn sie in ein anderes Konto wandern; Details in
+`docs/Backup-Format.md`.
+
 
 ## 4. Eine neue Uhr einrichten (Kurzanleitung)
 

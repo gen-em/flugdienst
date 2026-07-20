@@ -1,8 +1,14 @@
 <?php
 declare(strict_types=1);
 /**
- * Backup: Export/Import aller Einsatzdaten einer NutzerIn als verschluesselte
- * Datei (.edbak). Format-Doku: docs/Backup-Format.md
+ * Backup: Serialisierung und Wiederherstellung aller Daten einer NutzerIn.
+ * Format-Doku: docs/Backup-Format.md
+ *
+ * Seit Format 2 versiegelt und oeffnet der BROWSER die Datei (crypto.js):
+ * Er entschluesselt die geschuetzten Angaben vor dem Export und verschluesselt
+ * sie beim Import mit dem Schluessel des Zielkontos neu — dadurch laesst sich
+ * ein Backup in jedes Konto einspielen. Die Funktionen edbak_seal()/edbak_open()
+ * bleiben fuer den Import alter Dateien (Format 1) erhalten.
  *
  * Container v1 (binaer):
  *   Bytes 0-7   Magie "EDBAK1" + 0x00 + Version 0x01
@@ -59,8 +65,7 @@ function edbak_build(int $userId): string {
         $st = $pdo->prepare($sql); $st->execute($p); return $st->fetchAll(PDO::FETCH_ASSOC);
     };
 
-    $u = $q('SELECT email, name, pat_wrap_pw, pat_wrap_rc
-             FROM users WHERE id = ?', [$userId])[0];
+    $u = $q('SELECT email, name FROM users WHERE id = ?', [$userId])[0];
 
     $tracks = function (string $type, int $id) use ($q): array {
         return array_map(
@@ -114,14 +119,10 @@ function edbak_build(int $userId): string {
 
     $data = [
         'format' => 'einsatzdoku-backup',
-        'version' => 1,
+        'version' => 2,
         'created_at' => gmdate('c'),
         'app' => 'einsatzdoku-luftrettung',
         'user' => ['email' => $u['email'], 'name' => $u['name']],
-        'pat_module' => $u['pat_wrap_pw'] !== null ? [
-            'wrap_pw' => $u['pat_wrap_pw'],
-            'wrap_rc' => $u['pat_wrap_rc'],
-        ] : null,
         'stammdaten' => [
             'bases'        => $q('SELECT name, is_default FROM bases WHERE user_id = ? ORDER BY name', [$userId]),
             'aircraft'     => $q('SELECT registration, p1, p2, hems, fr, other, is_default

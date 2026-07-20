@@ -508,40 +508,140 @@ if ($tab === 'geraete') {
   <?php elseif ($tab === 'backup'): ?>
     <h1>Backup</h1>
     <p class="muted">Sichert <strong>alle</strong> deine Daten (Einsätze mit Phasen,
-       Reanimationen und Tracks, Ruhesegmente, Flugtage, Stammdaten sowie die
-       verschlüsselten PatientInnendaten samt Schlüssel-Hüllen) in eine einzelne,
-       mit deinem Wunsch-Passwort verschlüsselte Datei (<code>.edbak</code>,
-       AES-256-GCM). Format-Beschreibung: <code>docs/Backup-Format.md</code>.</p>
-    <?php if (($_GET['err'] ?? '') === 'pw'): ?>
-      <p class="alert">Passwörter ungleich oder kürzer als 8 Zeichen.</p>
-    <?php endif; ?>
+       Reanimationen und Tracks, Ruhesegmente, Flugtage, Stammdaten und die
+       geschützten Angaben) in eine einzelne Datei (<code>.edbak</code>), verschlüsselt
+       mit einem Passwort deiner Wahl (AES-256-GCM). Ver- und Entschlüsselung passieren
+       vollständig <strong>in deinem Browser</strong> — der Server sieht die Inhalte nie.
+       Dadurch lässt sich ein Backup auch in ein <strong>anderes Konto</strong>
+       einspielen. Format-Beschreibung: <code>docs/Backup-Format.md</code>.</p>
+
+    <div id="lockwarn" class="alert" hidden>Die geschützten Angaben lassen sich gerade
+      nicht entschlüsseln — bitte ab- und neu anmelden bzw.
+      <a href="einrichtung.php">mit Wiederherstellungsschlüssel entsperren</a>.</div>
 
     <h2>Exportieren</h2>
-    <form method="post" action="export_backup.php" class="settings-form">
-      <?= csrf_field() ?>
+    <div class="settings-form">
       <label>Backup-Passwort (mind. 8 Zeichen)
-        <input type="password" name="bpw1" required minlength="8" autocomplete="new-password"></label>
+        <input type="password" id="bpw1" minlength="8" autocomplete="new-password"></label>
       <label>Passwort wiederholen
-        <input type="password" name="bpw2" required autocomplete="new-password"></label>
+        <input type="password" id="bpw2" autocomplete="new-password"></label>
       <p class="muted">Ohne dieses Passwort ist die Datei wertlos — es wird nirgends
          gespeichert. Es darf, muss aber nicht dein Login-Passwort sein.</p>
-      <button class="btn-primary">Backup herunterladen</button>
-    </form>
+      <button class="btn-primary" id="expbtn">Backup erstellen</button>
+      <p class="muted" id="expstate" style="min-height:1.3em"></p>
+    </div>
 
     <h2>Importieren</h2>
     <p class="muted">Spielt ein Backup in <strong>dieses</strong> Konto zurück. Bereits
        vorhandene Einsätze, Tage und Stammdaten bleiben unangetastet (Erkennung über
-       interne Referenzen) — der Import ergänzt nur Fehlendes. Hinweis zu
-       PatientInnendaten: Die Blöcke bleiben verschlüsselt und sind nur lesbar, wenn
-       Login-Passwort bzw. Wiederherstellungsschlüssel zum Backup passen.</p>
-    <form method="post" action="einstellungen.php?t=backup" enctype="multipart/form-data" class="settings-form">
+       interne Referenzen) — der Import ergänzt nur Fehlendes und ist gefahrlos
+       wiederholbar.</p>
+    <form method="post" action="einstellungen.php?t=backup" enctype="multipart/form-data"
+          class="settings-form" id="impform">
       <?= csrf_field() ?><input type="hidden" name="action" value="backup_import">
       <label>Backup-Datei (.edbak)
-        <input type="file" name="bfile" accept=".edbak" required></label>
+        <input type="file" name="bfile" id="bfile" accept=".edbak" required></label>
       <label>Backup-Passwort
-        <input type="password" name="ipw" required autocomplete="off"></label>
+        <input type="password" name="ipw" id="ipw" required autocomplete="off"></label>
       <button class="btn-primary">Backup importieren</button>
+      <p class="muted" id="impstate" style="min-height:1.3em"></p>
     </form>
+
+    <script src="assets/crypto.js"></script>
+    <script>
+    const PAT_WRAP = <?= json_encode($patWrapPw) ?>;
+    const CSRF = <?= json_encode($_SESSION['csrf'] ?? '') ?>;
+    const expState = document.getElementById('expstate');
+    const impState = document.getElementById('impstate');
+
+    async function ck() {
+      const k = await EdCrypto.getContentKey(PAT_WRAP);
+      document.getElementById('lockwarn').hidden = !!k;
+      return k;
+    }
+    ck();
+
+    // ---- Export: Daten holen, entschlüsseln, versiegeln, herunterladen ----
+    document.getElementById('expbtn').addEventListener('click', async () => {
+      const pw = document.getElementById('bpw1').value;
+      if (pw.length < 8 || pw !== document.getElementById('bpw2').value) {
+        expState.textContent = 'Passwörter ungleich oder kürzer als 8 Zeichen.';
+        return;
+      }
+      const key = await ck();
+      if (!key) { expState.textContent = 'Entschlüsselung gesperrt — siehe Hinweis oben.'; return; }
+      try {
+        expState.textContent = 'Daten werden geladen…';
+        const data = await (await fetch('api/backup_data.php')).json();
+
+        expState.textContent = 'Geschützte Angaben werden entschlüsselt…';
+        let n = 0;
+        for (const m of (data.missions || [])) {
+          if (!m.pat_blob) continue;
+          try {
+            m.pat = JSON.parse(await EdCrypto.decrypt(key, m.pat_blob));
+            n++;
+          } catch (e) { m.pat_unreadable = true; }
+          delete m.pat_blob;
+        }
+
+        expState.textContent = 'Datei wird verschlüsselt…';
+        const bytes = await EdCrypto.sealBackup(pw, JSON.stringify(data));
+        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'einsatzdoku-backup-' + new Date().toISOString().slice(0, 10) + '.edbak';
+        a.click();
+        URL.revokeObjectURL(url);
+        expState.textContent = `Fertig: ${(data.missions || []).length} Einsätze `
+          + `(davon ${n} mit geschützten Angaben), `
+          + `${(data.rest_segments || []).length} Ruhesegmente, `
+          + `${(data.days || []).length} Flugtage.`;
+      } catch (e) {
+        expState.textContent = 'Export fehlgeschlagen: ' + e.message;
+      }
+    });
+
+    // ---- Import: Version erkennen; Format 2 im Browser, Format 1 am Server ----
+    document.getElementById('impform').addEventListener('submit', async ev => {
+      const f = document.getElementById('bfile').files[0];
+      if (!f) return;
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      const ver = EdCrypto.backupVersion(bytes);
+      if (ver !== 2) { return; }          // Format 1: normal an den Server senden
+      ev.preventDefault();
+
+      const key = await ck();
+      if (!key) { impState.textContent = 'Entschlüsselung gesperrt — siehe Hinweis oben.'; return; }
+      try {
+        impState.textContent = 'Datei wird geöffnet…';
+        const data = await EdCrypto.openBackup(document.getElementById('ipw').value, bytes);
+
+        impState.textContent = 'Angaben werden für dieses Konto verschlüsselt…';
+        for (const m of (data.missions || [])) {
+          if (m.pat && Object.keys(m.pat).length) {
+            m.pat_blob = await EdCrypto.encrypt(key, JSON.stringify(m.pat));
+          }
+          delete m.pat;
+        }
+
+        impState.textContent = 'Daten werden übertragen…';
+        const res = await fetch('api/backup_restore.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF': CSRF },
+          body: JSON.stringify(data)
+        });
+        const out = await res.json();
+        if (!out.ok) { throw new Error(out.meldung || out.hinweis || out.error || 'unbekannt'); }
+        const s = out.stats;
+        impState.textContent = `Import fertig: ${s.missions} Einsätze übernommen `
+          + `(${s.missions_skipped} bereits vorhanden), ${s.rests} Ruhesegmente, `
+          + `${s.days} Flugtage, ${s.stammdaten} Standortdaten-Einträge.`;
+      } catch (e) {
+        impState.textContent = 'Import fehlgeschlagen: ' + e.message;
+      }
+    });
+    </script>
 
   <?php else: ?>
     <h1>Geräte</h1>

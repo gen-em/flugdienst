@@ -95,10 +95,16 @@ Admin-Passwortvergabe existiert bewusst nicht. Alt-Konten (kdf_ver 0) werden
 beim ersten Login transparent migriert; `auth_salt.php` liefert Salts (mit
 deterministischem Fake für unbekannte Adressen gegen User-Enumeration).
 
-**Backup:** `backup_lib.php` serialisiert alle NutzerInnen-Daten (inkl.
-Chiffretexte und Schlüssel-Hüllen) als gzip-JSON in einen AES-256-GCM-Container
-(`.edbak`, PBKDF2 200 000; Aufbau: `docs/Backup-Format.md`). Import ergänzt nur
-Fehlendes (Dubletten über `client_ref`/Namen), überschreibt nie.
+**Backup (portabel, Format 2):** `api/backup_data.php` liefert alle Daten der
+NutzerIn als Roh-JSON (geschützte Angaben weiterhin als Chiffretext). Der
+Browser entschlüsselt sie mit dem Inhaltsschlüssel, ersetzt sie durch Klartext
+und versiegelt das Ganze per `EdCrypto.sealBackup()` (AES-256-GCM, PBKDF2
+310 000, gzip via CompressionStream) zur `.edbak`-Datei. Beim Import öffnet der
+Browser die Datei, verschlüsselt die Angaben mit dem Schlüssel des **Zielkontos**
+neu und schickt sie an `api/backup_restore.php` → `edbak_restore()`. Dadurch
+sind Backups zwischen Konten übertragbar; der Server sieht nie Klartext.
+Alt-Dateien (Format 1, serverseitig versiegelt) erkennt der Import an der Magie
+und verarbeitet sie über `edbak_open()` weiter. Aufbau: `docs/Backup-Format.md`.
 
 **Schutz manueller Einsätze:** Beim Ingest wird vor dem Upsert der
 `manual`-Marker geprüft. Ist er gesetzt, werden Metadaten/Phasen/Rea **nicht**

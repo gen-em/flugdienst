@@ -6,6 +6,18 @@ jedem Änderungspaket oben dazu.
 
 ## [Unveröffentlicht]
 
+### Geändert (Web — portables Backup)
+- **Backup läuft jetzt im Browser** (Format 2): Beim Export werden die
+  geschützten Angaben lokal entschlüsselt und mit dem Backup-Passwort
+  versiegelt; beim Import öffnet der Browser die Datei und verschlüsselt sie
+  mit dem Schlüssel des **Zielkontos** neu. Damit lässt sich ein Backup in
+  jedes Konto einspielen — der Server sieht zu keinem Zeitpunkt Klartext.
+  Container: AES-256-GCM, PBKDF2 310 000 Runden, gzip, Kopf per AAD gebunden.
+- Alt-Dateien (Format 1) werden am Kopf erkannt und weiterhin serverseitig
+  importiert; ihre geschützten Angaben bleiben kontogebunden.
+- Neue Endpunkte `api/backup_data.php` und `api/backup_restore.php`;
+  `export_backup.php` entfällt.
+
 ### Geändert (Web)
 - Ruhesegment-Tracks (Phase 1) auf der Tageskarte deutlich sichtbarer:
   warmes Grau statt Fast-Schwarz, kräftigere Linie mit Zoom-Anpassung.
