@@ -3,7 +3,7 @@ using Toybox.Lang;
 
 module Const {
 
-    const APP_VERSION = "1.2.0";      // bei jedem Release erhoehen
+    const APP_VERSION = "1.3.0";      // bei jedem Release erhoehen
 
     // Phasen 1..9 (Index 0 unbenutzt). Der Einsatz-Abschluss ist KEIN
     // Zeitstempel mehr, sondern eine bestaetigte Aktion (Phase 10 entfaellt).

@@ -18,33 +18,64 @@ class CprView extends WatchUi.View {
     function initialize() { View.initialize(); }
 
     function onUpdate(dc as Graphics.Dc) as Void {
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        var w = dc.getWidth();
+        var h = dc.getHeight();
+        var cx = w / 2;
+        var cy = h / 2;
+
+        // Heller Grund (transflektives Display: bei Tageslicht am besten lesbar)
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_WHITE);
         dc.clear();
-        var cx = dc.getWidth() / 2;
-        var cy = dc.getHeight() / 2;
 
         if (!Cpr.active) {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, cy - 40, Graphics.FONT_MEDIUM, "Reanimation",
                 Graphics.TEXT_JUSTIFY_CENTER);
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, cy + 4, Graphics.FONT_SMALL, "START = Beginn",
                 Graphics.TEXT_JUSTIFY_CENTER);
             return;
         }
 
-        // kleiner Timer: Gesamtdauer vorwaerts (LILA, gut ablesbar)
-        var e = Cpr.elapsedS();
+        // 1) Kopfbalken: Gesamtdauer der Reanimation
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.fillRectangle(0, 8, w, 48);
         dc.setColor(Graphics.COLOR_PURPLE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 38, Graphics.FONT_NUMBER_MILD,
-            _mmss(e), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(cx, 32, Graphics.FONT_NUMBER_MILD, _mmss(Cpr.elapsedS()),
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-        // grosser Timer: 2:00-Countdown (steht bei 0:00, dann rot)
+        // 2) Grosser 2:00-Countdown, mittig
         var r = Cpr.cycleRemainingS();
-        dc.setColor(r == 0 ? Graphics.COLOR_RED : Graphics.COLOR_WHITE,
+        dc.setColor(r == 0 ? Graphics.COLOR_RED : Graphics.COLOR_BLACK,
             Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy - 34, Graphics.FONT_NUMBER_THAI_HOT,
-            _mmss(r), Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, cy - 6, Graphics.FONT_NUMBER_THAI_HOT, _mmss(r),
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+
+        // 3) Fortschrittsbalken: fuellt sich im Lauf des Zyklus von links
+        //    nach rechts (leer bei Zyklusstart, voll bei 0:00)
+        var bx = 34;
+        var bw = w - 68;
+        var by = cy + 44;
+        var bh = 20;
+        var passed = Const.CPR_CYCLE_S - r;
+        if (passed < 0) { passed = 0; }
+        if (passed > Const.CPR_CYCLE_S) { passed = Const.CPR_CYCLE_S; }
+        var fill = (bw * passed) / Const.CPR_CYCLE_S;
+        if (fill > 0) {
+            dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
+            dc.fillRectangle(bx, by, fill, bh);
+        }
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.setPenWidth(2);
+        dc.drawRectangle(bx, by, bw, bh);      // Rahmen: leerer Balken sichtbar
+        dc.setPenWidth(1);
+
+        // 4) Trennlinie und aktuelle Uhrzeit
+        dc.drawLine(30, by + bh + 14, w - 30, by + bh + 14);
+        var t = System.getClockTime();
+        dc.drawText(cx, by + bh + 34, Graphics.FONT_NUMBER_MILD,
+            t.hour.format("%02d") + ":" + t.min.format("%02d"),
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
     function _mmss(s as Lang.Number) as Lang.String {

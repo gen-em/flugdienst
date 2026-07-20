@@ -33,31 +33,37 @@ class ClockView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
 
+        // Uhrzeit gross
         var t = System.getClockTime();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy - 36, Graphics.FONT_NUMBER_THAI_HOT,
+        dc.drawText(cx, cy - 44, Graphics.FONT_NUMBER_THAI_HOT,
             t.hour.format("%02d") + ":" + t.min.format("%02d"),
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-        // Phase im unteren Drittel (bewusst kleiner als die Uhrzeit)
+        // Datum klein darunter
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, cy + 4, Graphics.FONT_TINY,
+            Util.localDateShort(),
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+
+        // Phase darunter: Nummer gross, Bezeichnung klein
         dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 42, Graphics.FONT_LARGE,
+        dc.drawText(cx, cy + 40, Graphics.FONT_LARGE,
             Model.phase.toString(),
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 66, Graphics.FONT_TINY,
-            Const.PHASE_LABELS[Model.phase], Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, cy + 68, Graphics.FONT_TINY,
+            Const.PHASE_LABELS[Model.phase],
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-        // eine Statuszeile unten, nach Prioritaet:
-        // REA laeuft > Einsatz offen (Haltezustand)
+        // Laufende Reanimation: roter Ring entlang der Luenette — peripher
+        // erkennbar, ohne eine Textzeile zu belegen.
         if (Cpr.active) {
+            dc.setPenWidth(9);
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
-                "REA läuft", Graphics.TEXT_JUSTIFY_CENTER);
-        } else if (Model.missionActive() && Model.phase >= 9) {
-            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, dc.getHeight() - 30, Graphics.FONT_XTINY,
-                "START = Einsatz abschließen", Graphics.TEXT_JUSTIFY_CENTER);
+            var rad = (dc.getWidth() < dc.getHeight() ? dc.getWidth() : dc.getHeight()) / 2 - 5;
+            dc.drawCircle(cx, cy, rad);
+            dc.setPenWidth(1);
         }
     }
 }

@@ -26,13 +26,29 @@ module Model {
     // Sende-Rueckstand: nur ABGESCHLOSSENE, noch unbestaetigte Pakete.
     // Das laufende Segment/der laufende Einsatz zaehlt bewusst nicht mit.
     function backlogCount() as Lang.Number {
+        // Nur Pakete zaehlen, fuer die tatsaechlich noch etwas zu senden ist.
+        // Fertig uebertragene Eintraege, die nur noch in der Liste stehen,
+        // werden dabei gleich entsorgt (Selbstheilung) — sonst zeigte die
+        // Sync-Seite dauerhaft "1 Paket offen", obwohl alles angekommen ist.
         var n = 0;
-        for (var i = 0; i < pendingMissions.size(); i++) {
-            if (pendingMissions[i]["final"]) { n += 1; }
+        var changed = false;
+        for (var i = pendingMissions.size() - 1; i >= 0; i--) {
+            var m = pendingMissions[i];
+            if (!Uploader.hasWork(m["ref"])) {
+                if (m["final"] == true) { pendingMissions.remove(m); changed = true; }
+            } else if (m["final"] == true) {
+                n += 1;
+            }
         }
-        for (var j = 0; j < pendingRest.size(); j++) {
-            if (pendingRest[j]["final"]) { n += 1; }
+        for (var j = pendingRest.size() - 1; j >= 0; j--) {
+            var r = pendingRest[j];
+            if (!Uploader.hasWork(r["ref"])) {
+                if (r["final"] == true) { pendingRest.remove(r); changed = true; }
+            } else if (r["final"] == true) {
+                n += 1;
+            }
         }
+        if (changed) { save(); }      // damit die Bereinigung Neustarts ueberlebt
         return n;
     }
     var dayMissions as Lang.Number = 0;   // ABGESCHLOSSENE Einsaetze des Tages

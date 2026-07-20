@@ -49,8 +49,13 @@ class SyncView extends WatchUi.View {
         var open = Model.backlogCount();
         if (open == 0) {
             dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, cy - 24, Graphics.FONT_LARGE, "Sync vollständig ✓",
+            dc.drawText(cx, cy - 30, Graphics.FONT_LARGE, "Sync vollständig",
                 Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            // Haken selbst zeichnen (die Geraeteschrift kennt das Glyph nicht)
+            dc.setPenWidth(5);
+            dc.drawLine(cx - 14, cy + 6, cx - 4, cy + 16);
+            dc.drawLine(cx - 4, cy + 16, cx + 15, cy - 5);
+            dc.setPenWidth(1);
         } else {
             dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, cy - 44, Graphics.FONT_NUMBER_MILD, open.toString(),

@@ -45,6 +45,12 @@ module Uploader {
         _send(job);
     }
 
+    // Hat dieses Paket noch echte Arbeit? (offene Punkte oder unbestaetigte
+    // Metadaten) — Grundlage fuer die Backlog-Anzeige.
+    function hasWork(ref as Lang.String) as Lang.Boolean {
+        return _openPoints(ref) > 0 || !_isAcked(ref);
+    }
+
     function _findJob() as Lang.Dictionary or Null {
         for (var i = 0; i < Model.pendingMissions.size(); i++) {
             var m = Model.pendingMissions[i];

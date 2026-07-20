@@ -55,7 +55,7 @@ module Pair {
                 "d" => data["device_id"], "k" => data["api_key"]
             });
             Uploader.lastError = null;
-            status = "Gekoppelt ✓";
+            status = "Gekoppelt";   // ohne Haken-Glyph (Geraeteschrift kennt es nicht)
         } else if (code == 404) {
             status = "Code ungültig/abgelaufen";
         } else {

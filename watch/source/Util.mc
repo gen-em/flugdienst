@@ -27,6 +27,16 @@ module Util {
             g.year.format("%04d"), g.month.format("%02d"), g.day.format("%02d")]);
     }
 
+    // Kurzes Anzeigedatum, z. B. "Mo, 20.07." (eigene Wochentagsliste,
+    // damit die Sprache nicht von der Geraete-Locale abhaengt)
+    const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+
+    function localDateShort() as Lang.String {
+        var g = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
+        var wd = WD[(g.day_of_week - 1) % 7];
+        return wd + ", " + g.day.format("%02d") + "." + g.month.format("%02d") + ".";
+    }
+
     function epochNow() as Lang.Number {
         return Time.now().value();
     }
