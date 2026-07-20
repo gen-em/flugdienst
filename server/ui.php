@@ -20,9 +20,6 @@ function ui_topbar(string $active): void {
   </a>
   <nav class="mainnav">
     <a href="index.php" <?= $active === 'uebersicht' ? 'class="active"' : '' ?>>Übersicht</a>
-    <?php if ($userRole === 'admin'): ?>
-      <a href="admin.php" <?= $active === 'admin' ? 'class="active"' : '' ?>>Administration</a>
-    <?php endif; ?>
     <a class="gearlink <?= $active === 'einstellungen' ? 'active' : '' ?>"
        href="einstellungen.php?t=profil" title="Einstellungen" aria-label="Einstellungen">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true">
@@ -31,6 +28,34 @@ function ui_topbar(string $active): void {
       </svg></a>
   </nav>
 </header>
+<?php }
+
+/**
+ * Untermenue der Einstellungen — identisch auf einstellungen.php, admin.php
+ * und admin_user.php. Die Administration erscheint nur fuer Admins.
+ * $active: profil | stammdaten | backup | geraete | admin
+ */
+function ui_settings_sidebar(string $active): void {
+    global $userRole;
+    $items = [
+        'profil'     => ['einstellungen.php?t=profil', 'Profil'],
+        'stammdaten' => ['einstellungen.php?t=stammdaten', 'Standortdaten'],
+        'backup'     => ['einstellungen.php?t=backup', 'Backup'],
+        'geraete'    => ['einstellungen.php?t=geraete', 'Geräte'],
+    ];
+    if ($userRole === 'admin') {
+        $items['admin'] = ['admin.php', 'Administration'];
+    }
+    ?>
+  <aside class="daylist">
+    <h2>Einstellungen</h2>
+    <ul>
+      <?php foreach ($items as $key => [$href, $label]): ?>
+        <li><a href="<?= $href ?>" <?= $active === $key ? 'class="active"' : '' ?>><?= $label ?></a></li>
+      <?php endforeach; ?>
+      <li><a href="logout.php" onclick="return confirm('Wirklich abmelden?')">Abmelden</a></li>
+    </ul>
+  </aside>
 <?php }
 
 /** Einsatztage-Leiste (serverseitig, auf allen Inhaltsseiten identisch) */

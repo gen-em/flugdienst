@@ -69,13 +69,10 @@ $devices = $dv->fetchAll();
 <link rel="stylesheet" href="assets/style.css">
 <link rel="icon" type="image/png" href="assets/favicon.png"></head>
 <body>
-<?php ui_topbar('admin'); ?>
+<?php ui_topbar('einstellungen'); ?>
 
 <div class="layout">
-  <aside class="daylist">
-    <h2>Administration</h2>
-    <ul><li><a href="admin.php" class="active">Nutzerverwaltung</a></li></ul>
-  </aside>
+  <?php ui_settings_sidebar('admin'); ?>
 
   <main class="page">
   <p><a href="admin.php" class="add-link">← zurück zur Nutzerverwaltung</a></p>

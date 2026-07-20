@@ -45,15 +45,10 @@ $users   = db()->query('SELECT id, email, name, role, created_at FROM users ORDE
 <link rel="stylesheet" href="assets/style.css">
 <link rel="icon" type="image/png" href="assets/favicon.png"></head>
 <body>
-<?php ui_topbar('admin'); ?>
+<?php ui_topbar('einstellungen'); ?>
 
 <div class="layout">
-  <aside class="daylist">
-    <h2>Administration</h2>
-    <ul>
-      <li><a href="admin.php" class="active">Nutzerverwaltung</a></li>
-    </ul>
-  </aside>
+  <?php ui_settings_sidebar('admin'); ?>
 
 <main class="page">
   <?php if ($notice): ?><p class="alert alert-info"><?= e($notice) ?></p><?php endif; ?>

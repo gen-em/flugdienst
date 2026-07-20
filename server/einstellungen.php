@@ -245,16 +245,7 @@ if ($tab === 'geraete') {
 <?php ui_topbar('einstellungen'); ?>
 
 <div class="layout">
-  <aside class="daylist">
-    <h2>Einstellungen</h2>
-    <ul>
-      <li><a href="einstellungen.php?t=profil" <?= $tab === 'profil' ? 'class="active"' : '' ?>>Profil</a></li>
-      <li><a href="einstellungen.php?t=stammdaten" <?= $tab === 'stammdaten' ? 'class="active"' : '' ?>>Standortdaten</a></li>
-      <li><a href="einstellungen.php?t=backup" <?= $tab === 'backup' ? 'class="active"' : '' ?>>Backup</a></li>
-      <li><a href="einstellungen.php?t=geraete" <?= $tab === 'geraete' ? 'class="active"' : '' ?>>Geräte</a></li>
-      <li><a href="logout.php" onclick="return confirm('Wirklich abmelden?')">Abmelden</a></li>
-    </ul>
-  </aside>
+  <?php ui_settings_sidebar($tab); ?>
 
   <main class="page">
   <?php if ($notice): ?><p class="alert alert-info"><?= e($notice) ?></p><?php endif; ?>
