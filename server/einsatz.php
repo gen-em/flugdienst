@@ -73,6 +73,18 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 // Tracklinien: Staerke waechst beim Rauszoomen, damit kurze Tracks auf der
 // Uebersicht sichtbar bleiben (smoothFactor 0: keine Wegvereinfachung).
 const trackLines = [];
+// Einsatzort als klassischer Karten-Pin in der Einsatzfarbe (SVG-DivIcon)
+function locPin(color){
+  return L.divIcon({
+    className: 'locpin',
+    html: `<svg width="30" height="42" viewBox="0 0 30 42" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 1C7.3 1 1 7.2 1 14.9 1 25.4 15 41 15 41s14-15.6 14-26.1C29 7.2 22.7 1 15 1z"
+            fill="${color}" stroke="#fff" stroke-width="2"/>
+      <circle cx="15" cy="14.5" r="5" fill="#fff"/></svg>`,
+    iconSize: [30, 42], iconAnchor: [15, 41], popupAnchor: [0, -34]
+  });
+}
+
 function trackWeight(){
   const z = map.getZoom();
   return z >= 14 ? 4 : z >= 12 ? 5 : z >= 10 ? 6 : 7;
@@ -183,7 +195,8 @@ async function init(){
     tr.addEventListener('click', () => hlPhase(idx, 'toggle'));
     pb.appendChild(tr);
   });
-  buildPhaseMarkers(m.phases);
+  // Phasen-Marker vorerst deaktiviert (auf Wunsch; Code bleibt fuer spaeter)
+  // buildPhaseMarkers(m.phases);
 
   // Reanimationen: eine Zeiten-Tabelle je Sitzung
   if (m.resus && m.resus.length) {
@@ -222,8 +235,7 @@ async function init(){
         if (o.loc && o.loc.addr) {
           dl.insertAdjacentHTML('beforeend', `<dt>Einsatzort 🔒</dt><dd>${esc(o.loc.addr)}</dd>`);
           if (o.loc.lat != null) {
-            L.circleMarker([o.loc.lat, o.loc.lon],
-              { radius: 8, color: '#FF8F1F', weight: 3, fillColor: '#fff', fillOpacity: .9 })
+            L.marker([o.loc.lat, o.loc.lon], { icon: locPin('#FF8F1F'), keyboard: false })
               .addTo(map).bindPopup('Einsatzort<br>' + esc(o.loc.addr));
             if (!bounds.length) { map.setView([o.loc.lat, o.loc.lon], 13); }
           }

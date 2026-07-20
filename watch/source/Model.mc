@@ -119,6 +119,7 @@ module Model {
         _closeRestSegment();
         mission = {
             "ref" => "m-" + Util.epochNow().toString(),
+            "day" => Util.localDay(),      // Tag des EINSATZbeginns (0:00-Wechsel)
             "startedAt" => Util.isoNow(), "endedAt" => null,
             "phases" => [], "resus" => [],
             "final" => false
@@ -156,6 +157,7 @@ module Model {
     function _startRestSegment() as Void {
         restSegment = {
             "ref" => "r-" + Util.epochNow().toString(),
+            "day" => Util.localDay(),      // Tag des Segmentbeginns
             "startedAt" => Util.isoNow(), "endedAt" => null, "final" => false
         };
         Track.beginRestTrack(restSegment["ref"] as Lang.String);

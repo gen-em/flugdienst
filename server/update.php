@@ -318,6 +318,25 @@ $MIGRATIONS = [
             "ALTER TABLE users DROP COLUMN pat_fields",
         ],
     ],
+    [
+        'id'    => '2026_07_22_tag_zuordnung',
+        'label' => 'Tageszuordnung: Tag = lokales Datum des Einsatz-/Segmentbeginns (Wechsel 0:00); Bestand wird neu zugeordnet',
+        'run'   => function (PDO $pdo): void {
+            global $CFG;
+            $tz  = new DateTimeZone($CFG['app']['timezone'] ?? 'Europe/Berlin');
+            $utc = new DateTimeZone('UTC');
+            foreach (['missions', 'rest_segments'] as $tab) {
+                $rows = $pdo->query("SELECT id, day, started_at FROM `$tab`")->fetchAll(PDO::FETCH_ASSOC);
+                $upd = $pdo->prepare("UPDATE `$tab` SET day = ? WHERE id = ?");
+                foreach ($rows as $r) {
+                    $d = new DateTime((string)$r['started_at'], $utc);
+                    $d->setTimezone($tz);
+                    $local = $d->format('Y-m-d');
+                    if ($local !== (string)$r['day']) { $upd->execute([$local, (int)$r['id']]); }
+                }
+            }
+        },
+    ],
     // Naechste Migration hier anhaengen.
 ];
 

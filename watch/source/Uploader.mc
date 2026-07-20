@@ -93,7 +93,8 @@ module Uploader {
         }
 
         var body = {
-            "kind" => job["kind"], "client_ref" => ref, "day" => Model.day,
+            "kind" => job["kind"], "client_ref" => ref,
+            "day" => (d["day"] != null ? d["day"] : Model.day),
             "started_at" => d["startedAt"], "ended_at" => d["endedAt"],
             "final" => d["final"] == true,
             "track" => { "seq_from" => seqFrom, "points" => points }

@@ -267,8 +267,11 @@ th.sortable .arrow{color:var(--accent-dark)}
 /* Kopfleiste: mehr Luft, Zahnrad als Direktlink */
 .topbar{padding:.7rem 1.3rem}
 .brand{gap:.7rem}
-.gearlink{color:#C6CEDB;text-decoration:none;font-size:1.2rem;margin-left:1.1rem;
+.topbar nav{display:flex;align-items:center}
+.gearlink{color:#C6CEDB;text-decoration:none;margin-left:1.1rem;
+  display:inline-flex;align-items:center;
   padding-bottom:2px;border-bottom:2px solid transparent}
+.gearlink svg{width:21px;height:21px;display:block}
 .gearlink:hover,.gearlink.active{color:#fff;border-bottom-color:var(--accent)}
 
 /* Kopplungscode */
