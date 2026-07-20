@@ -246,7 +246,10 @@ async function loadDay(day){
   // Ruhe-Track: schwarz, dezent
   d.rest_segments.forEach(seg => {
     if (seg.length > 1) {
-      layerGroup.addLayer(L.polyline(seg, { color:'#1A0500', weight:2, opacity:0.55 }));
+      const rl = L.polyline(seg, { color:'#8A8378', weight: Math.max(3, trackWeight() - 1),
+        opacity:0.9, smoothFactor:0 });
+      layerGroup.addLayer(rl);
+      trackLines.push(rl);
       seg.forEach(p => bounds.push(p));
     }
   });

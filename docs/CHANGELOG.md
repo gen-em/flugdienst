@@ -6,6 +6,10 @@ jedem Änderungspaket oben dazu.
 
 ## [Unveröffentlicht]
 
+### Geändert (Web)
+- Ruhesegment-Tracks (Phase 1) auf der Tageskarte deutlich sichtbarer:
+  warmes Grau statt Fast-Schwarz, kräftigere Linie mit Zoom-Anpassung.
+
 ### Geändert (Web — Pflicht-Verschlüsselung)
 - **Verschlüsselung ist jetzt Pflicht:** kein Modul-Schalter, keine
   Feldauswahl mehr — der Einstellungs-Reiter „PatientInnendaten" entfällt.
