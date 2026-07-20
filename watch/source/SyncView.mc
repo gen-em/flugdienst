@@ -8,6 +8,7 @@ using Toybox.Graphics;
 using Toybox.Lang;
 using Toybox.Timer;
 using Toybox.Application.Storage;
+using Toybox.Position;
 
 class SyncView extends WatchUi.View {
 
@@ -66,19 +67,42 @@ class SyncView extends WatchUi.View {
                 Graphics.TEXT_JUSTIFY_CENTER);
         }
 
+        // GPS-Guete: spiegelt exakt die Schwelle, ab der Track.mc Punkte
+        // speichert (< QUALITY_POOR wird verworfen) — sonst waere die
+        // Anzeige irrefuehrend.
+        var y = cy + 34;
+        var gpsTxt = "GPS aus (kein Dienst)";
+        var gpsCol = Graphics.COLOR_DK_GRAY;
+        if (Model.serviceActive) {
+            var q = Position.QUALITY_NOT_AVAILABLE;
+            var pi = Position.getInfo();
+            if (pi != null && pi.accuracy != null) { q = pi.accuracy; }
+            if (q >= Position.QUALITY_USABLE) {
+                gpsTxt = "GPS gut"; gpsCol = Graphics.COLOR_GREEN;
+            } else if (q >= Position.QUALITY_POOR) {
+                gpsTxt = "GPS ausreichend"; gpsCol = Graphics.COLOR_GREEN;
+            } else {
+                gpsTxt = "GPS zu schwach"; gpsCol = Graphics.COLOR_RED;
+            }
+        }
+        dc.setColor(gpsCol, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, y, Graphics.FONT_XTINY, gpsTxt, Graphics.TEXT_JUSTIFY_CENTER);
+
         // Fehlergrund (z. B. "Nicht gekoppelt", "Upload 401")
         if (Uploader.lastError != null) {
+            y += 22;
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, cy + 30, Graphics.FONT_XTINY,
+            dc.drawText(cx, y, Graphics.FONT_XTINY,
                 Uploader.lastError as Lang.String, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
         // Kopplungs-Rueckmeldung (nach Code-Eingabe)
         if (Pair.status != null) {
+            y += 22;
             var ok = Pair.status.substring(0, 3).equals("Gek");
             dc.setColor(ok ? Graphics.COLOR_GREEN : Graphics.COLOR_YELLOW,
                 Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, cy + 52, Graphics.FONT_XTINY,
+            dc.drawText(cx, y, Graphics.FONT_XTINY,
                 Pair.status, Graphics.TEXT_JUSTIFY_CENTER);
         }
 

@@ -39,9 +39,9 @@ class CprView extends WatchUi.View {
 
         // 1) Kopfbalken: Gesamtdauer der Reanimation
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.fillRectangle(0, 8, w, 48);
-        dc.setColor(Graphics.COLOR_PURPLE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 32, Graphics.FONT_NUMBER_MILD, _mmss(Cpr.elapsedS()),
+        dc.fillRectangle(0, 0, w, 56);          // bis an die Oberkante
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 30, Graphics.FONT_NUMBER_MILD, _mmss(Cpr.elapsedS()),
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         // 2) Grosser 2:00-Countdown, mittig

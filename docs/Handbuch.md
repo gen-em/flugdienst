@@ -27,12 +27,23 @@ Mitternacht.
 Ein Neustart der Uhr oder der App mitten im Dienst ist unkritisch: Phase,
 Track und eine laufende Reanimation werden nahtlos fortgesetzt.
 
-### 2.2 Die vier Oberflächen
+### 2.2 Die Oberflächen
 
-Mit **kurz UP/DOWN** blätterst du im Kreis durch: **Uhr → Karte → Tempo → Reanimation**.
+Mit **kurz UP/DOWN** blätterst du im Kreis durch: **Uhr → Karte → Tempo →
+Statistik → Sync → Reanimation**.
 
-**Uhr (Hauptanzeige):** Uhrzeit und aktuelle Phase (Zahl + Name). Unten
-erscheint bei Bedarf „REA läuft" oder „Sync ausstehend".
+**Uhr (Hauptanzeige):** groß die Uhrzeit, darunter klein das Datum, darunter
+die aktuelle Phase (Zahl + Name). Läuft eine Reanimation, umschließt ein roter
+Ring die Anzeige — auf einen Blick erkennbar.
+
+**Sync:** Zeigt, ob alle abgeschlossenen Pakete beim Server angekommen sind
+(grün „Sync vollständig" mit Haken) oder wie viele noch offen sind, bei
+Problemen mit Fehlergrund. Darunter steht die **GPS-Güte**: „GPS gut" oder
+„GPS ausreichend" (grün) heißt, dass Positionen aufgezeichnet werden; „GPS zu
+schwach" (rot) bedeutet, dass die Uhr gerade keine Punkte speichert — die
+Schwelle entspricht exakt der, die auch die Aufzeichnung verwendet. Außerhalb
+eines Dienstes steht dort „GPS aus". Unten die App-Version; mit **START
+gedrückt halten** startest du hier die Geräte-Kopplung.
 
 - **kurz START** schaltet zur nächsten Phase (mit Zeitstempel und Position):
   1 Frei → 2 Alarmierung (= Einsatzbeginn) → 3 Abflug → 4 Ankunft Einsatzort →
@@ -81,8 +92,9 @@ geschlossen.
 Die Uhr lädt selbstständig hoch: Einsätze bei Phase 10, den Ruhe-Track etwa
 stündlich, den Rest beim Dienstende. Ohne Verbindung puffert die Uhr sicher im
 Speicher und sendet später nach — gelöscht wird lokal erst, wenn der Server
-den vollständigen Empfang bestätigt hat. „Sync ausstehend" auf der
-Hauptanzeige heißt nur: Es wird später erneut versucht.
+den vollständigen Empfang bestätigt hat. Den aktuellen Stand zeigt die
+**Sync-Seite** (vom Startbildschirm mit DOWN, im Dienst zwischen Statistik und
+Reanimation).
 
 ## 3. Die Web-Oberfläche
 
