@@ -184,7 +184,7 @@ function fieldValue(string $col) {
 <div class="layout">
   <?php ui_days_sidebar($day); ?>
 
-<main class="page page-narrow">
+<main class="page">
   <h1><?= $editing ? 'Einsatz bearbeiten' : 'Einsatz nachtragen' ?></h1>
   <?php if ($editing && !(int)$mission['manual']): ?>
     <p class="alert alert-info">Dieser Einsatz stammt von der Uhr. Nach dem Speichern gilt er als
@@ -193,7 +193,7 @@ function fieldValue(string $col) {
   <?php endif; ?>
   <?php if ($error): ?><p class="alert"><?= e($error) ?></p><?php endif; ?>
 
-  <form method="post" id="missionform">
+  <form method="post" id="missionform" class="formcol">
     <?= csrf_field() ?>
     <?php if ($editing): ?><input type="hidden" name="id" value="<?= $id ?>"><?php endif; ?>
 

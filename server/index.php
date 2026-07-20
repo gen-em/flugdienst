@@ -100,7 +100,7 @@ if ($selDay === null) {
         <th class="sortable" data-key="dx">Diagnose</th>
         <th class="sortable" data-key="winch">Winde</th>
         <th class="sortable" data-key="bw">Bergwacht</th>
-        <th class="sortable" data-key="km">Kilometer</th>
+        <th class="sortable" data-key="km">Flugkilometer</th>
       </tr></thead>
       <tbody></tbody>
     </table>
@@ -128,6 +128,18 @@ map.setView([48.5, 10.5], 7); // Fallback, bis Daten da sind
 
 let layerGroup = L.layerGroup().addTo(map);
 const trackLines = [];
+// Einsatzort als klassischer Karten-Pin in der Einsatzfarbe (SVG-DivIcon)
+function locPin(color){
+  return L.divIcon({
+    className: 'locpin',
+    html: `<svg width="30" height="42" viewBox="0 0 30 42" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 1C7.3 1 1 7.2 1 14.9 1 25.4 15 41 15 41s14-15.6 14-26.1C29 7.2 22.7 1 15 1z"
+            fill="${color}" stroke="#fff" stroke-width="2"/>
+      <circle cx="15" cy="14.5" r="5" fill="#fff"/></svg>`,
+    iconSize: [30, 42], iconAnchor: [15, 41], popupAnchor: [0, -34]
+  });
+}
+
 let mapHasBounds = false;
 function trackWeight(){
   const z = map.getZoom();
@@ -289,8 +301,8 @@ async function loadDay(day){
             m._ort = extractOrt(o.loc.addr);
             changed = true;
             if (o.loc.lat != null) {
-              layerGroup.addLayer(L.circleMarker([o.loc.lat, o.loc.lon],
-                { radius: 8, color: m._col, weight: 3, fillColor: '#fff', fillOpacity: .9 })
+              layerGroup.addLayer(L.marker([o.loc.lat, o.loc.lon],
+                { icon: locPin(m._col), keyboard: false })
                 .bindPopup(`Einsatz ${m._no}<br>` + esc(o.loc.addr)));
               pinBounds.push([o.loc.lat, o.loc.lon]);
             }

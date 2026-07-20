@@ -30,6 +30,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (PDOException $ex) { $error = 'Diese E-Mail-Adresse wird bereits verwendet.'; }
         }
     }
+    if ($action === 'user_delete') {
+        if ($uid === $userId) {
+            $error = 'Das eigene Konto kann hier nicht gelöscht werden.';
+        } else {
+            // FK-Kaskaden entfernen Einsätze, Segmente, Tracks, Geräte, Flugtage
+            db()->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
+            header('Location: admin.php');
+            exit;
+        }
+    }
     if ($action === 'device_toggle') {
         db()->prepare('UPDATE devices SET active = 1 - active WHERE id = ? AND user_id = ?')
             ->execute([(int)($_POST['dev'] ?? 0), $uid]);
@@ -124,6 +134,14 @@ $devices = $dv->fetchAll();
     <?php endforeach; ?>
     </tbody>
   </table>
+
+  <hr class="sep">
+  <form method="post"
+        onsubmit="return confirm('Diese NutzerIn ENDGÜLTIG löschen? Alle Einsätze, Flugtage, Tracks, Reanimationen und Geräte werden unwiderruflich mit entfernt. Verschlüsselte Angaben sind danach für niemanden mehr lesbar.')">
+    <?= csrf_field() ?><input type="hidden" name="action" value="user_delete">
+    <input type="hidden" name="id" value="<?= $uid ?>">
+    <button class="btn-red">! Nutzer löschen</button>
+  </form>
 
   <?php ui_footer(); ?>
   </main>

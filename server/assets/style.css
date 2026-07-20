@@ -300,3 +300,17 @@ h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
 
 /* Admin: ganze Zeile als Hover-Ziel */
 .rowlink:hover td{background:var(--accent-light)}
+
+/* Einsatzort-Pin und Tagestabelle */
+.locpin svg{filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
+#missions th{text-align:center}
+#missions th:nth-child(2),#missions td:nth-child(2),
+#missions th:nth-child(6),#missions td:nth-child(6){width:3.4rem}
+#missions th:nth-child(3),#missions td:nth-child(3){width:4.6rem}
+#missions th:nth-child(8),#missions td:nth-child(8){width:4rem}
+#missions th:nth-child(9),#missions td:nth-child(9){width:5.4rem}
+#missions td:nth-child(2),#missions td:nth-child(6),
+#missions td:nth-child(8),#missions td:nth-child(9){text-align:center}
+
+/* Einsatzformular: Seitenrahmen wie überall, Eingaben in lesbarer Spalte */
+.formcol{max-width:760px}
