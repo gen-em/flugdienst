@@ -96,9 +96,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$errors && $pdo !== null) {
         try {
             if ($dropExisting) {
+                // Tabellenliste direkt aus schema.sql lesen — so bleibt sie
+                // automatisch vollstaendig, wenn spaeter Tabellen dazukommen.
+                preg_match_all('/CREATE TABLE(?:\s+IF NOT EXISTS)?\s+`?(\w+)`?/i',
+                    (string)file_get_contents($schemaPath), $mm);
                 $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
-                foreach (['track_points','resus_events','resus_sessions','mission_phases',
-                          'rest_segments','missions','devices','password_resets','users'] as $t) {
+                foreach ($mm[1] as $t) {
                     $pdo->exec("DROP TABLE IF EXISTS `{$t}`");
                 }
                 $pdo->exec('SET FOREIGN_KEY_CHECKS=1');

@@ -3,6 +3,8 @@ declare(strict_types=1);
 /**
  * Datenbank-Updates (Migrationen).
  * - Nur fuer eingeloggte Admins.
+ * - NEUE MIGRATION? Die ID zusaetzlich am Ende von schema.sql eintragen,
+ *   damit Neuinstallationen sie nicht unnoetig ausfuehren.
  * - Fuehrt Buch in der Tabelle schema_migrations: jede Migration laeuft genau
  *   einmal. Mehrfaches Aufrufen dieser Seite ist ungefaehrlich.
  * - Neue Migrationen werden unten in $MIGRATIONS ergaenzt.

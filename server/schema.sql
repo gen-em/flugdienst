@@ -214,3 +214,35 @@ CREATE TABLE track_points (
   ts  INT UNSIGNED NOT NULL,                          -- Unix-Epoche (s, UTC)
   PRIMARY KEY (owner_type, owner_id, seq)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------------
+-- Migrations-Buchfuehrung. Eine frische Installation ist bereits auf dem
+-- Stand aller bisherigen Migrationen, deshalb werden sie hier als erledigt
+-- eingetragen — update.php findet dann nichts mehr zu tun.
+--
+-- WICHTIG bei neuen Migrationen: die neue ID zusaetzlich hier ergaenzen,
+-- sonst laeuft sie bei jeder Neuinstallation unnoetig (und ggf. auf Daten,
+-- die es noch gar nicht gibt).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  id         VARCHAR(120) NOT NULL PRIMARY KEY,
+  applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  status     VARCHAR(16) NOT NULL DEFAULT 'applied'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO schema_migrations (id, status) VALUES
+  ('2026_07_16_mehrere_reanimationen', 'skipped'),
+  ('2026_07_17_flugtage', 'skipped'),
+  ('2026_07_17_wartung', 'skipped'),
+  ('2026_07_18_geraete_status', 'skipped'),
+  ('2026_07_18_manuelle_einsaetze', 'skipped'),
+  ('2026_07_19_phase10_entfernen', 'skipped'),
+  ('2026_07_19_profil_name', 'skipped'),
+  ('2026_07_19_geraete_entkoppeln', 'skipped'),
+  ('2026_07_19_stammdaten', 'skipped'),
+  ('2026_07_20_einsatzfelder_ort', 'skipped'),
+  ('2026_07_20_stammdaten_defaults', 'skipped'),
+  ('2026_07_20_kopplung', 'skipped'),
+  ('2026_07_20_patientinnendaten', 'skipped'),
+  ('2026_07_21_pflicht_e2e', 'skipped'),
+  ('2026_07_22_tag_zuordnung', 'skipped');
