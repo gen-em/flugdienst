@@ -98,8 +98,8 @@ if ($selDay === null) {
         <th class="sortable" data-key="site">Einsatzort</th>
         <th class="sortable" data-key="age">Alter</th>
         <th class="sortable" data-key="dx">Diagnose</th>
-        <th>Winde</th>
-        <th>Bergwacht</th>
+        <th class="sortable" data-key="winch">Winde</th>
+        <th class="sortable" data-key="bw">Bergwacht</th>
         <th class="sortable" data-key="km">Kilometer</th>
       </tr></thead>
       <tbody></tbody>
@@ -127,6 +127,16 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 map.setView([48.5, 10.5], 7); // Fallback, bis Daten da sind
 
 let layerGroup = L.layerGroup().addTo(map);
+const trackLines = [];
+let mapHasBounds = false;
+function trackWeight(){
+  const z = map.getZoom();
+  return z >= 14 ? 4 : z >= 12 ? 5 : z >= 10 ? 6 : 7;
+}
+map.on('zoomend', () => {
+  const w = trackWeight();
+  trackLines.forEach(l => l.setStyle({ weight: w }));
+});
 
 function fmtDay(iso){ const [y,m,d]=iso.split('-'); return `${d}.${m}.${y}`; }
 let dayMissions = [];
@@ -140,6 +150,8 @@ function sortVal(m, key){
     case 'site':  return (m._ort || '').toLowerCase();
     case 'age':   return m._age == null ? -1 : m._age;
     case 'dx':    return (m._dx || '').toLowerCase();
+    case 'winch': return m.winch ? 1 : 0;
+    case 'bw':    return m.bergwacht ? 1 : 0;
     case 'winch': return m.winch ? 1 : 0;
     case 'bw':    return m.bergwacht ? 1 : 0;
     case 'km':    return m.distance_m == null ? -1 : m.distance_m;
@@ -292,6 +304,7 @@ async function loadDay(day){
 
   // Auto-Zoom: Track soll ca. 75 % der Karte einnehmen -> ~12.5 % Rand je Seite
   if (bounds.length) {
+    mapHasBounds = true;
     const px = map.getSize();
     map.fitBounds(L.latLngBounds(bounds),
       { padding: [px.y * 0.125, px.x * 0.125] });

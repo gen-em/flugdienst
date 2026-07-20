@@ -89,7 +89,7 @@ Hauptanzeige heißt nur: Es wird später erneut versucht.
 Die Kopfleiste zeigt links das GenEM-Icon mit „Einsatzdokumentation
 Luftrettung – *Name*" (Name im Profil setzbar, sonst E-Mail), rechts die
 Menüs **Übersicht**, **Administration** (nur Admin) und **⚙ Einstellungen**
-(Direktlink zu Profil, Stammdaten, Geräten und Abmelden). Nach 30 Minuten
+(Profil, Geräte, Standortdaten, Backup; Abmelden fragt sicherheitshalber nach). Nach 30 Minuten
 ohne Aktivität meldet das System automatisch ab. Die Einsatztage-Leiste links begleitet alle
 Inhaltsseiten — auch Einsatzansicht und Formular; ein Tagesklick führt zur
 Übersicht des Tages.
@@ -109,8 +109,11 @@ Links die Liste der Flugtage; der neueste ist vorausgewählt. Pro Tag:
   Kurzfassung.
 - **Karte** mit allen Einsätzen des Tages (jeder in eigener Farbe, beginnend
   mit Orange/Blau/Rot) und dem Ruhe-Track in Schwarz.
-- **Tabelle** der Einsätze (Nr., Beginn, Dauer, Einsatzort, Winde, Bergwacht,
-  Kilometer) — Klick öffnet den Einsatz, Klick auf einen Spaltenkopf sortiert.
+- **Tabelle** der Einsätze: Nr., Beginn, Dauer, **Einsatzort** (Ortschaft aus
+  der verschlüsselten Adresse), **Alter**, **Diagnose**, Winde, Bergwacht,
+  Kilometer — Klick öffnet den Einsatz, Klick auf einen Spaltenkopf sortiert
+  (außer Winde/Bergwacht). Die Einsatzort-Pins auf der Karte tragen die Farbe
+  des jeweiligen Einsatzes; Tracklinien werden beim Rauszoomen dicker.
   Die Dauer rechnet von der Alarmierung bis Phase 9; fehlt Phase 9, steht dort
   „kein Ende".
 - **„+ Einsatz nachtragen"** öffnet das Eingabeformular für diesen Tag.
@@ -120,7 +123,9 @@ Links die Liste der Flugtage; der neueste ist vorausgewählt. Pro Tag:
 Titel „Einsatz N · Uhrzeit" (N = Nummer des Tages nach Alarmierungszeit),
 darunter **Bearbeiten** und **Löschen** (mit Bestätigung; entfernt auch Phasen,
 Reanimationen und Track — die Uhr legt den Einsatz danach nicht wieder an).
-Karte mit Track (Start grün, Ende rot) und ggf. dem Einsatzort-Pin; auf dem
+Karte mit Track (Start grün, Ende rot) und ggf. dem Einsatzort-Pin aus den
+lokal entschlüsselten Koordinaten (Diagnose, Alter und Einsatzort erscheinen
+mit 🔒 in der Feldliste); auf dem
 Track sitzen **Phasen-Nummern** an den GPS-Positionen der Zeitstempel
 (Umschalter unter der Karte). Zeigt man auf eine Phasenzeile oder eine Kachel,
 leuchtet das Gegenstück orange auf (am Handy: antippen). Darunter die
@@ -133,12 +138,13 @@ Uhrzeit eintragen, Zeilen hinzufügen/entfernen — auch dieselbe Phase mehrfach
 **In chronologischer Reihenfolge eintragen**; Zeiten nach Mitternacht werden
 automatisch dem Folgetag zugerechnet.
 
-Der **Einsatzort** hat ein Suchfeld: Ab drei Buchstaben erscheinen
+Diagnose, Alter und **Einsatzort** liegen gemeinsam im verschlüsselten Block
+(siehe 3.7). Der Einsatzort hat ein Suchfeld: Ab drei Buchstaben erscheinen
 Adressvorschläge (OpenStreetMap); die Auswahl eines Vorschlags speichert die
 Koordinaten und setzt den Pin auf den Karten. Freitext ohne Vorschlag geht
 auch — dann ohne Pin.
 
-Dazu die Zusatzfelder: Einsatznummer, Transportziel, Beschreibung Einsatzort
+Dazu die Zusatzfelder: Einsatznummer, Transportziel, Beschreibung Einsatzort (nur Detailansicht)
 (erscheint in der Tagestabelle), **Windeneinsatz** (Haken öffnet Cycles,
 Cycles mit Patient, Luftverladung), **Bergwacht** (Haken öffnet Bereitschaft
 aus den Stammdaten plus Namen/Infos), Anderer Notarzt, Weitere Rettungsmittel
@@ -172,7 +178,7 @@ vorbelegt.
 NutzerInnen anlegen (verschickt automatisch den Passwort-Setz-Link) und
 löschen (**Achtung:** entfernt alle Daten der Person unwiderruflich). Ein
 Klick auf eine NutzerIn öffnet die Editierseite: Rolle wechseln, E-Mail
-ändern, neues Passwort vergeben und die verbundenen Geräte einsehen
+ändern und die verbundenen Geräte einsehen
 (aktivieren/deaktivieren/löschen — Löschen lässt hochgeladene Daten
 bestehen).
 Nach Code-Updates mit Datenbank-Änderungen einmal **`update.php`** aufrufen

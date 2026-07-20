@@ -3,7 +3,10 @@
 Dokumentation von Hubschraubereinsätzen: Garmin-Uhr-App (Fenix 6 Pro,
 Connect IQ) erfasst Phasen, GPS-Tracks und Reanimations-Ereignisse und lädt
 sie auf einen eigenen Server; die Web-App (PHP/MySQL) zeigt Flugtage,
-Einsätze und Rea-Protokolle und erlaubt Nachtragen/Bearbeiten.
+Einsätze und Rea-Protokolle und erlaubt Nachtragen/Bearbeiten. Diagnose,
+Alter und Einsatzort sind **Ende-zu-Ende-verschlüsselt** (Schlüssel aus dem
+Login-Passwort, Wiederherstellungsschlüssel als Rettungsanker); ein
+verschlüsseltes **Backup** (.edbak) sichert alle Daten in eine Datei.
 
 ## Dokumentation
 
@@ -22,9 +25,10 @@ Einsätze und Rea-Protokolle und erlaubt Nachtragen/Bearbeiten.
 (Details: Technik-Doku, Abschnitt Betrieb).
 
 **Uhr:** `watch/` mit VS Code + Monkey-C-Erweiterung + Connect-IQ-SDK bauen
-(Ziel `fenix6pro`), `.prg` per USB nach `GARMIN/Apps/`, Zugangsdaten über die
-Connect-IQ-Einstellungen eintragen (Details: Technik-Doku, Abschnitt 5;
-Geräte-Anlage: Handbuch, Abschnitt 4).
+(Ziel `fenix6pro`; vorher die Server-Domain in `properties.xml` eintragen),
+`.prg` per USB nach `GARMIN/Apps/`, dann **per Code koppeln**: Web →
+Einstellungen → Geräte → Code erzeugen; Uhr → Sync-Seite (DOWN) → START
+halten → Code eintippen (Details: Handbuch, Abschnitt 4).
 
 **Deployment:** Push auf `main` deployt `server/` automatisch per FTPS
 (GitHub Actions). Nach DB-Änderungen als Admin `update.php` aufrufen.

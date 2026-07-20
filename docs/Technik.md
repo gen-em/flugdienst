@@ -32,14 +32,17 @@ hems/
 │   ├── ingest.php         Uhr-/Fremdquellen-Endpunkt (Auth, Idempotenz)
 │   ├── index.php          Tagesübersicht  · einsatz.php  Einsatzansicht
 │   ├── einsatz_form.php   Nachtragen/Bearbeiten · mission_fields.php Felddefinition
-│   ├── geraete.php        Geräte-Selbstverwaltung · admin.php Verwaltung
-│   ├── login/logout/reset_request/reset_confirm.php   Auth-Flows
-│   ├── install.php        Ersteinrichtung · update.php Migrations-Runner
-│   ├── db.php             PDO, Helfer, Labels, Aufräumjob
-│   ├── auth_guard.php     Session/CSRF/Rollen · smtp.php SMTPS-Versand
+│   ├── einstellungen.php  Profil/Geräte/Standortdaten/Backup · admin.php + admin_user.php Verwaltung
+│   ├── einrichtung.php    E2E-Ersteinrichtung (Wiederherstellungsschlüssel) & Entsperren
+│   ├── pair.php           Uhr-Kopplung per Code · geraete.php Geräte (Altseite)
+│   ├── backup_lib.php     .edbak-Container · export_backup.php Download-Endpunkt
+│   ├── login/logout/reset_request/reset_confirm.php   Auth-Flows · auth_salt.php KDF-Salt
+│   ├── install.php        Serverinstallation · update.php Migrations-Runner
+│   ├── db.php             PDO, Helfer, Labels, Aufräumjob · ui.php Kopf-/Seitenleisten
+│   ├── auth_guard.php     Session/CSRF/Rollen, erzwungene E2E-Einrichtung · smtp.php SMTPS
 │   ├── api/day.php        Tage + Tagesdaten (GET), Flugtag-Meta (POST)
 │   ├── api/mission.php    Einzeleinsatz inkl. Feldern/Rea-Sitzungen
-│   ├── assets/            style.css, Logos, Favicon
+│   ├── assets/            style.css, crypto.js (WebCrypto-Helfer), Logos, Favicon
 │   ├── migrations/        (nur Doku; produktiv zählt update.php)
 │   └── schema.sql         Voll-Schema für Neuinstallationen
 ├── watch/                 Connect-IQ-Projekt (Monkey C)
@@ -52,16 +55,18 @@ hems/
 
 | Tabelle | Zweck / Besonderheiten |
 |---|---|
-| `users` | Login (E-Mail = Username), Rolle `user`/`admin`; Löschen kaskadiert alles |
+| `users` | Login (E-Mail = Username), Rolle `user`/`admin`; Löschen kaskadiert alles; **Browser-Schlüsselableitung** (`kdf_salt`, `kdf_ver`) und **E2E-Schlüssel-Hüllen** `pat_wrap_pw`/`pat_wrap_rc` (Inhaltsschlüssel passwort- bzw. wiederherstellungsverpackt) |
 | `password_resets` | Token-Hashes (sha256), 1 h gültig; Aufräumjob entsorgt Altbestand |
 | `devices` | Upload-Zugang je Gerät: `device_id` (öffentlich) + `api_key_hash`; **`active`-Flag** (deaktivieren statt löschen); virtuelle Geräte `manual-<userId>` für Handeinträge (dauerhaft inaktiv, aus Listen gefiltert) |
-| `missions` | Einsatz; `UNIQUE(device_id, client_ref)` = Idempotenz-Anker; `day` = Flugtag; **`manual`-Marker** (Schutz vor Uhr-Überschreiben); Zusatzfelder lt. `mission_fields.php` (derzeit `mission_no`, `notes`) |
+| `missions` | Einsatz; `UNIQUE(device_id, client_ref)` = Idempotenz-Anker; `day` = Flugtag; **`manual`-Marker** (Schutz vor Uhr-Überschreiben); Zusatzfelder lt. `mission_fields.php`; **`pat_blob`** = E2E-Chiffretext (Diagnose, Alter, Einsatzort — Klartext-Ortsspalten existieren seit der Pflicht-Migration nicht mehr) |
 | `mission_phases` | Phasen-Zeitstempel (2–10, Mehrfach-Einträge erlaubt) inkl. Position |
 | `resus_sessions` / `resus_events` | Reanimationen: **mehrere Sitzungen je Einsatz**, Ereignisse typisiert |
 | `rest_segments` | Ruhe-Track-Segmente (gleiches Idempotenz-Schema wie Einsätze) |
 | `track_points` | GPS-Punkte für Einsätze **und** Segmente; PK `(owner_type, owner_id, seq)`; bewusst ohne FK (polymorph) → Aufräumjob entfernt Waisen |
 | `days` | Flugtag-Metadaten; **Verknüpfung über natürlichen Schlüssel `(user_id, day)`**, entsteht lazy beim ersten Speichern |
-| `app_state` | Schlüssel/Wert (z. B. `last_cleanup`) |
+| `pair_codes` | Kopplungscodes für die Uhr (5 Zeichen, 60 min, einmalig; Aufräumjob) |
+| `deleted_refs` | Sperrliste gelöschter `client_ref`s (90 Tage) gegen Wieder-Upload durch die Uhr |
+| `app_state` | Schlüssel/Wert (z. B. `last_cleanup`, `salt_secret`) |
 | `schema_migrations` | Buchführung des Migrations-Runners |
 
 Skalierung: ~2.000–2.500 Punkte je Einsatz; Indizes `(user_id, day)` und der
@@ -75,6 +80,25 @@ antwortet mit `next_seq` (erste noch fehlende Sequenz). Wiederholungen sind
 unschädlich (`INSERT IGNORE` auf den Punkte-PK, Upsert auf `client_ref`).
 Phasen/Rea werden je Upload **vollständig ersetzt** (kein Delta). Die Uhr darf
 lokal erst löschen, wenn `final` bestätigt und `next_seq` = Punktzahl.
+
+**Ende-zu-Ende-Verschlüsselung (Pflicht):** Beim Login leitet der Browser per
+PBKDF2-SHA256 (310 000 Runden) aus Passwort + `kdf_salt` zwei Werte ab: ein
+Auth-Token (ersetzt das Passwort gegenüber dem Server) und einen Datenschlüssel
+(bleibt im Browser, `sessionStorage`). Ein zufälliger **Inhaltsschlüssel**
+verschlüsselt `pat_blob` (`{dx, age, loc:{addr,lat,lon}}`, AES-GCM) und liegt
+doppelt verpackt in `users`: mit dem Datenschlüssel (`pat_wrap_pw`) und mit dem
+aus dem Wiederherstellungsschlüssel abgeleiteten Schlüssel (`pat_wrap_rc`).
+`auth_guard.php` erzwingt die Ersteinrichtung (einrichtung.php), solange die
+Hüllen fehlen; dieselbe Seite entsperrt nach einem Passwort-Reset per
+Wiederherstellungsschlüssel. Passwort-Ändern re-wrappt clientseitig; eine
+Admin-Passwortvergabe existiert bewusst nicht. Alt-Konten (kdf_ver 0) werden
+beim ersten Login transparent migriert; `auth_salt.php` liefert Salts (mit
+deterministischem Fake für unbekannte Adressen gegen User-Enumeration).
+
+**Backup:** `backup_lib.php` serialisiert alle NutzerInnen-Daten (inkl.
+Chiffretexte und Schlüssel-Hüllen) als gzip-JSON in einen AES-256-GCM-Container
+(`.edbak`, PBKDF2 200 000; Aufbau: `docs/Backup-Format.md`). Import ergänzt nur
+Fehlendes (Dubletten über `client_ref`/Namen), überschreibt nie.
 
 **Schutz manueller Einsätze:** Beim Ingest wird vor dem Upsert der
 `manual`-Marker geprüft. Ist er gesetzt, werden Metadaten/Phasen/Rea **nicht**
@@ -107,8 +131,10 @@ gesperrt, Referrer-Policy `strict-origin-when-cross-origin` (OSM-Kacheln).
 | `Track.mc` | GPS (15 m/10 s/1 s-Ausdünnung), Distanz/Anstieg, Anzeige-Polylinie (Cap 1000, Dichte-Halbierung), **Flash-Chunks à 200 Punkte**; `restore()` lädt Teil-Chunks zurück in den Puffer (Chunk-Ausrichtung, verlustfrei) |
 | `Cpr.mc` | Rea-Timer app-weit (1-s-Tick), 2:00-Zyklus, Ereignisse, **persistenter Zustand** (übersteht Neustart) |
 | `Uploader.mc` | Job-Queue (fertige Einsätze → Segmente → aktive), Chunking ≤ 500, `next_seq`-Bestätigung, Purge inkl. Marken |
-| `Nav.mc` | Pager Uhr → Karte → Tempo → Rea |
-| `StartView/ClockView/MapPage/SpeedView/CprView.mc` | Oberflächen + Delegates; lange Tastendrücke manuell via `onKeyPressed/Released` (800 ms, `Const.LONG_PRESS_MS`) |
+| `Nav.mc` | Pager Uhr → Karte → Tempo → Statistik → Sync → Rea |
+| `StartView/ClockView/MapPage/SpeedView/StatsView/CprView.mc` | Oberflächen + Delegates; lange Tastendrücke manuell via `onKeyPressed/Released` (800 ms, `Const.LONG_PRESS_MS`) |
+| `SyncView.mc` | Sync-Status (Backlog = nur abgeschlossene Pakete), App-Version, Kopplung per START-Halten |
+| `Pair.mc` | Kopplungscode-Eingabe → tauscht Code gegen Geräte-Zugang (`Storage 'cred'`) |
 | `Const.mc` / `Util.mc` | Labels, Tuning-Werte; ISO-UTC, lokale Anzeige, Vibration |
 
 Rückruf-Muster: `method()` existiert nur auf Objekten → kleine
@@ -117,8 +143,10 @@ Module weiter.
 
 **Build:** VS Code + Monkey-C-Erweiterung + Connect-IQ-SDK + JDK;
 Entwickler-Schlüssel via „Generate a Developer Key". Ziel `fenix6pro`,
-Debug-Build; Sideload: `.prg` nach `GARMIN/Apps/`. Einstellungen
-(Server-URL/Geräte-ID/Schlüssel) über Connect-IQ-Settings am Handy.
+Debug-Build; Sideload: `.prg` nach `GARMIN/Apps/`. In `properties.xml` steht
+nur die Server-Domain; die Zugangsdaten holt sich die Uhr selbst über die
+**Kopplung per Code** (Web: Einstellungen → Geräte; Uhr: Sync-Seite → START
+halten). `Const.APP_VERSION` bei Releases mitziehen (Anzeige Sync-Seite).
 
 ## 6. Deployment
 
