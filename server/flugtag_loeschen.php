@@ -57,7 +57,7 @@ require_once __DIR__ . '/ui.php';   // auth_guard.php laedt sie bereits
       <input type="hidden" name="day" value="<?= e($day) ?>">
       <input type="hidden" name="confirm" value="ja">
       <button class="btn-red">Ganzen Tag in den Papierkorb</button>
-      <a class="btn-link" href="index.php?day=<?= e($day) ?>">Abbrechen</a>
+      <a class="btn-plain" href="index.php?day=<?= e($day) ?>">Abbrechen</a>
     </form>
   </main>
 </div>

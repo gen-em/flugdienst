@@ -61,7 +61,7 @@ require_once __DIR__ . '/ui.php';   // auth_guard.php laedt sie bereits
       <input type="hidden" name="id" value="<?= (int)$id ?>">
       <input type="hidden" name="confirm" value="ja">
       <button class="btn-red">In den Papierkorb</button>
-      <a class="btn-link" href="einsatz.php?id=<?= (int)$id ?>">Abbrechen</a>
+      <a class="btn-plain" href="einsatz.php?id=<?= (int)$id ?>">Abbrechen</a>
     </form>
   </main>
 </div>

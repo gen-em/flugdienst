@@ -32,6 +32,9 @@ return [
     'transport_dest' => [
         'label' => 'Transportziel', 'type' => 'text', 'max' => 190,
         'placeholder' => 'z. B. Klinikum Kempten',
+        'children' => [
+            'schockraum' => [ 'label' => 'Schockraum', 'type' => 'checkbox' ],
+        ],
     ],
     'site_desc' => [
         'label' => 'Beschreibung Einsatzort', 'type' => 'text', 'max' => 190,
@@ -64,6 +67,11 @@ return [
                 'label' => 'Namen / Infos', 'type' => 'text', 'max' => 190,
             ],
         ],
+    ],
+
+    'secondary' => [
+        'label' => 'Sekundärtransport', 'type' => 'checkbox',
+        'day_col' => 'check', 'day_label' => 'Sekundär&shy;transport',
     ],
     'other_ema' => [
         'label' => 'Anderer Notarzt', 'type' => 'text', 'max' => 190,

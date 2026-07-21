@@ -38,9 +38,9 @@ $istTag = ($action === 'purge_day');
 if ($istTag && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) {
     http_response_code(400); exit('Ungültiges Datum.');
 }
-if (!$istTag && $action !== 'purge_mission') { header('Location: index.php'); exit; }
+$zeigeListe = ($action !== 'purge_day' && $action !== 'purge_mission');
 
-if ($istTag) {
+if (!$zeigeListe && $istTag) {
     $scope = trash_scope_day($userId, $day);
     // Der Umfang zaehlt nur nicht-geloeschte Zeilen; im Papierkorb sind alle
     // markiert, deshalb hier direkt zaehlen.
@@ -48,12 +48,15 @@ if ($istTag) {
                         WHERE user_id = ? AND day = ? AND deleted_at IS NOT NULL');
     $c->execute([$userId, $day]);
     $anzahl = (int)$c->fetchColumn();
-} else {
+} elseif (!$zeigeListe) {
     $st = db()->prepare('SELECT * FROM missions WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL');
     $st->execute([$id, $userId]);
     $m = $st->fetch();
-    if (!$m) { header('Location: index.php'); exit; }
+    if (!$m) { header('Location: papierkorb.php'); exit; }
 }
+
+$trashDays     = $zeigeListe ? trash_list_days($userId) : [];
+$trashMissions = $zeigeListe ? trash_list_missions($userId) : [];
 
 require_once __DIR__ . '/ui.php';   // auth_guard.php laedt sie bereits
 ?>
@@ -62,7 +65,7 @@ require_once __DIR__ . '/ui.php';   // auth_guard.php laedt sie bereits
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Endgültig löschen · Einsatzdoku</title>
+  <title><?= $zeigeListe ? 'Papierkorb' : 'Endgültig löschen' ?> · Einsatzdoku</title>
   <link rel="stylesheet" href="assets/style.css">
   <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
@@ -71,6 +74,68 @@ require_once __DIR__ . '/ui.php';   // auth_guard.php laedt sie bereits
 <div class="layout">
   <?php ui_days_sidebar(null); ?>
   <main class="page">
+  <?php if ($zeigeListe): ?>
+    <h1>Papierkorb</h1>
+    <p class="muted">Gelöschtes bleibt <?= TRASH_DAYS ?> Tage hier und wird danach
+       automatisch endgültig entfernt.</p>
+
+    <?php if (!$trashDays && !$trashMissions): ?>
+      <div class="card"><p>Der Papierkorb ist leer.</p></div>
+    <?php endif; ?>
+
+    <?php if ($trashDays): ?>
+      <h2>Flugtage</h2>
+      <table class="data trashtable">
+        <thead><tr><th>Tag</th><th>Einsätze</th><th>gelöscht am</th><th class="th-act">Aktionen</th></tr></thead>
+        <tbody>
+        <?php foreach ($trashDays as $t): ?>
+          <tr>
+            <td><?= e(date('d.m.Y', strtotime((string)$t['day']))) ?></td>
+            <td><?= (int)$t['einsaetze'] ?></td>
+            <td><?= e(fmt_local((string)$t['deleted_at'], 'd.m.Y H:i')) ?></td>
+            <td><div class="rowactions">
+              <form method="post" action="papierkorb.php">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="restore_day">
+                <input type="hidden" name="day" value="<?= e((string)$t['day']) ?>">
+                <button class="btn-primary">Wiederherstellen</button>
+              </form>
+              <a class="btn-red"
+                 href="papierkorb.php?action=purge_day&amp;day=<?= e((string)$t['day']) ?>">Endgültig löschen</a>
+            </div></td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endif; ?>
+
+    <?php if ($trashMissions): ?>
+      <h2>Einsätze</h2>
+      <table class="data trashtable">
+        <thead><tr><th>Tag</th><th>Beginn</th><th>gelöscht am</th><th class="th-act">Aktionen</th></tr></thead>
+        <tbody>
+        <?php foreach ($trashMissions as $t): ?>
+          <tr>
+            <td><?= e(date('d.m.Y', strtotime((string)$t['day']))) ?></td>
+            <td><?= e(fmt_local((string)$t['started_at'])) ?></td>
+            <td><?= e(fmt_local((string)$t['deleted_at'], 'd.m.Y H:i')) ?></td>
+            <td><div class="rowactions">
+              <form method="post" action="papierkorb.php">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="restore_mission">
+                <input type="hidden" name="id" value="<?= (int)$t['id'] ?>">
+                <button class="btn-primary">Wiederherstellen</button>
+              </form>
+              <a class="btn-red"
+                 href="papierkorb.php?action=purge_mission&amp;id=<?= (int)$t['id'] ?>">Endgültig löschen</a>
+            </div></td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endif; ?>
+
+  <?php else: ?>
     <h1>Endgültig löschen?</h1>
     <div class="card">
       <?php if ($istTag): ?>
@@ -92,8 +157,9 @@ require_once __DIR__ . '/ui.php';   // auth_guard.php laedt sie bereits
       <input type="hidden" name="id" value="<?= (int)$id ?>">
       <input type="hidden" name="confirm" value="ja">
       <button class="btn-red">Ja, endgültig löschen</button>
-      <a class="btn-link" href="index.php">Abbrechen</a>
+      <a class="btn-plain" href="papierkorb.php">Abbrechen</a>
     </form>
+  <?php endif; ?>
   </main>
 </div>
 <?php ui_footer(); ?>

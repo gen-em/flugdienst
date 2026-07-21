@@ -91,89 +91,25 @@ if ($selDay === null) {
     <div id="map" class="map"></div>
     <table class="data" id="missions">
       <thead><tr>
-        <th></th>
-        <th class="sortable" data-key="no">Nr.</th>
-        <th class="sortable" data-key="start">Beginn</th>
-        <th class="sortable" data-key="dur">Dauer</th>
-        <th class="sortable" data-key="site">Einsatzort</th>
-        <th class="sortable" data-key="age">Alter</th>
-        <th class="sortable" data-key="dx">Diagnose</th>
-        <th class="sortable" data-key="winch">Winde</th>
-        <th class="sortable" data-key="bw">Bergwacht</th>
-        <th class="sortable" data-key="km">Flugkilometer</th>
+        <th class="c-swatch"></th>
+        <th class="sortable c-no"   data-key="no">Nr.</th>
+        <th class="sortable c-mid"  data-key="start">Beginn</th>
+        <th class="sortable c-mid"  data-key="dur">Dauer</th>
+        <th class="sortable"        data-key="site">Einsatzort</th>
+        <th class="sortable c-slim" data-key="age">Alter</th>
+        <th class="sortable"        data-key="dx">Diagnose</th>
+        <th class="sortable c-slim" data-key="winch">Winde</th>
+        <th class="sortable c-slim" data-key="bw">Bergwacht</th>
+        <th class="sortable c-slim" data-key="sec">Sekundär&shy;transport</th>
+        <th class="sortable c-mid"  data-key="km">Flugkilometer</th>
       </tr></thead>
       <tbody></tbody>
     </table>
     <p id="empty" class="muted" hidden>Für diesen Tag sind keine Einsätze dokumentiert.</p>
     <div class="dayactions">
       <a href="einsatz_form.php" id="addmission" class="btn-primary">+ Einsatz nachtragen</a>
-      <a class="btn-red" id="daydellink" href="#" hidden>Flugtag löschen</a>
+      <a class="btn-red" id="daydellink" href="#" hidden>Tag löschen</a>
     </div>
-
-    <?php
-      require_once __DIR__ . '/trash_lib.php';
-      $trashDays     = trash_list_days($userId);
-      $trashMissions = trash_list_missions($userId);
-      if ($trashDays || $trashMissions):
-    ?>
-    <section class="trash">
-      <h2>Papierkorb</h2>
-      <p class="muted">Gelöschtes bleibt <?= TRASH_DAYS ?> Tage hier und wird danach
-         automatisch endgültig entfernt.</p>
-
-      <?php if ($trashDays): ?>
-        <h3>Flugtage</h3>
-        <table class="trashtable">
-          <thead><tr><th>Tag</th><th>Einsätze</th><th>gelöscht am</th><th></th></tr></thead>
-          <tbody>
-          <?php foreach ($trashDays as $t): ?>
-            <tr>
-              <td><?= e(date('d.m.Y', strtotime((string)$t['day']))) ?></td>
-              <td><?= (int)$t['einsaetze'] ?></td>
-              <td><?= e(fmt_local((string)$t['deleted_at'], 'd.m.Y H:i')) ?></td>
-              <td class="trashactions">
-                <form method="post" action="papierkorb.php">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="action" value="restore_day">
-                  <input type="hidden" name="day" value="<?= e((string)$t['day']) ?>">
-                  <button class="btn-link">Wiederherstellen</button>
-                </form>
-                <a class="btn-link danger"
-                   href="papierkorb.php?action=purge_day&amp;day=<?= e((string)$t['day']) ?>">Endgültig löschen</a>
-              </td>
-            </tr>
-          <?php endforeach; ?>
-          </tbody>
-        </table>
-      <?php endif; ?>
-
-      <?php if ($trashMissions): ?>
-        <h3>Einsätze</h3>
-        <table class="trashtable">
-          <thead><tr><th>Tag</th><th>Beginn</th><th>gelöscht am</th><th></th></tr></thead>
-          <tbody>
-          <?php foreach ($trashMissions as $t): ?>
-            <tr>
-              <td><?= e(date('d.m.Y', strtotime((string)$t['day']))) ?></td>
-              <td><?= e(fmt_local((string)$t['started_at'])) ?></td>
-              <td><?= e(fmt_local((string)$t['deleted_at'], 'd.m.Y H:i')) ?></td>
-              <td class="trashactions">
-                <form method="post" action="papierkorb.php">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="action" value="restore_mission">
-                  <input type="hidden" name="id" value="<?= (int)$t['id'] ?>">
-                  <button class="btn-link">Wiederherstellen</button>
-                </form>
-                <a class="btn-link danger"
-                   href="papierkorb.php?action=purge_mission&amp;id=<?= (int)$t['id'] ?>">Endgültig löschen</a>
-              </td>
-            </tr>
-          <?php endforeach; ?>
-          </tbody>
-        </table>
-      <?php endif; ?>
-    </section>
-    <?php endif; ?>
 
     <?php ui_footer(); ?>
   </main>
@@ -233,6 +169,7 @@ function sortVal(m, key){
     case 'dx':    return (m._dx || '').toLowerCase();
     case 'winch': return m.winch ? 1 : 0;
     case 'bw':    return m.bergwacht ? 1 : 0;
+    case 'sec':   return m.secondary ? 1 : 0;
     case 'winch': return m.winch ? 1 : 0;
     case 'bw':    return m.bergwacht ? 1 : 0;
     case 'km':    return m.distance_m == null ? -1 : m.distance_m;
@@ -249,16 +186,17 @@ function renderMissionTable(){
   });
   list.forEach(m => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><span class="swatch" style="background:${m._col}"></span></td>
-      <td class="mono">${m._no}</td>
-      <td class="mono">${m.start_hhmm}</td>
-      <td>${fmtDur(m.duration_s)}</td>
+    tr.innerHTML = `<td class="c-swatch"><span class="swatch" style="background:${m._col}"></span></td>
+      <td class="mono c-no">${m._no}</td>
+      <td class="mono c-mid">${m.start_hhmm}</td>
+      <td class="c-mid">${fmtDur(m.duration_s)}</td>
       <td${m._ort ? '' : ' class="dash"'}>${m._ort ? esc(m._ort) : '–'}</td>
-      <td class="mono${m._age != null ? '' : ' dash'}">${m._age != null ? m._age : '–'}</td>
+      <td class="mono c-slim${m._age != null ? '' : ' dash'}">${m._age != null ? m._age : '–'}</td>
       <td${m._dx ? '' : ' class="dash"'}>${m._dx ? esc(m._dx) : '–'}</td>
-      <td class="checkcol">${m.winch ? '✓' : ''}</td>
-      <td class="checkcol">${m.bergwacht ? '✓' : ''}</td>
-      <td class="mono">${fmtKm(m.distance_m)}</td>`;
+      <td class="checkcol c-slim">${m.winch ? '✓' : ''}</td>
+      <td class="checkcol c-slim">${m.bergwacht ? '✓' : ''}</td>
+      <td class="checkcol c-slim">${m.secondary ? '✓' : ''}</td>
+      <td class="mono c-mid">${fmtKm(m.distance_m)}</td>`;
     tr.addEventListener('click', () => location.href = 'einsatz.php?id=' + m.id);
     tbody.appendChild(tr);
   });

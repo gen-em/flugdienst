@@ -351,6 +351,14 @@ $MIGRATIONS = [
             "ALTER TABLE days ADD COLUMN deleted_at DATETIME NULL",
         ],
     ],
+    [
+        'id'    => '2026_07_23_sekundaer_schockraum',
+        'label' => 'Neue Felder: Sekundärtransport und Schockraum',
+        'sql'   => [
+            "ALTER TABLE missions ADD COLUMN secondary TINYINT(1) NOT NULL DEFAULT 0",
+            "ALTER TABLE missions ADD COLUMN schockraum TINYINT(1) NOT NULL DEFAULT 0",
+        ],
+    ],
     // Naechste Migration hier anhaengen.
 ];
 

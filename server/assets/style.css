@@ -347,3 +347,39 @@ h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
   gap:1rem;margin:1.4rem 0 .2rem}
 .dayactions .btn-primary,.dayactions .btn-red{display:inline-block;text-decoration:none;
   padding:.45rem 1rem;border-radius:6px}
+
+/* --- Block H: Aktionsleiste, Spaltenbreiten, Papierkorb --- */
+.dayactions{display:flex;justify-content:space-between;align-items:center;
+  gap:1rem;margin:1.4rem 0 .2rem}
+.dayactions a{flex:0 0 auto;white-space:nowrap}
+
+/* Vier Breitenstufen (über Klassen, damit neue Spalten nichts verschieben) */
+#missions th.c-swatch,#missions td.c-swatch{width:1.9rem}
+#missions th.c-no,#missions td.c-no{width:2.4rem}
+#missions th.c-slim,#missions td.c-slim{width:4.2rem}
+#missions th.c-mid,#missions td.c-mid{width:5.6rem;text-align:center}
+#missions td.c-no,#missions td.c-slim{text-align:center}
+#missions th.c-slim{line-height:1.15}
+
+/* Papierkorb-Symbol unten in der Einsatztage-Spalte */
+.trashlink{display:flex;justify-content:center;margin:1.6rem 0 .6rem;
+  color:#8A8378;text-decoration:none}
+.trashlink svg{width:22px;height:22px}
+.trashlink:hover{color:var(--accent)}
+.trashlink.leer{color:#CFCABF;pointer-events:auto}
+.trashlink.leer:hover{color:#CFCABF}
+.trashtable .rowactions{display:flex;gap:.6rem;justify-content:flex-end}
+.trashtable .rowactions form{display:inline}
+
+/* Seitenkopf mit Aktionen rechts (Einsatzansicht) */
+.pagehead{display:flex;align-items:flex-start;justify-content:space-between;gap:1.2rem}
+.pagehead-text{min-width:0}
+.pagehead-text h1{margin-bottom:.2rem}
+.pagehead-actions{display:flex;gap:.6rem;flex:0 0 auto;padding-top:.45rem}
+.pagehead-actions a{text-decoration:none;white-space:nowrap}
+.btn-plain{display:inline-block;text-decoration:none;padding:.45rem 1rem;border-radius:6px;
+  border:1px solid #D8D3C8;background:#FFFCFA;color:#1A0500;cursor:pointer;font:inherit}
+.btn-plain:hover{background:#F3EFE7}
+
+/* Schaltflächen, die Links sind, nie unterstreichen */
+a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none}

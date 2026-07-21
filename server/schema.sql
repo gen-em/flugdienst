@@ -56,6 +56,8 @@ CREATE TABLE missions (
   winch_cycles_pat TINYINT NULL,
   winch_airload TINYINT(1) NOT NULL DEFAULT 0,
   bergwacht  TINYINT(1) NOT NULL DEFAULT 0,
+  secondary  TINYINT(1) NOT NULL DEFAULT 0,        -- Sekundaertransport
+  schockraum TINYINT(1) NOT NULL DEFAULT 0,        -- Zielklinik: Schockraum
   bw_unit    VARCHAR(120) NULL,
   bw_info    VARCHAR(190) NULL,
   other_ema  VARCHAR(190) NULL,
@@ -251,4 +253,5 @@ INSERT IGNORE INTO schema_migrations (id, status) VALUES
   ('2026_07_20_patientinnendaten', 'skipped'),
   ('2026_07_21_pflicht_e2e', 'skipped'),
   ('2026_07_22_tag_zuordnung', 'skipped'),
-  ('2026_07_22_papierkorb', 'skipped');
+  ('2026_07_22_papierkorb', 'skipped'),
+  ('2026_07_23_sekundaer_schockraum', 'skipped');

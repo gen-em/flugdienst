@@ -25,11 +25,15 @@ if ($missionDay === false) { http_response_code(404); exit('Einsatz nicht gefund
   <?php ui_days_sidebar($missionDay); ?>
 
   <main class="page">
-  <h1 id="title">Einsatz</h1>
-  <p id="meta" class="muted"></p>
-  <div class="actionbar">
-    <a class="btn-edit" href="einsatz_form.php?id=<?= $mid ?>">Bearbeiten</a>
-    <a class="btn-red" href="einsatz_loeschen.php?id=<?= $mid ?>">Löschen</a>
+  <div class="pagehead">
+    <div class="pagehead-text">
+      <h1 id="title">Einsatz</h1>
+      <p id="meta" class="muted"></p>
+    </div>
+    <div class="pagehead-actions">
+      <a class="btn-edit" href="einsatz_form.php?id=<?= $mid ?>">Bearbeiten</a>
+      <a class="btn-red" href="einsatz_loeschen.php?id=<?= $mid ?>">Löschen</a>
+    </div>
   </div>
 
   <dl class="fieldlist" id="fieldlist" hidden></dl>
