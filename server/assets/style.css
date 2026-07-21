@@ -94,8 +94,18 @@ table.data tbody tr:last-child td{border-bottom:0}
 label{display:block;margin:.7rem 0 .2rem;font-size:.92rem}
 input,select{width:100%;padding:.5rem .6rem;border:1px solid var(--line);
   border-radius:5px;font:inherit;background:var(--schnee)}
-input:focus,select:focus,textarea:focus,button:focus,a:focus,summary:focus{
+/* Fokusring nur bei Tastaturbedienung zeigen. Nach einem Mausklick blieb er
+ * sonst stehen — bei <summary> umschliesst er zudem den gesamten aufgeklappten
+ * Bereich statt nur der Kopfzeile und lief damit ueber den Inhalt. */
+input:focus-visible,select:focus-visible,textarea:focus-visible,
+button:focus-visible,a:focus-visible{
   outline:2px solid var(--blau);outline-offset:1px}
+/* Aufklapp-Ueberschriften: kein Rahmen. Der Rahmen passte nicht zur Form und
+ * umschloss bei geoeffnetem Abschnitt den ganzen Inhalt. Stattdessen dieselbe
+ * dezente Faerbung wie beim Ueberfahren — bleibt fuer Tastaturbedienung
+ * erkennbar, ohne aufzufallen. */
+summary:focus{outline:none}
+summary:focus-visible{outline:none;box-shadow:none;background:var(--accent-light)}
 button{font:inherit;font-family:var(--head);font-weight:600;border:0;
   border-radius:5px;padding:.5rem .9rem;cursor:pointer}
 .btn-primary{background:var(--accent);color:#fff;width:100%;margin-top:.9rem}
@@ -427,6 +437,7 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
 .stammblock[open]>summary::before{transform:rotate(90deg)}
 .stammblock[open]{padding-bottom:1rem}
 .stammblock>summary:hover{color:var(--accent)}
+.stammblock>summary{border-radius:6px}
 
 /* --- Weitere Rettungsmittel: Eingabe mit Merkfeldern --- */
 .rmbox{position:relative}
@@ -506,9 +517,17 @@ input[type=checkbox]{accent-color:var(--blau)}
 
 .monthblock > summary{font-size:.82rem;color:#5B5F66}
 .monthblock > summary:hover{background:var(--accent-light)}
-.monthblock ul{list-style:none;margin:0;padding:0 0 .2rem 1.3rem}
+.monthblock ul{list-style:none;margin:0;padding:.1rem 0 .25rem 1.3rem}
 
 .daylist a{display:block;padding:.3rem .5rem;color:var(--ink);text-decoration:none;
   border-radius:5px;font-size:.86rem;font-variant-numeric:tabular-nums}
 .daylist a.active{background:var(--navy);color:#fff}
 .daylist a:hover:not(.active){background:var(--accent-light)}
+
+/* Jahres-/Monatszeilen liegen auf eigener Ebene, damit die Markierung des
+   aktiven Tages nicht ueberdeckt wird (Fokusring siehe summary:focus-visible) */
+.yearblock > summary,.monthblock > summary{position:relative;z-index:1}
+.daylist a.active{position:relative;z-index:2}
+
+/* Aktiver Tag: eigene Ebene und etwas Abstand, damit die Markierung frei steht */
+.monthblock li{margin:.05rem 0}
