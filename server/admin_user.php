@@ -141,7 +141,7 @@ $devices = $dv->fetchAll();
             <input type="hidden" name="id" value="<?= $uid ?>"><input type="hidden" name="dev" value="<?= (int)$d['id'] ?>">
             <button class="btn-danger"><?= (int)$d['active'] ? 'Deaktivieren' : 'Aktivieren' ?></button>
           </form>
-          <form method="post" onsubmit="return confirm('Gerät wirklich löschen? Hochgeladene Daten bleiben erhalten.')">
+          <form method="post" data-confirm="Gerät wirklich löschen? Hochgeladene Daten bleiben erhalten.">
             <?= csrf_field() ?><input type="hidden" name="action" value="device_delete">
             <input type="hidden" name="id" value="<?= $uid ?>"><input type="hidden" name="dev" value="<?= (int)$d['id'] ?>">
             <button class="btn-danger">Löschen</button>
@@ -159,7 +159,7 @@ $devices = $dv->fetchAll();
      Verschlüsselte Angaben sind danach für niemanden mehr lesbar. Dieser Schritt lässt
      sich nicht rückgängig machen und geht nicht über den Papierkorb.</p>
   <form method="post" class="settings-form"
-        onsubmit="return confirm('Nutzer endgültig löschen?')">
+        data-confirm="Nutzer endgültig löschen?" data-confirm-ok="Endgültig löschen">
     <?= csrf_field() ?><input type="hidden" name="action" value="user_delete">
     <input type="hidden" name="id" value="<?= $uid ?>">
     <label>Zur Bestätigung die E-Mail-Adresse abtippen

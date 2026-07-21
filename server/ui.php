@@ -53,7 +53,8 @@ function ui_settings_sidebar(string $active): void {
       <?php foreach ($items as $key => [$href, $label]): ?>
         <li><a href="<?= $href ?>" <?= $active === $key ? 'class="active"' : '' ?>><?= $label ?></a></li>
       <?php endforeach; ?>
-      <li><a href="logout.php" onclick="return confirm('Wirklich abmelden?')">Abmelden</a></li>
+      <li><a href="logout.php" data-confirm="Wirklich abmelden?" data-confirm-ok="Abmelden"
+             data-confirm-tone="normal">Abmelden</a></li>
     </ul>
   </aside>
 <?php }
@@ -84,6 +85,7 @@ function ui_days_sidebar(?string $currentDay): void {
 
 /** Fusszeile: im Dokumentfluss, rechtsbündig unter dem Inhalt */
 function ui_footer(): void { ?>
+  <script src="assets/confirm.js"></script>
 <footer class="sitefooter">© Gen-EM – OpenSource Software –
   <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE"
      target="_blank" rel="noopener">AGPL-3.0</a></footer>

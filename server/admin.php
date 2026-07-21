@@ -66,7 +66,7 @@ $users   = db()->query('SELECT id, email, name, role, created_at FROM users ORDE
           <td><?= e(fmt_local($u['created_at'], 'd.m.Y')) ?></td>
           <td>
             <?php if ((int)$u['id'] !== $userId): ?>
-            <form method="post" onclick="event.stopPropagation()" onsubmit="return confirm('Nutzer und alle zugehörigen Daten löschen?')">
+            <form method="post" onclick="event.stopPropagation()" data-confirm="Nutzer und alle zugehörigen Daten löschen?">
               <?= csrf_field() ?><input type="hidden" name="action" value="user_del">
               <input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
               <button class="btn-danger">Löschen</button>

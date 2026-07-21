@@ -371,7 +371,7 @@ if ($tab === 'geraete') {
             <?php endif; ?>
             <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;eb=<?= (int)$b['id'] ?>#standorte">Bearbeiten</a>
             <form method="post" action="einstellungen.php?t=stammdaten#standorte"
-                  onsubmit="return confirm('Standort löschen?')">
+                  data-confirm="Standort löschen?">
               <?= csrf_field() ?><input type="hidden" name="action" value="base_del">
               <input type="hidden" name="id" value="<?= (int)$b['id'] ?>">
               <button class="btn-red">Löschen</button>
@@ -414,7 +414,7 @@ if ($tab === 'geraete') {
             <?php endif; ?>
             <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ac=<?= (int)$a['id'] ?>#hubschrauber">Bearbeiten</a>
             <form method="post" action="einstellungen.php?t=stammdaten#hubschrauber"
-                  onsubmit="return confirm('Hubschrauber löschen?')">
+                  data-confirm="Hubschrauber löschen?">
               <?= csrf_field() ?><input type="hidden" name="action" value="ac_del">
               <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
               <button class="btn-red">Löschen</button>
@@ -456,7 +456,7 @@ if ($tab === 'geraete') {
             <td class="th-act"><div class="rowactions">
               <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ec=<?= (int)$c['id'] ?>#besatzung">Bearbeiten</a>
               <form method="post" action="einstellungen.php?t=stammdaten#besatzung"
-                    onsubmit="return confirm('Eintrag löschen?')">
+                    data-confirm="Eintrag löschen?">
                 <?= csrf_field() ?><input type="hidden" name="action" value="crew_del">
                 <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
                 <button class="btn-red">Löschen</button>
@@ -491,7 +491,7 @@ if ($tab === 'geraete') {
           <td class="th-act"><div class="rowactions">
             <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ew=<?= (int)$b['id'] ?>#bergwacht">Bearbeiten</a>
             <form method="post" action="einstellungen.php?t=stammdaten#bergwacht"
-                  onsubmit="return confirm('Bereitschaft löschen?')">
+                  data-confirm="Bereitschaft löschen?">
               <?= csrf_field() ?><input type="hidden" name="action" value="bw_del">
               <input type="hidden" name="id" value="<?= (int)$b['id'] ?>">
               <button class="btn-red">Löschen</button>
@@ -609,12 +609,20 @@ if ($tab === 'geraete') {
 
     // ---- Import: Version erkennen; Format 2 im Browser, Format 1 am Server ----
     document.getElementById('impform').addEventListener('submit', async ev => {
+      // WICHTIG: synchron abbrechen, bevor irgendetwas awaited wird — sonst
+      // schickt der Browser das Formular parallel zum Browser-Import ab.
+      ev.preventDefault();
+      const form = ev.target;
       const f = document.getElementById('bfile').files[0];
       if (!f) return;
       const bytes = new Uint8Array(await f.arrayBuffer());
       const ver = EdCrypto.backupVersion(bytes);
-      if (ver !== 2) { return; }          // Format 1: normal an den Server senden
-      ev.preventDefault();
+      if (ver !== 2) {
+        // Altformat: dem Server überlassen (loest kein submit-Event aus)
+        impState.textContent = 'Älteres Backup — wird auf dem Server verarbeitet…';
+        form.submit();
+        return;
+      }
 
       const key = await ck();
       if (!key) { impState.textContent = 'Entschlüsselung gesperrt — siehe Hinweis oben.'; return; }
@@ -716,7 +724,7 @@ if ($tab === 'geraete') {
               <button class="btn-danger"><?= (int)$d['active'] ? 'Deaktivieren' : 'Aktivieren' ?></button>
             </form>
             <form method="post" action="einstellungen.php?t=geraete"
-                  onsubmit="return confirm('Gerät wirklich löschen? Bereits hochgeladene Daten bleiben erhalten.')">
+                  data-confirm="Gerät wirklich löschen? Bereits hochgeladene Daten bleiben erhalten.">
               <?= csrf_field() ?><input type="hidden" name="action" value="delete">
               <input type="hidden" name="id" value="<?= (int)$d['id'] ?>">
               <button class="btn-danger">Löschen</button>

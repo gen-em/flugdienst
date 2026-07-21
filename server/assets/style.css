@@ -333,3 +333,11 @@ h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
 .data th{text-align:center}
 .data th:first-child{text-align:left}
 .data td{vertical-align:middle}
+
+/* Bestätigungsdialog im Seiteninhalt (ersetzt window.confirm) */
+.confirmbox{border:0;border-radius:10px;padding:1.3rem 1.4rem;max-width:26rem;
+  box-shadow:0 12px 40px rgba(0,0,0,.28);background:#FFFCFA;color:#1A0500}
+.confirmbox::backdrop{background:rgba(26,46,77,.45)}
+.confirmtext{margin:0 0 1.1rem;font-size:1rem;line-height:1.45}
+.confirmbtns{display:flex;gap:.7rem;justify-content:flex-end}
+.confirmbtns button{padding:.42rem 1rem;border-radius:6px;cursor:pointer;font:inherit}
