@@ -150,8 +150,10 @@ function locPin(color){
 
 let mapHasBounds = false;
 function trackWeight(){
+  // Ab Zoom 11 und weiter heraus je eine Stufe duenner als frueher —
+  // sonst wirken kurze Tracks bei kleinem Massstab wie dicke Balken.
   const z = map.getZoom();
-  return z >= 14 ? 4 : z >= 12 ? 5 : z >= 10 ? 6 : 7;
+  return z >= 14 ? 4 : z >= 10 ? 5 : 6;
 }
 map.on('zoomend', () => {
   const w = trackWeight();
