@@ -151,6 +151,24 @@ CREATE TABLE crew_presets (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Vorbelegung: andere Rettungsmittel (RTW, NEF, weitere Hubschrauber ...)
+CREATE TABLE resources (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  UNIQUE KEY uq_user_res (user_id, name),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Je Einsatz beteiligte Rettungsmittel; einzeln entfernbar, daher eigene Zeilen
+CREATE TABLE mission_resources (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  mission_id INT UNSIGNED NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  KEY idx_mres_mission (mission_id),
+  FOREIGN KEY (mission_id) REFERENCES missions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE bw_units (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id INT UNSIGNED NOT NULL,
@@ -254,4 +272,5 @@ INSERT IGNORE INTO schema_migrations (id, status) VALUES
   ('2026_07_21_pflicht_e2e', 'skipped'),
   ('2026_07_22_tag_zuordnung', 'skipped'),
   ('2026_07_22_papierkorb', 'skipped'),
-  ('2026_07_23_sekundaer_schockraum', 'skipped');
+  ('2026_07_23_sekundaer_schockraum', 'skipped'),
+  ('2026_07_24_rettungsmittel', 'skipped');

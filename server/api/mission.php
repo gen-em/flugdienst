@@ -15,6 +15,16 @@ $fields = [];
 $collect = function (string $col, array $f) use (&$collect, &$fields, $m) {
     $type = $f['type'] ?? 'text';
     $v = $m[$col] ?? null;
+    if ($type === 'resources') {
+        // Eigene Tabelle: jedes Rettungsmittel ist eine eigene Zeile
+        $q = db()->prepare('SELECT name FROM mission_resources WHERE mission_id = ? ORDER BY id');
+        $q->execute([(int)$m['id']]);
+        $namen = $q->fetchAll(PDO::FETCH_COLUMN);
+        if ($namen) {
+            $fields[] = ['label' => $f['label'], 'value' => implode(', ', $namen)];
+        }
+        return;
+    }
     if ($type === 'checkbox') {
         if ((int)$v === 1) {
             $fields[] = ['label' => $f['label'], 'value' => 'Ja'];

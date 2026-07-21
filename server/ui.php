@@ -84,12 +84,16 @@ function ui_days_sidebar(?string $currentDay): void {
       require_once __DIR__ . '/trash_lib.php';
       $trashLeer = !trash_list_days($userId) && !trash_list_missions($userId);
     ?>
+    <a class="dayadd" href="flugtag_neu.php" title="Flugtag von Hand anlegen">
+      + Flugtag anlegen
+    </a>
     <a class="trashlink<?= $trashLeer ? ' leer' : '' ?>" href="papierkorb.php"
-       title="<?= $trashLeer ? 'Papierkorb ist leer' : 'Papierkorb' ?>" aria-label="Papierkorb">
+       title="<?= $trashLeer ? 'Papierkorb ist leer' : 'Papierkorb' ?>">
       <svg width="26" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
            fill="currentColor" aria-hidden="true">
         <path d="M9 3h6l1 1h4v2H4V4h4l1-1zM6 7h12l-1 13.1c-.06.5-.5.9-1 .9H8c-.5 0-.94-.4-1-.9L6 7zm3.5 2.6v9h1.6v-9H9.5zm3.4 0v9h1.6v-9h-1.6z"/>
       </svg>
+      <span>Papierkorb</span>
     </a>
 
 </aside>

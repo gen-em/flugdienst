@@ -7,6 +7,94 @@ jedem Änderungspaket oben dazu.
 ## [Unveröffentlicht]
 
 ### Web
+- **Andere Rettungsmittel:** neue Vorbelegungsliste in den Standortdaten und
+  Eingabe mit Vorschlägen im Einsatzformular (Suche ab zwei Zeichen, Klick
+  übernimmt, freie Eingaben möglich). Jedes Rettungsmittel wird als eigener
+  Datensatz gespeichert und lässt sich einzeln wieder entfernen; bisherige
+  Freitexte werden bei der Migration automatisch aufgeteilt.
+- **Standortdaten aufgeräumt:** Die fünf Bereiche sind jetzt aufklappbare
+  Abschnitte und starten zugeklappt. Wer über einen Anker hineinspringt — etwa
+  nach dem Speichern —, landet in einem automatisch geöffneten Abschnitt.
+- **Flugtag von Hand anlegen** über die Einsatztage-Spalte, für Tage ohne Uhr.
+- Kopfleiste bleibt beim Scrollen stehen; der Papierkorb ist beschriftet;
+  „+ Einsatz nachtragen" und „Tag löschen" sind gleich hoch und gleich gesetzt.
+- Kartenlinien durchgehend eine Stufe dünner, Einsatz- und Tagesansicht nutzen
+  jetzt dieselbe Staffelung.
+
+- Tagesübersicht besser lesbar: Zeilen abwechselnd schattiert, alle Spalten
+  mittig ausgerichtet, Dauer kompakt gesetzt („3h 33min" statt „3 h 33 min"),
+  damit die Spalte einzeilig bleibt. Bergwacht, Sekundär/Transport und
+  „Flug km" haben mehr Luft bekommen; die Seite ist dafür 1200 px breit.
+
+- **Neues Logo** (Hubschrauber-Bildmarke) für Kopfleiste, Login-,
+  Einrichtungsseite und Favicon. Die Vorlagen wurden freigestellt (weißer
+  Hintergrund → transparent, Kantenglättung erhalten); die weiße Fassung
+  übernimmt die Maske der farbigen, damit beide deckungsgleich sitzen. Das
+  Favicon liegt quadratisch mit Rand vor, damit es im Browser-Tab nicht
+  verzerrt.
+
+- Tagesübersicht: Spaltenüberschriften werden nicht mehr silbengetrennt —
+  Winde, Bergwacht und „Flug km" stehen einzeilig, „Sekundär/Transport" bricht
+  genau zwischen den Wörtern um; Alter ist so breit wie Beginn. Seitenbreite
+  1150 px; die festen Spalten belegen rund 600 px, der Rest bleibt für
+  Einsatzort und Diagnose.
+- **Menüspalte bleibt stehen:** Die Einsatztage-Leiste nimmt die volle
+  Fensterhöhe ein und scrollt bei vielen Tagen intern; der Papierkorb sitzt in
+  einem festen Streifen darunter und ist dadurch immer sichtbar, ohne die Seite
+  scrollen zu müssen.
+
+- **Tagesübersicht zeigt Ladefehler an,** statt still leer zu bleiben: Liefert
+  die Tages-API kein JSON (z. B. weil eine Migration fehlt), erscheint jetzt
+  eine Meldung mit dem Anfang der Serverantwort. Vorher brach das Skript
+  wortlos ab — Titel, Tabelle, Karte und der Löschknopf blieben leer.
+- „Tag löschen" wird serverseitig eingeblendet und hängt nicht mehr am
+  erfolgreichen Laden der Tagesdaten.
+- Papierkorb: Aufbewahrung von 30 auf **90 Tage** verlängert; die Aktionen
+  „Wiederherstellen" und „Endgültig löschen" sind gleich groß und bündig.
+- Tagesübersicht: feste Tabellenaufteilung, damit die Spaltenbreiten wirklich
+  greifen; Seitenbreite auf 1240 px erhöht, sodass Flugtag-Kasten, Karte und
+  Tabelle gleich breit sind. Papierkorb-Symbol in fester Größe am unteren Rand
+  der Einsatztage-Spalte.
+
+- **Neue Felder:** „Sekundärtransport" (Haken, eigene sortierbare Spalte in der
+  Tagesübersicht neben Bergwacht) und „Schockraum" (Haken beim Transportziel).
+- **Papierkorb ist eine eigene Seite** und über ein Symbol unten in der
+  Einsatztage-Spalte erreichbar — ausgegraut, solange er leer ist. Die
+  Aktionen „Wiederherstellen" und „Endgültig löschen" sind jetzt Schaltflächen.
+- Tagesübersicht: Spaltenbreiten in vier Stufen über Klassen statt Positionen
+  (Farbe/Nr. sehr schmal; Alter, Winde, Bergwacht, Sekundärtransport schmal;
+  Beginn, Dauer, Flugkilometer mittig und mittelbreit; Einsatzort und Diagnose
+  bekommen den Rest). Neue Spalten verschieben dadurch keine Breiten mehr.
+- Aktionsleiste unter der Tabelle: Schaltflächen nur so breit wie nötig,
+  „Flugtag löschen" heißt jetzt „Tag löschen".
+- Einsatzansicht: „Bearbeiten" und „Löschen" stehen rechts neben Titel und
+  Uhrzeit statt darunter; Schaltflächen werden nicht mehr unterstrichen.
+- „Abbrechen" auf den Löschseiten ist eine Schaltfläche statt eines Textlinks.
+- **Altes Backup-Format entfernt:** Der serverseitige `.edbak`-Weg (Version 1)
+  ist raus — Container-Funktionen in `backup_lib.php`, die Versionsweiche in
+  `crypto.js`, der Import-Zweig samt Datei-Upload in `einstellungen.php` und
+  Kapitel 4 der Formatdoku. Der Import prüft jetzt strikt die Dateikennung und
+  lehnt alles andere mit klarer Meldung ab; damit kann kein zweiter Importweg
+  mehr dazwischenfunken.
+- Unter der Tagestabelle stehen jetzt zwei Schaltflächen: links „+ Einsatz
+  nachtragen", rechts „Flugtag löschen" (weiterhin mit serverseitiger
+  Bestätigungsseite).
+- **Behoben:** Die neuen Seiten `flugtag_loeschen.php`, `einsatz_loeschen.php`
+  und `papierkorb.php` banden `ui.php` ein zweites Mal ein (ohne `_once`),
+  obwohl `auth_guard.php` sie bereits lädt — PHP brach mit „Cannot redeclare"
+  ab, im Browser als Fehler 500 sichtbar.
+- **Rückfragen laufen nicht mehr über Browser-Dialoge:** `window.confirm()` bot
+  die Option „keine weiteren Dialoge dieser Seite anzeigen" — danach wären
+  Löschungen ohne jede Nachfrage durchgelaufen. Alle Bestätigungen nutzen jetzt
+  ein Fenster im Seiteninhalt (`assets/confirm.js`, `data-confirm`), das sich
+  nicht abschalten lässt; „Abbrechen" ist vorausgewählt, Escape bricht ab.
+- **Backup-Import schlug scheinbar fehl, obwohl er lief:** Der Formular-Handler
+  brach das normale Absenden erst nach dem Einlesen der Datei ab. Bis dahin
+  hatte der Browser das Formular längst mitgeschickt, sodass parallel der alte
+  serverseitige Import lief und mit „Keine gültige Backup-Datei" antwortete —
+  während der Browser-Import im Hintergrund korrekt durchlief. Das Absenden
+  wird jetzt sofort unterbunden; Altformat-Dateien werden gezielt an den Server
+  weitergereicht.
 - **Papierkorb für Einsätze und Flugtage:** Gelöschtes wird zunächst nur
   markiert und bleibt 30 Tage wiederherstellbar (Anzeige unten auf der
   Übersicht, je Tabelle für Flugtage und Einsätze mit „Wiederherstellen" und
@@ -185,7 +273,13 @@ jedem Änderungspaket oben dazu.
   wird jetzt aus `schema.sql` gelesen und bleibt automatisch vollständig.
 - Neue Migration „Papierkorb" (`deleted_at`, `deleted_with_day`).
 
-### Uhr (v1.2.0 – v1.3.2)
+### Uhr (v1.2.0 – v1.3.3)
+- **Tastensperre öffnet nicht mehr das Schnellmenü (v1.3.3):** Kommt während
+  des langen START-Drucks eine beliebige weitere Taste dazu, wertet die App das
+  als Sperr-Kombination der Uhr — das Menü bleibt zu, und auch die Seitenwahl
+  springt nicht an. Der lange Druck allein öffnet das Menü unverändert. Gleiche
+  Absicherung in der Reanimations-Ansicht, wo langes UP/DOWN Adrenalin und
+  Rhythmus markiert.
 - **Rea-Menü neu:** groß umrahmte Felder (~4 je Seite, größere Schrift),
   Gruppen mit dünnen Trennlinien (Rhythmuskontrolle/Defibrillation ·
   Adrenalin/Amiodaron · **Zugang** [neues Ereignis]/Intubation/Sonographie ·

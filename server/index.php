@@ -150,10 +150,9 @@ function locPin(color){
 
 let mapHasBounds = false;
 function trackWeight(){
-  // Ab Zoom 11 und weiter heraus je eine Stufe duenner als frueher —
-  // sonst wirken kurze Tracks bei kleinem Massstab wie dicke Balken.
+  // Duenne Linien: bei kleinem Massstab wirkten dicke Striche wie Balken.
   const z = map.getZoom();
-  return z >= 14 ? 4 : z >= 10 ? 5 : 6;
+  return z >= 14 ? 3 : z >= 10 ? 4 : 5;
 }
 map.on('zoomend', () => {
   const w = trackWeight();

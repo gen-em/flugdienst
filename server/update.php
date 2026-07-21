@@ -359,6 +359,38 @@ $MIGRATIONS = [
             "ALTER TABLE missions ADD COLUMN schockraum TINYINT(1) NOT NULL DEFAULT 0",
         ],
     ],
+    [
+        'id'    => '2026_07_24_rettungsmittel',
+        'label' => 'Andere Rettungsmittel: Vorbelegungen und Zuordnung je Einsatz',
+        'run'   => function (PDO $pdo): void {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS resources (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id INT UNSIGNED NOT NULL,
+                name VARCHAR(120) NOT NULL,
+                UNIQUE KEY uq_user_res (user_id, name),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $pdo->exec("CREATE TABLE IF NOT EXISTS mission_resources (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                mission_id INT UNSIGNED NOT NULL,
+                name VARCHAR(120) NOT NULL,
+                KEY idx_mres_mission (mission_id),
+                FOREIGN KEY (mission_id) REFERENCES missions(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            // Bisherige Freitexte uebernehmen: an Komma/Semikolon trennen,
+            // damit jeder Eintrag einzeln entfernbar wird.
+            $alt = $pdo->query("SELECT id, other_resources FROM missions
+                                WHERE other_resources IS NOT NULL AND other_resources <> ''");
+            $ins = $pdo->prepare('INSERT INTO mission_resources (mission_id, name) VALUES (?, ?)');
+            foreach ($alt->fetchAll() as $m) {
+                foreach (preg_split('/[,;]/u', (string)$m['other_resources']) as $teil) {
+                    $teil = trim($teil);
+                    if ($teil !== '') { $ins->execute([(int)$m['id'], mb_substr($teil, 0, 120)]); }
+                }
+            }
+        },
+    ],
     // Naechste Migration hier anhaengen.
 ];
 

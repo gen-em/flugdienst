@@ -38,6 +38,9 @@ function edbak_build(int $userId): string {
                        'lon' => $p['lon'] !== null ? (float)$p['lon'] : null],
             $q('SELECT phase, occurred_at, lat, lon FROM mission_phases
                 WHERE mission_id = ? ORDER BY occurred_at', [$mid]));
+        $m['resources'] = $q('SELECT name FROM mission_resources
+                              WHERE mission_id = ? ORDER BY id', [$mid]);
+        $m['resources'] = array_column($m['resources'], 'name');
         $m['resus'] = [];
         foreach ($q('SELECT id, started_at FROM resus_sessions
                      WHERE mission_id = ? ORDER BY started_at', [$mid]) as $s) {
@@ -82,6 +85,7 @@ function edbak_build(int $userId): string {
                                   FROM aircraft WHERE user_id = ? ORDER BY registration', [$userId]),
             'crew_presets' => $q('SELECT role, name FROM crew_presets WHERE user_id = ? ORDER BY role, name', [$userId]),
             'bw_units'     => $q('SELECT name FROM bw_units WHERE user_id = ? ORDER BY name', [$userId]),
+            'resources'    => $q('SELECT name FROM resources WHERE user_id = ? ORDER BY name', [$userId]),
         ],
         'days' => $days,
         'missions' => $missions,
@@ -163,6 +167,8 @@ function edbak_restore(int $userId, array $data): array {
         $extraCols = [];
         $collectCols = function (array $fs) use (&$collectCols, &$extraCols) {
             foreach ($fs as $col => $f) {
+                // 'resources' hat keine eigene Spalte in missions
+                if (($f['type'] ?? '') === 'resources') { continue; }
                 $extraCols[] = $col;
                 if (!empty($f['children'])) { $collectCols($f['children']); }
             }
@@ -190,6 +196,13 @@ function edbak_restore(int $userId, array $data): array {
 
             $insPh = $pdo->prepare('INSERT INTO mission_phases
                 (mission_id, phase, occurred_at, lat, lon) VALUES (?,?,?,?,?)');
+            foreach (($m['resources'] ?? []) as $rname) {
+                $rname = mb_substr(trim((string)$rname), 0, 120);
+                if ($rname !== '') {
+                    $pdo->prepare('INSERT INTO mission_resources (mission_id, name) VALUES (?,?)')
+                        ->execute([$mid, $rname]);
+                }
+            }
             foreach (($m['phases'] ?? []) as $p) {
                 $insPh->execute([$mid, (int)$p['phase'], $p['occurred_at'],
                                  $p['lat'] ?? null, $p['lon'] ?? null]);

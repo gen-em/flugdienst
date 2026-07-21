@@ -119,17 +119,3 @@ daten = json.loads(gzip.decompress(roh) if b[8] == 1 else roh)
   Chiffretext.
 - Standard-Markierungen (★) werden nur importiert, wenn noch kein Standard
   gesetzt ist (es bleibt bei genau einem).
-
-## 4. Altformat Version 1 (nur noch Import)
-
-Dateien mit der Magie `EDBAK1` stammen aus der früheren, serverseitigen
-Fassung: Kopf `EDBAK1 0x00 0x01`, danach Salt (16), IV (12), GCM-Tag (16) und
-AES-256-GCM über gzip-JSON, Schlüssel per PBKDF2-SHA256 mit **200 000** Runden,
-AAD = die 8 Magie-Bytes. Der Import erkennt solche Dateien automatisch und
-verarbeitet sie auf dem Server weiter.
-
-**Wichtige Einschränkung:** In Format 1 liegen die geschützten Angaben als
-Chiffretext des Ursprungskontos im Backup. Sie lassen sich deshalb nur im
-selben Konto lesen — in ein anderes Konto kommen nur die übrigen Daten
-(Einsätze, Zeiten, Tracks, Flugtage, Stammdaten). Genau diese Einschränkung
-behebt Format 2.

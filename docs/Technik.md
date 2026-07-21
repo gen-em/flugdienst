@@ -105,8 +105,15 @@ und versiegelt das Ganze per `EdCrypto.sealBackup()` (AES-256-GCM, PBKDF2
 Browser die Datei, verschlüsselt die Angaben mit dem Schlüssel des **Zielkontos**
 neu und schickt sie an `api/backup_restore.php` → `edbak_restore()`. Dadurch
 sind Backups zwischen Konten übertragbar; der Server sieht nie Klartext.
-Alt-Dateien (Format 1, serverseitig versiegelt) erkennt der Import an der Magie
-und verarbeitet sie über `edbak_open()` weiter. Aufbau: `docs/Backup-Format.md`.
+Der Import prüft die Dateikennung und lehnt Fremddateien ab; einen
+serverseitigen Import gibt es nicht mehr. Aufbau: `docs/Backup-Format.md`.
+
+**Bestätigungen:** `assets/confirm.js` fängt Formulare und Links mit
+`data-confirm` ab und zeigt ein `<dialog>` im Seiteninhalt statt
+`window.confirm()` — native Dialoge lassen sich pro Seite dauerhaft
+unterdrücken, was die Rückfrage wirkungslos machen würde. Eingebunden über
+`ui_footer()`. Sicherheitskritische Löschungen hängen ohnehin nicht daran,
+sondern an den serverseitigen Zwischenseiten.
 
 **Papierkorb (Soft-Delete):** Einsätze, Ruhesegmente und Flugtage tragen
 `deleted_at`; alle Lesepfade (Übersicht, Tages-/Einsatz-API, Tagesliste,

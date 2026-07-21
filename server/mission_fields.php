@@ -77,7 +77,9 @@ return [
         'label' => 'Anderer Notarzt', 'type' => 'text', 'max' => 190,
     ],
     'other_resources' => [
-        'label' => 'Weitere Rettungsmittel', 'type' => 'text', 'max' => 190,
+        // Sonderfall: nicht als Spalte in missions, sondern als eigene Zeilen
+        // in mission_resources (einzeln entfernbar). Siehe einsatz_form.php.
+        'label' => 'Weitere Rettungsmittel', 'type' => 'resources',
     ],
     'notes' => [
         'label' => 'Notizen', 'type' => 'textarea', 'max' => 2000,

@@ -86,8 +86,9 @@ function locPin(color){
 }
 
 function trackWeight(){
+  // Duenne Linien: bei kleinem Massstab wirkten dicke Striche wie Balken.
   const z = map.getZoom();
-  return z >= 14 ? 4 : z >= 12 ? 5 : z >= 10 ? 6 : 7;
+  return z >= 14 ? 3 : z >= 10 ? 4 : 5;
 }
 map.on('zoomend', () => {
   const w = trackWeight();

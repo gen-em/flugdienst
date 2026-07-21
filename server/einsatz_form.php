@@ -5,6 +5,23 @@ $FIELDS = require __DIR__ . '/mission_fields.php';
 
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 $editing = $id > 0;
+
+// Andere Rettungsmittel: Vorbelegungen und bereits zugeordnete Eintraege
+$rmVorlagen = db()->prepare('SELECT name FROM resources WHERE user_id = ? ORDER BY name');
+$rmVorlagen->execute([$userId]);
+$rmVorlagen = $rmVorlagen->fetchAll(PDO::FETCH_COLUMN);
+$rmGewaehlt = [];
+if ($editing) {
+    $q = db()->prepare('SELECT r.name FROM mission_resources r
+                        JOIN missions m ON m.id = r.mission_id
+                        WHERE r.mission_id = ? AND m.user_id = ? ORDER BY r.id');
+    $q->execute([$id, $userId]);
+    $rmGewaehlt = $q->fetchAll(PDO::FETCH_COLUMN);
+}
+// Nach fehlgeschlagenem Absenden die Eingaben behalten
+if (($_POST['f_other_resources'] ?? null) !== null && is_array($_POST['f_other_resources'])) {
+    $rmGewaehlt = array_values(array_filter(array_map('trim', $_POST['f_other_resources'])));
+}
 $error = null;
 
 /* ---- Helfer: lokale Uhrzeit (Berlin) -> UTC-DATETIME ---------------------- */
@@ -73,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fieldCols = []; $fieldVals = [];
         $readField = function (string $col, array $f, bool $parentOn = true) use (&$readField, &$fieldCols, &$fieldVals) {
             $type = $f['type'] ?? 'text';
+            if ($type === 'resources') { return; }   // eigene Tabelle, siehe unten
             if ($type === 'checkbox') {
                 $v = ($parentOn && isset($_POST['f_' . $col])) ? 1 : 0;
                 $fieldCols[] = $col; $fieldVals[] = $v;
@@ -146,6 +164,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($rows as $r) { $ins->execute([$id, $r[0], $r[1]]); }
 
             $pdo->commit();
+
+            // Rettungsmittel als eigene Zeilen speichern (einzeln entfernbar).
+            // Doppelte und leere Eintraege werden dabei verworfen.
+            $rm = $_POST['f_other_resources'] ?? [];
+            if (!is_array($rm)) { $rm = []; }
+            $sauber = [];
+            foreach ($rm as $name) {
+                $name = mb_substr(trim((string)$name), 0, 120);
+                if ($name !== '' && !in_array($name, $sauber, true)) { $sauber[] = $name; }
+            }
+            db()->prepare('DELETE FROM mission_resources WHERE mission_id = ?')->execute([$id]);
+            $insR = db()->prepare('INSERT INTO mission_resources (mission_id, name) VALUES (?, ?)');
+            foreach ($sauber as $name) { $insR->execute([$id, $name]); }
+
             header('Location: einsatz.php?id=' . $id);
             exit;
         } catch (Throwable $ex) {
@@ -241,6 +273,17 @@ function fieldValue(string $col) {
       $renderField = function (string $col, array $f, int $depth = 0) use (&$renderField, $optSrc): void {
           $type = $f['type'] ?? 'text';
           $val = fieldValue($col);
+          if ($type === 'resources') { ?>
+            <label class="fld">
+              <span><?= e($f['label']) ?></span>
+              <div class="rmbox">
+                <div class="rmchips" id="rmchips"></div>
+                <input type="text" id="rminput" autocomplete="off"
+                       placeholder="Tippen zum Suchen, Klick zum Übernehmen">
+                <div class="rmlist" id="rmlist" hidden></div>
+              </div>
+            </label>
+          <?php return; }
           if ($type === 'checkbox') {
               $on = ($val === '1' || $val === 1); ?>
             <div class="fld-check<?= $depth ? ' fld-sub' : '' ?>">
@@ -432,6 +475,92 @@ document.getElementById('addrow').addEventListener('click', ev => {
   const last = rows.length ? parseInt(rows[rows.length - 1].value) : 1;
   addRow(Math.min(last + 1, 10), '').focus();   // direkt per Tastatur bedienbar
 });
+
+/* ---- Andere Rettungsmittel: Eingabe mit Vorschlaegen ------------------- */
+(function(){
+  const box   = document.getElementById('rmchips');
+  const input = document.getElementById('rminput');
+  const liste = document.getElementById('rmlist');
+  if (!box || !input) { return; }
+
+  const vorlagen = <?= json_encode($rmVorlagen, JSON_UNESCAPED_UNICODE) ?>;
+  let gewaehlt   = <?= json_encode($rmGewaehlt, JSON_UNESCAPED_UNICODE) ?>;
+
+  function zeichneChips(){
+    box.innerHTML = '';
+    gewaehlt.forEach((name, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'rmchip';
+      chip.appendChild(document.createTextNode(name));
+      const x = document.createElement('button');
+      x.type = 'button'; x.className = 'rmx'; x.textContent = '\u00d7';
+      x.title = name + ' entfernen';
+      x.addEventListener('click', () => { gewaehlt.splice(i, 1); zeichneChips(); suche(); });
+      chip.appendChild(x);
+      // Wert mitschicken: eigene Zeile je Rettungsmittel
+      const feld = document.createElement('input');
+      feld.type = 'hidden'; feld.name = 'f_other_resources[]'; feld.value = name;
+      chip.appendChild(feld);
+      box.appendChild(chip);
+    });
+  }
+
+  function hinzu(name){
+    name = name.trim();
+    if (!name) { return; }
+    if (gewaehlt.some(g => g.toLowerCase() === name.toLowerCase())) { return; }  // keine Dubletten
+    gewaehlt.push(name);
+    input.value = '';
+    zeichneChips();
+    suche();
+    input.focus();
+  }
+
+  function suche(){
+    const q = input.value.trim();
+    liste.innerHTML = '';
+    if (q.length < 2) { liste.hidden = true; return; }      // erst ab zwei Zeichen
+
+    const ql = q.toLowerCase();
+    const treffer = vorlagen.filter(v =>
+      v.toLowerCase().includes(ql) &&
+      !gewaehlt.some(g => g.toLowerCase() === v.toLowerCase()));
+
+    treffer.slice(0, 8).forEach(v => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'rmopt'; b.textContent = v;
+      b.addEventListener('click', () => hinzu(v));
+      liste.appendChild(b);
+    });
+
+    // Freie Eingabe immer anbieten, wenn sie nicht exakt schon dabei ist
+    const exakt = treffer.some(v => v.toLowerCase() === ql)
+               || gewaehlt.some(g => g.toLowerCase() === ql);
+    if (!exakt) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'rmopt rmneu';
+      b.textContent = '\u201e' + q + '\u201c \u00fcbernehmen';
+      b.addEventListener('click', () => hinzu(q));
+      liste.appendChild(b);
+    }
+    liste.hidden = liste.children.length === 0;
+  }
+
+  input.addEventListener('input', suche);
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      const erster = liste.querySelector('.rmopt');
+      if (erster) { erster.click(); }
+    } else if (ev.key === 'Escape') {
+      liste.hidden = true;
+    }
+  });
+  input.addEventListener('blur', () => setTimeout(() => { liste.hidden = true; }, 150));
+  input.addEventListener('focus', suche);
+
+  zeichneChips();
+})();
 </script>
 </body>
 </html>

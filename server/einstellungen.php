@@ -193,6 +193,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->execute([(int)($_POST['id'] ?? 0), $userId]);
         $notice = 'Eintrag gelöscht.';
     }
+    if ($action === 'res_save') {
+        $n = mb_substr(trim($_POST['name'] ?? ''), 0, 120);
+        $wid = (int)($_POST['id'] ?? 0);
+        if ($n !== '') {
+            if ($wid > 0) {
+                db()->prepare('UPDATE resources SET name = ? WHERE id = ? AND user_id = ?')
+                    ->execute([$n, $wid, $userId]);
+            } else {
+                db()->prepare('INSERT IGNORE INTO resources (user_id, name) VALUES (?,?)')
+                    ->execute([$userId, $n]);
+            }
+            $notice = 'Rettungsmittel gespeichert.';
+        }
+    }
+    if ($action === 'res_del') {
+        // Bereits dokumentierte Einsaetze behalten ihren Eintrag: Die
+        // Zuordnung steht als eigener Datensatz und haengt nicht an dieser Liste.
+        db()->prepare('DELETE FROM resources WHERE id = ? AND user_id = ?')
+            ->execute([(int)($_POST['id'] ?? 0), $userId]);
+        $notice = 'Rettungsmittel geloescht.';
+    }
     if ($action === 'bw_save') {
         $n = mb_substr(trim($_POST['name'] ?? ''), 0, 120);
         $wid = (int)($_POST['id'] ?? 0);
@@ -316,12 +337,15 @@ if ($tab === 'geraete') {
       $crew->execute([$userId]); $crew = $crew->fetchAll();
       $bw = db()->prepare('SELECT id, name FROM bw_units WHERE user_id = ? ORDER BY name');
       $bw->execute([$userId]); $bw = $bw->fetchAll();
+      $res = db()->prepare('SELECT id, name FROM resources WHERE user_id = ? ORDER BY name');
+      $res->execute([$userId]); $res = $res->fetchAll();
       $pick = function (array $rows, string $param) {
           foreach ($rows as $r) { if ((int)$r['id'] === (int)($_GET[$param] ?? 0)) { return $r; } }
           return null;
       };
       $editAc = $pick($acs, 'ac');    $editBase = $pick($bases, 'eb');
       $editBw = $pick($bw, 'ew');
+      $editRes = $pick($res, 'er');
       $editCrew = null;
       foreach ($crew as $c) { if ((int)$c['id'] === (int)($_GET['ec'] ?? 0)) { $editCrew = $c; } }
     ?>
@@ -330,7 +354,9 @@ if ($tab === 'geraete') {
        sortiert. Löschen entfernt nur den Listeneintrag — gespeicherte Flugtage bleiben
        unverändert. ★ markiert die Vorbelegung neuer Flugtage.</p>
 
-    <h2 id="standorte">Standorte</h2>
+      <details class="stammblock" id="standorte">
+    <summary>Standorte</summary>
+
     <table class="data">
       <thead><tr><th>Name</th><th>Standard</th><th class="th-act">Aktionen</th></tr></thead>
       <tbody>
@@ -369,7 +395,11 @@ if ($tab === 'geraete') {
     </form>
 
     <hr class="sep">
-    <h2 id="hubschrauber">Hubschrauber</h2>
+      </details>
+
+  <details class="stammblock" id="hubschrauber">
+    <summary>Hubschrauber</summary>
+
     <p class="muted">Die angehakten Rollen bestimmen, welche Besatzungsfelder am Flugtag erscheinen.</p>
     <table class="data">
       <thead><tr><th>Kennung</th><th>Rollen</th><th>Standard</th><th class="th-act">Aktionen</th></tr></thead>
@@ -422,7 +452,11 @@ if ($tab === 'geraete') {
     </form>
 
     <hr class="sep">
-    <h2 id="besatzung">Besatzung — Vorbelegungen</h2>
+      </details>
+
+  <details class="stammblock" id="besatzung">
+    <summary>Besatzung — Vorbelegungen</summary>
+
     <p class="muted">Diese Namen erscheinen am Flugtag als Auswahl im jeweiligen Rollen-Dropdown.</p>
     <?php foreach ($ROLE_LABELS as $rk => $lbl): ?>
       <h3 class="rolehead"><?= e($lbl) ?></h3>
@@ -459,7 +493,46 @@ if ($tab === 'geraete') {
     <?php endforeach; ?>
 
     <hr class="sep">
-    <h2 id="bergwacht">Bergwacht-Bereitschaften</h2>
+      </details>
+
+  <details class="stammblock" id="rettungsmittel">
+    <summary>Andere Rettungsmittel</summary>
+
+    <p class="muted">Vorbelegung f&uuml;r das Feld &bdquo;Weitere Rettungsmittel&ldquo; im Einsatz.
+       Dort gen&uuml;gen zwei Zeichen, dann erscheinen die passenden Eintr&auml;ge zum Anklicken.</p>
+    <table class="data">
+      <tbody>
+      <?php if (!$res): ?><tr><td class="muted">Noch keine Rettungsmittel.</td><td></td></tr><?php endif; ?>
+      <?php foreach ($res as $r): ?>
+        <tr>
+          <td><?= e($r['name']) ?></td>
+          <td class="th-act"><div class="rowactions">
+            <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;er=<?= (int)$r['id'] ?>#rettungsmittel">Bearbeiten</a>
+            <form method="post" action="einstellungen.php?t=stammdaten#rettungsmittel"
+                  data-confirm="Rettungsmittel aus der Vorbelegung l&ouml;schen? Bereits dokumentierte Eins&auml;tze behalten ihren Eintrag.">
+              <?= csrf_field() ?><input type="hidden" name="action" value="res_del">
+              <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+              <button class="btn-red">L&ouml;schen</button>
+            </form>
+          </div></td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+    <form method="post" action="einstellungen.php?t=stammdaten#rettungsmittel" class="inline-form">
+      <?= csrf_field() ?><input type="hidden" name="action" value="res_save">
+      <input type="hidden" name="id" value="<?= $editRes ? (int)$editRes['id'] : 0 ?>">
+      <input type="text" name="name" maxlength="120" required
+             placeholder="z. B. RTW Kempten 21/83" value="<?= e($editRes['name'] ?? '') ?>">
+      <button class="btn-primary"><?= $editRes ? '&Auml;nderung speichern' : 'Rettungsmittel hinzuf&uuml;gen' ?></button>
+      <?php if ($editRes): ?><a class="btn-red" href="einstellungen.php?t=stammdaten">Abbrechen</a><?php endif; ?>
+    </form>
+
+      </details>
+
+  <details class="stammblock" id="bergwacht">
+    <summary>Bergwacht-Bereitschaften</summary>
+
     <table class="data">
       <tbody>
       <?php if (!$bw): ?><tr><td class="muted">Noch keine Bereitschaften.</td><td></td></tr><?php endif; ?>
@@ -487,6 +560,8 @@ if ($tab === 'geraete') {
       <button class="btn-primary"><?= $editBw ? 'Änderung speichern' : 'Bereitschaft hinzufügen' ?></button>
       <?php if ($editBw): ?><a class="btn-red" href="einstellungen.php?t=stammdaten">Abbrechen</a><?php endif; ?>
     </form>
+  </details>
+
 
   <?php elseif ($tab === 'backup'): ?>
     <h1>Backup</h1>
@@ -626,7 +701,22 @@ if ($tab === 'geraete') {
         impState.textContent = 'Import fehlgeschlagen: ' + e.message;
       }
     });
-    </script>
+    
+/* Standortdaten: Abschnitt oeffnen, wenn er angesprungen oder bearbeitet wird */
+(function(){
+  function oeffne(id){
+    const d = document.getElementById(id);
+    if (d && d.tagName === 'DETAILS') {
+      d.open = true;
+      d.scrollIntoView({ block: 'start' });
+    }
+  }
+  if (location.hash.length > 1) { oeffne(location.hash.slice(1)); }
+  window.addEventListener('hashchange', () => {
+    if (location.hash.length > 1) { oeffne(location.hash.slice(1)); }
+  });
+})();
+</script>
 
   <?php else: ?>
     <h1>Geräte</h1>

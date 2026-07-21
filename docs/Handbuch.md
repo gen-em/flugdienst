@@ -51,6 +51,10 @@ gedrückt halten** startest du hier die Geräte-Kopplung.
   8 Übergabezeit → 9 Endzeit → 10 Beendigung (= Einsatzende, zurück zu 1).
 - **lang START** öffnet das **Schnellmenü**: eine Phase direkt anspringen
   (erneutes Setzen erzeugt einen *zusätzlichen* Zeitstempel — nichts wird
+
+  Drückst du während des langen START-Drucks zusätzlich eine andere Taste,
+  bleibt das Menü zu — die App erkennt daran die **Tastensperre** der Uhr. So
+  kollidiert das Sperren nicht mehr mit dem Schnellmenü.
   überschrieben), „Einsatzübersicht Zeiten" (Liste aller Zeitstempel) und
   „Einsatztag beenden".
 - **BACK** fragt nach, bevor die App verlassen wird.
@@ -242,11 +246,66 @@ mehrfaches Einspielen derselben Datei ist gefahrlos. Während Export und Import
 zeigt eine Statuszeile den Fortschritt und am Ende die Zahl der übernommenen
 Einsätze, Ruhesegmente und Flugtage.
 
-Ältere Backups (vor dieser Fassung erstellt) werden weiterhin erkannt und
-eingespielt. Bei ihnen bleiben allerdings nur die unverschlüsselten Daten
-nutzbar, wenn sie in ein anderes Konto wandern; Details in
-`docs/Backup-Format.md`.
+Der Aufbau der Datei ist in `docs/Backup-Format.md` vollständig beschrieben —
+sie lässt sich damit auch ohne dieses Programm entschlüsseln.
 
+
+### 3.8b Andere Rettungsmittel
+
+Unter **Einstellungen › Standortdaten › Andere Rettungsmittel** legst du RTW,
+NEF oder weitere Hubschrauber als Vorbelegung an. Im Einsatzformular tippst du
+im Feld **Weitere Rettungsmittel** mindestens zwei Zeichen — dann erscheinen
+die passenden Einträge zum Anklicken. Jeder übernommene Eintrag steht als
+eigenes Element mit kleinem Kreuz zum Entfernen; mehrere sind möglich, doppelte
+werden abgewiesen. Steht etwas nicht in der Vorbelegung, lässt es sich trotzdem
+übernehmen — es gilt dann nur für diesen Einsatz.
+
+Löschst du später ein Rettungsmittel aus der Vorbelegung, behalten bereits
+dokumentierte Einsätze ihren Eintrag: Die Zuordnung wird je Einsatz gespeichert
+und hängt nicht an der Liste.
+
+### 3.8c Flugtag von Hand anlegen
+
+Lief die Uhr an einem Tag nicht, legst du den Flugtag über **+ Flugtag
+anlegen** unten in der Einsatztage-Spalte an. Danach lassen sich Maschine,
+Besatzung und nachgetragene Einsätze wie gewohnt erfassen.
+
+### 3.9 Löschen und Papierkorb
+
+Einsätze und ganze Flugtage landen beim Löschen zunächst im **Papierkorb** und
+bleiben dort **90 Tage** wiederherstellbar; danach räumt das System sie
+automatisch endgültig weg.
+
+- **Einsatz löschen:** in der Einsatzansicht über „Löschen". Es erscheint eine
+  Seite, die vorher zeigt, was mitgeht (Phasen, Reanimationen, Trackpunkte).
+- **Flugtag löschen:** unten auf der Tagesübersicht. Achtung — das entfernt
+  **den kompletten Tag**: alle Einsätze, Ruhesegmente, Tracks, Reanimationen
+  und die Flugtag-Angaben. Beim Wiederherstellen kehrt alles gemeinsam zurück.
+- **Papierkorb:** eigene Seite, erreichbar über das Papierkorb-Symbol unten in der
+  Einsatztage-Spalte (ausgegraut, solange nichts darin liegt) —
+  je eine Tabelle für gelöschte Flugtage und einzeln gelöschte Einsätze, mit
+  „Wiederherstellen" und „Endgültig löschen". Endgültiges Löschen fragt noch
+  einmal nach und ist unwiderruflich.
+
+Solange etwas im Papierkorb liegt, nimmt der Server Nachlieferungen der Uhr
+für diese Einsätze zwar entgegen, verwirft sie aber — gelöschte Einsätze
+wachsen also nicht wieder an. Erst beim endgültigen Löschen wird die Referenz
+dauerhaft gesperrt, sodass die Uhr sie nicht neu anlegt.
+
+Alle Rückfragen erscheinen als Fenster **innerhalb der Seite**, nicht als
+Browser-Dialog. Das ist Absicht: Bei Browser-Dialogen lässt sich „keine
+weiteren Dialoge dieser Seite anzeigen" ankreuzen — danach würden Löschungen
+kommentarlos durchlaufen. Seiteneigene Fenster kann der Browser nicht
+abschalten.
+
+Stammdaten (Standorte, Maschinen, Besatzung, Bergwacht) und Geräte werden
+direkt nach einer kurzen Rückfrage gelöscht — sie sind schnell wieder angelegt.
+**Bereits dokumentierte Flugtage bleiben davon unberührt:** Besatzungsnamen und
+Bergwacht-Angaben stehen ohnehin als Text im Flugtag, und beim Löschen einer
+Maschine oder eines Standorts wird deren Name vorher in die betroffenen
+Flugtage übernommen. Die Historie bleibt also vollständig lesbar.
+Ein **Nutzerkonto** zu löschen verlangt zusätzlich das Abtippen der
+E-Mail-Adresse und geht nicht über den Papierkorb.
 
 ## 4. Eine neue Uhr einrichten (Kurzanleitung)
 
