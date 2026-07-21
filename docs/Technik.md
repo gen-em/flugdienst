@@ -33,9 +33,11 @@ hems/
 │   ├── index.php          Tagesübersicht  · einsatz.php  Einsatzansicht
 │   ├── einsatz_form.php   Nachtragen/Bearbeiten · mission_fields.php Felddefinition
 │   ├── einstellungen.php  Profil/Geräte/Standortdaten/Backup · admin.php + admin_user.php Verwaltung
+│   ├── einsatz_loeschen.php · flugtag_loeschen.php · papierkorb.php  Löschen mit Vorschau
+│   ├── api/               day.php · mission.php · backup_data.php · backup_restore.php
 │   ├── einrichtung.php    E2E-Ersteinrichtung (Wiederherstellungsschlüssel) & Entsperren
 │   ├── pair.php           Uhr-Kopplung per Code · geraete.php Geräte (Altseite)
-│   ├── backup_lib.php     .edbak-Container · export_backup.php Download-Endpunkt
+│   ├── backup_lib.php     Backup-Serialisierung · trash_lib.php Papierkorb-Logik
 │   ├── login/logout/reset_request/reset_confirm.php   Auth-Flows · auth_salt.php KDF-Salt
 │   ├── install.php        Serverinstallation · update.php Migrations-Runner
 │   ├── db.php             PDO, Helfer, Labels, Aufräumjob · ui.php Kopf-/Seitenleisten
@@ -58,7 +60,7 @@ hems/
 | `users` | Login (E-Mail = Username), Rolle `user`/`admin`; Löschen kaskadiert alles; **Browser-Schlüsselableitung** (`kdf_salt`, `kdf_ver`) und **E2E-Schlüssel-Hüllen** `pat_wrap_pw`/`pat_wrap_rc` (Inhaltsschlüssel passwort- bzw. wiederherstellungsverpackt) |
 | `password_resets` | Token-Hashes (sha256), 1 h gültig; Aufräumjob entsorgt Altbestand |
 | `devices` | Upload-Zugang je Gerät: `device_id` (öffentlich) + `api_key_hash`; **`active`-Flag** (deaktivieren statt löschen); virtuelle Geräte `manual-<userId>` für Handeinträge (dauerhaft inaktiv, aus Listen gefiltert) |
-| `missions` | Einsatz; `UNIQUE(device_id, client_ref)` = Idempotenz-Anker; `day` = Flugtag; **`manual`-Marker** (Schutz vor Uhr-Überschreiben); Zusatzfelder lt. `mission_fields.php`; **`pat_blob`** = E2E-Chiffretext (Diagnose, Alter, Einsatzort — Klartext-Ortsspalten existieren seit der Pflicht-Migration nicht mehr) |
+| `missions` | Einsatz; `UNIQUE(device_id, client_ref)` = Idempotenz-Anker; `day` = Flugtag; **`manual`-Marker** (Schutz vor Uhr-Überschreiben); `deleted_at`/`deleted_with_day` (Papierkorb); Zusatzfelder lt. `mission_fields.php`; **`pat_blob`** = E2E-Chiffretext (Diagnose, Alter, Einsatzort — Klartext-Ortsspalten existieren seit der Pflicht-Migration nicht mehr) |
 | `mission_phases` | Phasen-Zeitstempel (2–10, Mehrfach-Einträge erlaubt) inkl. Position |
 | `resus_sessions` / `resus_events` | Reanimationen: **mehrere Sitzungen je Einsatz**, Ereignisse typisiert |
 | `rest_segments` | Ruhe-Track-Segmente (gleiches Idempotenz-Schema wie Einsätze) |
@@ -105,6 +107,17 @@ neu und schickt sie an `api/backup_restore.php` → `edbak_restore()`. Dadurch
 sind Backups zwischen Konten übertragbar; der Server sieht nie Klartext.
 Alt-Dateien (Format 1, serverseitig versiegelt) erkennt der Import an der Magie
 und verarbeitet sie über `edbak_open()` weiter. Aufbau: `docs/Backup-Format.md`.
+
+**Papierkorb (Soft-Delete):** Einsätze, Ruhesegmente und Flugtage tragen
+`deleted_at`; alle Lesepfade (Übersicht, Tages-/Einsatz-API, Tagesliste,
+Backup) filtern darauf. `trash_lib.php` bündelt Umfangsermittlung, weiches
+Löschen, Wiederherstellen und endgültiges Entfernen; der Aufräumjob in `db.php`
+räumt nach `TRASH_DAYS` (30) endgültig ab. Beim Löschen eines Flugtags werden
+dessen Einsätze/Segmente mit `deleted_with_day = 1` markiert — sie hängen am
+Tag und kehren mit ihm zurück. `ingest.php` quittiert Uploads für Einträge im
+Papierkorb, verwirft sie aber; erst das endgültige Löschen schreibt die
+Referenz nach `deleted_refs`. Schwere Löschungen laufen über serverseitige
+Zwischenseiten mit Umfangsanzeige statt über Browser-Dialoge.
 
 **Schutz manueller Einsätze:** Beim Ingest wird vor dem Upsert der
 `manual`-Marker geprüft. Ist er gesetzt, werden Metadaten/Phasen/Rea **nicht**
@@ -153,6 +166,13 @@ Debug-Build; Sideload: `.prg` nach `GARMIN/Apps/`. In `properties.xml` steht
 nur die Server-Domain; die Zugangsdaten holt sich die Uhr selbst über die
 **Kopplung per Code** (Web: Einstellungen → Geräte; Uhr: Sync-Seite → START
 halten). `Const.APP_VERSION` bei Releases mitziehen (Anzeige Sync-Seite).
+
+**Dienstende (Uhr):** „Einsatztag beenden" schließt Rea und Dienst, setzt den
+Arbeitszustand zurück (Zähler, Phase, Tag) und beendet die App per
+`System.exit()`; die Upload-Warteschlange bleibt erhalten. Der Wechsel zur
+Sende-Ansicht läuft verzögert (Modul `EndDay`), weil ein direkter
+`switchToView()` aus `ConfirmationDelegate.onResponse()` von der sich
+schließenden Bestätigung wieder entfernt würde.
 
 ## 6. Deployment
 

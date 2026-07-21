@@ -51,9 +51,19 @@ try {
         // Manuell bearbeitete Einsaetze schuetzen: Uhr-Uploads duerfen
         // Metadaten/Phasen/Rea nicht mehr ueberschreiben; Trackpunkte werden
         // weiterhin ergaenzt (Append-only, unkritisch).
-        $chk = $pdo->prepare('SELECT id, manual FROM missions WHERE device_id = ? AND client_ref = ?');
+        $chk = $pdo->prepare('SELECT id, manual, deleted_at FROM missions
+                              WHERE device_id = ? AND client_ref = ?');
         $chk->execute([$dev['id'], $clientRef]);
         $existing = $chk->fetch();
+
+        // Im Papierkorb: Empfang bestaetigen, Daten aber verwerfen — sonst
+        // wuerde ein geloeschter Einsatz durch Nachlieferungen wieder wachsen.
+        // Erst das endgueltige Loeschen traegt ihn in die Sperrliste ein.
+        if ($existing && $existing['deleted_at'] !== null) {
+            $pdo->commit();
+            json_out(['ok' => true, 'id' => 0, 'stored_points' => 0,
+                      'next_seq' => $seqFrom + count($points)]);
+        }
         if ($existing && (int)$existing['manual'] === 1) {
             $ownerId = (int)$existing['id'];
             $ownerType = 'mission';

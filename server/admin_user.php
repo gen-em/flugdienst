@@ -19,6 +19,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $notice = 'Rolle geändert.';
         }
     }
+    if ($action === 'name') {
+        $name = trim($_POST['name'] ?? '');
+        db()->prepare('UPDATE users SET name = ? WHERE id = ?')
+            ->execute([$name !== '' ? $name : null, $uid]);
+        $notice = 'Name geändert.';
+    }
     if ($action === 'email') {
         $email = trim($_POST['email'] ?? '');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -31,8 +37,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     if ($action === 'user_delete') {
+        // Zweite Stufe: die E-Mail-Adresse muss abgetippt werden. Bewusst
+        // SERVERSEITIG geprueft — ein Browser-Dialog liesse sich umgehen.
+        $eingabe = trim((string)($_POST['confirm_email'] ?? ''));
         if ($uid === $userId) {
             $error = 'Das eigene Konto kann hier nicht gelöscht werden.';
+        } elseif (strcasecmp($eingabe, (string)$u['email']) !== 0) {
+            $error = 'Die eingegebene E-Mail-Adresse stimmt nicht überein — nichts wurde gelöscht.';
         } else {
             // FK-Kaskaden entfernen Einsätze, Segmente, Tracks, Geräte, Flugtage
             db()->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
@@ -99,6 +110,15 @@ $devices = $dv->fetchAll();
     <button class="btn-primary">E-Mail speichern</button>
   </form>
 
+  <h2>Name</h2>
+  <form method="post" class="inline-form">
+    <?= csrf_field() ?><input type="hidden" name="action" value="name">
+    <input type="hidden" name="id" value="<?= $uid ?>">
+    <input type="text" name="name" maxlength="120" placeholder="z. B. Vorname Nachname"
+           value="<?= e((string)($u['name'] ?? '')) ?>">
+    <button class="btn-primary">Name speichern</button>
+  </form>
+
   <p class="muted">Ein Passwort kann hier nicht gesetzt werden: Die Daten sind mit dem
      Passwort der Person Ende-zu-Ende-verschlüsselt. Bei vergessenem Passwort den Weg
      „Passwort vergessen" auf der Login-Seite nutzen — der Zugriff auf verschlüsselte
@@ -133,11 +153,19 @@ $devices = $dv->fetchAll();
   </table>
 
   <hr class="sep">
-  <form method="post"
-        onsubmit="return confirm('Diese NutzerIn ENDGÜLTIG löschen? Alle Einsätze, Flugtage, Tracks, Reanimationen und Geräte werden unwiderruflich mit entfernt. Verschlüsselte Angaben sind danach für niemanden mehr lesbar.')">
+  <h2>Nutzer löschen</h2>
+  <p class="muted">Entfernt das Konto <strong><?= e($u['email']) ?></strong> mit
+     <strong>allen</strong> Daten: Einsätze, Flugtage, Tracks, Reanimationen und Geräte.
+     Verschlüsselte Angaben sind danach für niemanden mehr lesbar. Dieser Schritt lässt
+     sich nicht rückgängig machen und geht nicht über den Papierkorb.</p>
+  <form method="post" class="settings-form"
+        onsubmit="return confirm('Nutzer endgültig löschen?')">
     <?= csrf_field() ?><input type="hidden" name="action" value="user_delete">
     <input type="hidden" name="id" value="<?= $uid ?>">
-    <button class="btn-red">! Nutzer löschen</button>
+    <label>Zur Bestätigung die E-Mail-Adresse abtippen
+      <input type="text" name="confirm_email" autocomplete="off" required
+             placeholder="<?= e($u['email']) ?>"></label>
+    <button class="btn-red">! Nutzer endgültig löschen</button>
   </form>
 
   <?php ui_footer(); ?>

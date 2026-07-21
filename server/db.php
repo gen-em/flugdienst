@@ -89,6 +89,10 @@ function run_cleanup_if_due(): void {
                        OR created_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)");
         $pdo->exec("DELETE FROM deleted_refs
                     WHERE deleted_at < DATE_SUB(NOW(), INTERVAL 90 DAY)");
+        // Papierkorb: abgelaufene Eintraege endgueltig entfernen
+        require_once __DIR__ . '/trash_lib.php';
+        trash_purge_expired($pdo);
+
         $pdo->exec("DELETE FROM password_resets
                     WHERE used_at IS NOT NULL
                        OR expires_at < DATE_SUB(NOW(), INTERVAL 7 DAY)");

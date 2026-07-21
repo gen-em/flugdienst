@@ -63,9 +63,9 @@ function ui_days_sidebar(?string $currentDay): void {
     global $userId;
     $st = db()->prepare(
         'SELECT day FROM (
-            SELECT day FROM missions WHERE user_id = ?
-            UNION SELECT day FROM rest_segments WHERE user_id = ?
-            UNION SELECT day FROM days WHERE user_id = ?
+            SELECT day FROM missions WHERE user_id = ? AND deleted_at IS NULL
+            UNION SELECT day FROM rest_segments WHERE user_id = ? AND deleted_at IS NULL
+            UNION SELECT day FROM days WHERE user_id = ? AND deleted_at IS NULL
          ) t ORDER BY day DESC LIMIT 90');
     $st->execute([$userId, $userId, $userId]);
     $days = $st->fetchAll(PDO::FETCH_COLUMN); ?>

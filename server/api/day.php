@@ -50,8 +50,8 @@ $day = (string)($_GET['day'] ?? '');
 
 if ($day === '') {
     $st = db()->prepare('SELECT DISTINCT day FROM (
-                           SELECT day FROM missions      WHERE user_id = ?
-                           UNION SELECT day FROM rest_segments WHERE user_id = ?
+                           SELECT day FROM missions      WHERE user_id = ? AND deleted_at IS NULL
+                           UNION SELECT day FROM rest_segments WHERE user_id = ? AND deleted_at IS NULL
                          ) t ORDER BY day DESC LIMIT 120');
     $st->execute([$userId, $userId]);
     $days = array_column($st->fetchAll(), 'day');
@@ -68,7 +68,7 @@ $mt = db()->prepare('SELECT d.aircraft_id, d.base_id, d.crew_p1, d.crew_p2, d.cr
                      FROM days d
                      LEFT JOIN aircraft a ON a.id = d.aircraft_id
                      LEFT JOIN bases b ON b.id = d.base_id
-                     WHERE d.user_id = ? AND d.day = ?');
+                     WHERE d.user_id = ? AND d.day = ? AND d.deleted_at IS NULL');
 $mt->execute([$userId, $day]);
 $meta = $mt->fetch() ?: null;
 
@@ -79,7 +79,8 @@ $st = db()->prepare('SELECT id, started_at, ended_at, distance_m, final,
                        site_desc, winch, bergwacht, pat_blob,
                        (SELECT MAX(occurred_at) FROM mission_phases p
                         WHERE p.mission_id = missions.id AND p.phase = 9) AS p9_at
-                     FROM missions WHERE user_id = ? AND day = ? ORDER BY started_at');
+                     FROM missions WHERE user_id = ? AND day = ? AND deleted_at IS NULL
+                     ORDER BY started_at');
 $st->execute([$userId, $day]);
 $missions = [];
 foreach ($st->fetchAll() as $m) {
@@ -105,7 +106,7 @@ foreach ($st->fetchAll() as $m) {
     ];
 }
 
-$st = db()->prepare('SELECT id FROM rest_segments WHERE user_id = ? AND day = ? ORDER BY started_at');
+$st = db()->prepare('SELECT id FROM rest_segments WHERE user_id = ? AND day = ? AND deleted_at IS NULL ORDER BY started_at');
 $st->execute([$userId, $day]);
 $rest = [];
 foreach ($st->fetchAll() as $r) {

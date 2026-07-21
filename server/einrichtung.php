@@ -57,7 +57,7 @@ if ($patReady) {
 <body class="login-body">
 <div class="login-wrap">
 <div class="login-card setup-card">
-  <img src="assets/logo-weiss.png" alt="Einsatzdoku" class="login-logo">
+  <img src="assets/logo.png" alt="Einsatzdoku" class="login-logo">
   <?php if ($error): ?><p class="alert"><?= e($error) ?></p><?php endif; ?>
 
   <?php if (!$patReady): ?>

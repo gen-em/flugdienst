@@ -151,6 +151,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $notice = 'Standard-Maschine gesetzt.';
     }
     if ($action === 'base_del') {
+        // Standortnamen in den Flugtagen sichern (siehe ac_del)
+        db()->prepare('UPDATE days d
+                       JOIN bases b ON b.id = d.base_id
+                          SET d.base = b.name
+                        WHERE d.user_id = ? AND d.base_id = ?')
+            ->execute([$userId, (int)($_POST['id'] ?? 0)]);
         db()->prepare('DELETE FROM bases WHERE id = ? AND user_id = ?')
             ->execute([(int)($_POST['id'] ?? 0), $userId]);
         $notice = 'Standort gelöscht.';
@@ -177,6 +183,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     if ($action === 'ac_del') {
+        // Bevor die Maschine verschwindet: ihren Namen in den betroffenen
+        // Flugtagen als Text sichern, sonst stuende dort nach dem Loeschen
+        // nichts mehr (Fremdschluessel wird auf NULL gesetzt).
+        db()->prepare('UPDATE days d
+                       JOIN aircraft a ON a.id = d.aircraft_id
+                          SET d.aircraft = a.registration
+                        WHERE d.user_id = ? AND d.aircraft_id = ?')
+            ->execute([$userId, (int)($_POST['id'] ?? 0)]);
         db()->prepare('DELETE FROM aircraft WHERE id = ? AND user_id = ?')
             ->execute([(int)($_POST['id'] ?? 0), $userId]);
         $notice = 'Hubschrauber gelöscht.';
@@ -338,7 +352,7 @@ if ($tab === 'geraete') {
        sortiert. Löschen entfernt nur den Listeneintrag — gespeicherte Flugtage bleiben
        unverändert. ★ markiert die Vorbelegung neuer Flugtage.</p>
 
-    <h2>Standorte</h2>
+    <h2 id="standorte">Standorte</h2>
     <table class="data">
       <thead><tr><th>Name</th><th>Standard</th><th class="th-act">Aktionen</th></tr></thead>
       <tbody>
@@ -349,14 +363,14 @@ if ($tab === 'geraete') {
           <td class="checkcol"><?= (int)$b['is_default'] ? '★' : '' ?></td>
           <td><div class="rowactions">
             <?php if (!(int)$b['is_default']): ?>
-              <form method="post" action="einstellungen.php?t=stammdaten">
+              <form method="post" action="einstellungen.php?t=stammdaten#standorte">
                 <?= csrf_field() ?><input type="hidden" name="action" value="base_default">
                 <input type="hidden" name="id" value="<?= (int)$b['id'] ?>">
                 <button class="btn-plain">Als Standard</button>
               </form>
             <?php endif; ?>
-            <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;eb=<?= (int)$b['id'] ?>">Bearbeiten</a>
-            <form method="post" action="einstellungen.php?t=stammdaten"
+            <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;eb=<?= (int)$b['id'] ?>#standorte">Bearbeiten</a>
+            <form method="post" action="einstellungen.php?t=stammdaten#standorte"
                   onsubmit="return confirm('Standort löschen?')">
               <?= csrf_field() ?><input type="hidden" name="action" value="base_del">
               <input type="hidden" name="id" value="<?= (int)$b['id'] ?>">
@@ -367,7 +381,7 @@ if ($tab === 'geraete') {
       <?php endforeach; ?>
       </tbody>
     </table>
-    <form method="post" action="einstellungen.php?t=stammdaten" class="inline-form">
+    <form method="post" action="einstellungen.php?t=stammdaten#standorte" class="inline-form">
       <?= csrf_field() ?><input type="hidden" name="action" value="base_save">
       <input type="hidden" name="id" value="<?= $editBase ? (int)$editBase['id'] : 0 ?>">
       <input type="text" name="name" maxlength="120" required
@@ -377,7 +391,7 @@ if ($tab === 'geraete') {
     </form>
 
     <hr class="sep">
-    <h2>Hubschrauber</h2>
+    <h2 id="hubschrauber">Hubschrauber</h2>
     <p class="muted">Die angehakten Rollen bestimmen, welche Besatzungsfelder am Flugtag erscheinen.</p>
     <table class="data">
       <thead><tr><th>Kennung</th><th>Rollen</th><th>Standard</th><th class="th-act">Aktionen</th></tr></thead>
@@ -392,14 +406,14 @@ if ($tab === 'geraete') {
           <td class="checkcol"><?= (int)$a['is_default'] ? '★' : '' ?></td>
           <td><div class="rowactions">
             <?php if (!(int)$a['is_default']): ?>
-              <form method="post" action="einstellungen.php?t=stammdaten">
+              <form method="post" action="einstellungen.php?t=stammdaten#hubschrauber">
                 <?= csrf_field() ?><input type="hidden" name="action" value="ac_default">
                 <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
                 <button class="btn-plain">Als Standard</button>
               </form>
             <?php endif; ?>
-            <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ac=<?= (int)$a['id'] ?>">Bearbeiten</a>
-            <form method="post" action="einstellungen.php?t=stammdaten"
+            <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ac=<?= (int)$a['id'] ?>#hubschrauber">Bearbeiten</a>
+            <form method="post" action="einstellungen.php?t=stammdaten#hubschrauber"
                   onsubmit="return confirm('Hubschrauber löschen?')">
               <?= csrf_field() ?><input type="hidden" name="action" value="ac_del">
               <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
@@ -410,7 +424,7 @@ if ($tab === 'geraete') {
       <?php endforeach; ?>
       </tbody>
     </table>
-    <form method="post" action="einstellungen.php?t=stammdaten" class="ac-form">
+    <form method="post" action="einstellungen.php?t=stammdaten#hubschrauber" class="ac-form">
       <?= csrf_field() ?><input type="hidden" name="action" value="ac_save">
       <input type="hidden" name="id" value="<?= $editAc ? (int)$editAc['id'] : 0 ?>">
       <div class="inline-form">
@@ -430,7 +444,7 @@ if ($tab === 'geraete') {
     </form>
 
     <hr class="sep">
-    <h2>Besatzung — Vorbelegungen</h2>
+    <h2 id="besatzung">Besatzung — Vorbelegungen</h2>
     <p class="muted">Diese Namen erscheinen am Flugtag als Auswahl im jeweiligen Rollen-Dropdown.</p>
     <?php foreach ($ROLE_LABELS as $rk => $lbl): ?>
       <h3 class="rolehead"><?= e($lbl) ?></h3>
@@ -440,8 +454,8 @@ if ($tab === 'geraete') {
           <tr>
             <td><?= e($c['name']) ?></td>
             <td class="th-act"><div class="rowactions">
-              <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ec=<?= (int)$c['id'] ?>">Bearbeiten</a>
-              <form method="post" action="einstellungen.php?t=stammdaten"
+              <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ec=<?= (int)$c['id'] ?>#besatzung">Bearbeiten</a>
+              <form method="post" action="einstellungen.php?t=stammdaten#besatzung"
                     onsubmit="return confirm('Eintrag löschen?')">
                 <?= csrf_field() ?><input type="hidden" name="action" value="crew_del">
                 <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
@@ -453,7 +467,7 @@ if ($tab === 'geraete') {
         <?php if (!$any): ?><tr><td class="muted">Noch keine Einträge.</td><td></td></tr><?php endif; ?>
         </tbody>
       </table>
-      <form method="post" action="einstellungen.php?t=stammdaten" class="inline-form">
+      <form method="post" action="einstellungen.php?t=stammdaten#besatzung" class="inline-form">
         <?= csrf_field() ?><input type="hidden" name="action" value="crew_save">
         <input type="hidden" name="role" value="<?= $rk ?>">
         <input type="hidden" name="id"
@@ -467,7 +481,7 @@ if ($tab === 'geraete') {
     <?php endforeach; ?>
 
     <hr class="sep">
-    <h2>Bergwacht-Bereitschaften</h2>
+    <h2 id="bergwacht">Bergwacht-Bereitschaften</h2>
     <table class="data">
       <tbody>
       <?php if (!$bw): ?><tr><td class="muted">Noch keine Bereitschaften.</td><td></td></tr><?php endif; ?>
@@ -475,8 +489,8 @@ if ($tab === 'geraete') {
         <tr>
           <td><?= e($b['name']) ?></td>
           <td class="th-act"><div class="rowactions">
-            <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ew=<?= (int)$b['id'] ?>">Bearbeiten</a>
-            <form method="post" action="einstellungen.php?t=stammdaten"
+            <a class="btn-yellow" href="einstellungen.php?t=stammdaten&amp;ew=<?= (int)$b['id'] ?>#bergwacht">Bearbeiten</a>
+            <form method="post" action="einstellungen.php?t=stammdaten#bergwacht"
                   onsubmit="return confirm('Bereitschaft löschen?')">
               <?= csrf_field() ?><input type="hidden" name="action" value="bw_del">
               <input type="hidden" name="id" value="<?= (int)$b['id'] ?>">
@@ -487,7 +501,7 @@ if ($tab === 'geraete') {
       <?php endforeach; ?>
       </tbody>
     </table>
-    <form method="post" action="einstellungen.php?t=stammdaten" class="inline-form">
+    <form method="post" action="einstellungen.php?t=stammdaten#bergwacht" class="inline-form">
       <?= csrf_field() ?><input type="hidden" name="action" value="bw_save">
       <input type="hidden" name="id" value="<?= $editBw ? (int)$editBw['id'] : 0 ?>">
       <input type="text" name="name" maxlength="120" required

@@ -4,7 +4,7 @@ require_once __DIR__ . '/../auth_guard.php';
 
 $id = (int)($_GET['id'] ?? 0);
 
-$st = db()->prepare('SELECT * FROM missions WHERE id = ? AND user_id = ?');   // Datentrennung!
+$st = db()->prepare('SELECT * FROM missions WHERE id = ? AND user_id = ? AND deleted_at IS NULL');   // Datentrennung!
 $st->execute([$id, $userId]);
 $m = $st->fetch();
 if (!$m) json_out(['error' => 'not_found'], 404);
@@ -30,7 +30,7 @@ foreach ($FIELDS as $col => $f) { $collect($col, $f); }
 
 // Tagesnummer nach Alarmierungszeit (frueheste = 1)
 $no = db()->prepare('SELECT COUNT(*) + 1 FROM missions
-                     WHERE user_id = ? AND day = ? AND started_at < ?');
+                     WHERE user_id = ? AND day = ? AND started_at < ? AND deleted_at IS NULL');
 $no->execute([$userId, $m['day'], $m['started_at']]);
 $dayNo = (int)$no->fetchColumn();
 

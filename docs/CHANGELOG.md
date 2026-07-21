@@ -6,7 +6,19 @@ jedem Änderungspaket oben dazu.
 
 ## [Unveröffentlicht]
 
-### Geändert (Web — portables Backup)
+### Web
+- **Papierkorb für Einsätze und Flugtage:** Gelöschtes wird zunächst nur
+  markiert und bleibt 30 Tage wiederherstellbar (Anzeige unten auf der
+  Übersicht, je Tabelle für Flugtage und Einsätze mit „Wiederherstellen" und
+  „Endgültig löschen"). Der Aufräumjob entfernt Abgelaufenes automatisch.
+- **Flugtag löschen** entfernt den kompletten Tag (Einsätze, Ruhesegmente,
+  Tracks, Reanimationen, Flugtag-Angaben) und stellt ihn geschlossen wieder her.
+- Schwere Löschungen laufen über eine **serverseitige Zwischenseite mit
+  Umfangs-Anzeige** (ohne JavaScript wirksam) statt über einen Browser-Dialog.
+- **Nutzer löschen** verlangt jetzt zusätzlich das Abtippen der E-Mail-Adresse;
+  geprüft wird serverseitig.
+- Uploads der Uhr für Einsätze im Papierkorb werden quittiert, aber verworfen;
+  erst das endgültige Löschen sperrt die Referenz dauerhaft.
 - **Backup läuft jetzt im Browser** (Format 2): Beim Export werden die
   geschützten Angaben lokal entschlüsselt und mit dem Backup-Passwort
   versiegelt; beim Import öffnet der Browser die Datei und verschlüsselt sie
@@ -17,12 +29,8 @@ jedem Änderungspaket oben dazu.
   importiert; ihre geschützten Angaben bleiben kontogebunden.
 - Neue Endpunkte `api/backup_data.php` und `api/backup_restore.php`;
   `export_backup.php` entfällt.
-
-### Geändert (Web)
 - Ruhesegment-Tracks (Phase 1) auf der Tageskarte deutlich sichtbarer:
   warmes Grau statt Fast-Schwarz, kräftigere Linie mit Zoom-Anpassung.
-
-### Geändert (Web — Pflicht-Verschlüsselung)
 - **Verschlüsselung ist jetzt Pflicht:** kein Modul-Schalter, keine
   Feldauswahl mehr — der Einstellungs-Reiter „PatientInnendaten" entfällt.
   Beim ersten Anmelden erzwingt das System die **Ersteinrichtung** mit
@@ -40,8 +48,6 @@ jedem Änderungspaket oben dazu.
   machen); Hinweis auf „Passwort vergessen" + Wiederherstellungsschlüssel.
 - Backup: exportiert die Schlüssel-Hüllen ohne Modul-Schalter; Alt-Backups
   mit Klartext-Ort werden beim Import toleriert (Ort wird verworfen).
-
-### Behoben / Geändert (Web)
 - **Einsatzansicht komplett neu gebaut:** Bearbeiten-Link führt wieder zum
   richtigen Einsatz (die Seite hatte die Einsatz-ID verloren), volle Breite
   wie die Flugtag-Übersicht, Aktionsleiste nebeneinander.
@@ -55,29 +61,6 @@ jedem Änderungspaket oben dazu.
 - **Geräte umbenennbar** (gelber Bearbeiten-Button je Zeile).
 - Administration: Name als eigene Spalte, ganze Zeile reagiert auf
   Hover/Klick; Abmelden fragt nach Bestätigung.
-
-### Geändert (Uhr — v1.2.0)
-- **Rea-Menü neu:** groß umrahmte Felder (~4 je Seite, größere Schrift),
-  Gruppen mit dünnen Trennlinien (Rhythmuskontrolle/Defibrillation ·
-  Adrenalin/Amiodaron · **Zugang** [neues Ereignis]/Intubation/Sonographie ·
-  ROSC/Tod · Übersicht), dicke Linie vor **„Rea BEENDEN"** (vorher „ENDE").
-  Server und Doku kennen den Ereignistyp `zugang`.
-- **Einsatzzähler:** Die Statistik zählt nur noch abgeschlossene Einsätze
-  (Alarmierung + dokumentiertes Ende); der laufende zählt nicht mehr mit.
-- **Sync-Seite:** Grün „Sync vollständig ✓", sobald kein Rückstand besteht —
-  das konstruktionsbedingt immer offene laufende Ruhesegment zählt nicht mehr
-  als „offenes Paket". Der Koppel-Hinweis erscheint nur noch ungekoppelt.
-- App-Version 1.2.0 (Sync-Seite).
-
-### Geändert (Uhr)
-- **Geräte-Kopplung umgezogen:** Die Code-Eingabe liegt jetzt auf der
-  Sync-/Versionsseite und startet mit **START gedrückt halten** (1 s) — die
-  frühere „UP halten"-Geste auf dem Startbildschirm löste auf dem Gerät nicht
-  zuverlässig aus. Der Startbildschirm zeigt ungekoppelt den Hinweis
-  „Nicht gekoppelt — DOWN drücken"; die Kopplungs-Rückmeldung („Gekoppelt ✓")
-  erscheint auf der Sync-Seite.
-
-### Hinzugefügt
 - **Backup (Export/Import):** Einstellungs-Reiter „Backup" sichert alle
   eigenen Daten (Einsätze inkl. Phasen/Reanimationen/Tracks, Ruhesegmente,
   Flugtage, Stammdaten, verschlüsselte PatientInnendaten samt
@@ -132,25 +115,6 @@ jedem Änderungspaket oben dazu.
   Hover-/Tipp-Kopplung in beide Richtungen zwischen Phasen-Tabelle und Karte.
 - CSS-Fix: `hidden`-Attribut greift jetzt überall (u. a. Rollenfelder am
   Flugtag verschwinden korrekt).
-
-### Behoben (Uhr)
-- **Absturz bei Ablauf des 2:00-Timers:** Das 5×-Vibrationsmuster überschritt
-  Garmins Hardware-Limit von 8 Vibrationsprofilen. Muster jetzt gesplittet
-  (3 + 2 Pulse); alle Vibrationsaufrufe zusätzlich abgesichert.
-- **Karte:** Eigene Zoom-Steuerung statt des unzuverlässigen System-Browse-
-  Modus — kurz START = Zoom-Modus, UP/DOWN zoomen um die Position, BACK
-  zurück zum Track-Fit.
-- **Sync-Diagnose:** Startbildschirm und Statistik-Seite zeigen den konkreten
-  Fehlergrund („Keine Server-URL", „Zugangsdaten fehlen", HTTP-Codes) statt
-  nur „Sync ausstehend".
-
-### Geändert (Uhr)
-- Statistik-Seite zeigt nur noch die Einsätze des Tages (Alarmierungs-Zähler
-  entfernt); Zahl deutlich größer.
-- Jeder Neustart des 2:00-Zyklus (Rhythmuskontrolle, manuell, Rea-Start)
-  bestätigt mit 2× Vibration.
-
-### Geändert
 - **Administration:** Klick auf eine NutzerIn öffnet die Editierseite (Rolle,
   E-Mail, neues Passwort, verbundene Geräte mit Aktivieren/Deaktivieren und
   Löschen). Admin-Geräteanlage ersatzlos entfernt (Selbstverwaltung genügt).
@@ -208,12 +172,51 @@ jedem Änderungspaket oben dazu.
   „Bearbeiten" als Button; Feldliste vertikal zentriert; „+ Phase hinzufügen"
   fokussiert das neue Dropdown; Fußzeile mit © Gen-EM und AGPL-3.0 auf allen
   Seiten.
-
-### Behoben
 - Navigation: Auf der Geräte-Seite tauschten „Geräte" und „Verwaltung" beim
   Klick die Plätze (abweichende Link-Reihenfolge).
 - Migration „Mehrere Reanimationen": Ersatzindex vor dem Entfernen des
   UNIQUE (MySQL 1553); Runner überspringt bereits erledigte Einzelschritte.
+
+### Installation
+- `schema.sql` legt die Migrations-Buchführung (`schema_migrations`) an und
+  trägt alle bisherigen Migrationen als erledigt ein — eine frische
+  Installation ist sofort auf Endstand.
+- Der Installer löschte beim Zurücksetzen nur neun alte Tabellen; die Liste
+  wird jetzt aus `schema.sql` gelesen und bleibt automatisch vollständig.
+- Neue Migration „Papierkorb" (`deleted_at`, `deleted_with_day`).
+
+### Uhr (v1.2.0 – v1.3.2)
+- **Rea-Menü neu:** groß umrahmte Felder (~4 je Seite, größere Schrift),
+  Gruppen mit dünnen Trennlinien (Rhythmuskontrolle/Defibrillation ·
+  Adrenalin/Amiodaron · **Zugang** [neues Ereignis]/Intubation/Sonographie ·
+  ROSC/Tod · Übersicht), dicke Linie vor **„Rea BEENDEN"** (vorher „ENDE").
+  Server und Doku kennen den Ereignistyp `zugang`.
+- **Einsatzzähler:** Die Statistik zählt nur noch abgeschlossene Einsätze
+  (Alarmierung + dokumentiertes Ende); der laufende zählt nicht mehr mit.
+- **Sync-Seite:** Grün „Sync vollständig ✓", sobald kein Rückstand besteht —
+  das konstruktionsbedingt immer offene laufende Ruhesegment zählt nicht mehr
+  als „offenes Paket". Der Koppel-Hinweis erscheint nur noch ungekoppelt.
+- App-Version 1.2.0 (Sync-Seite).
+- **Geräte-Kopplung umgezogen:** Die Code-Eingabe liegt jetzt auf der
+  Sync-/Versionsseite und startet mit **START gedrückt halten** (1 s) — die
+  frühere „UP halten"-Geste auf dem Startbildschirm löste auf dem Gerät nicht
+  zuverlässig aus. Der Startbildschirm zeigt ungekoppelt den Hinweis
+  „Nicht gekoppelt — DOWN drücken"; die Kopplungs-Rückmeldung („Gekoppelt ✓")
+  erscheint auf der Sync-Seite.
+- **Absturz bei Ablauf des 2:00-Timers:** Das 5×-Vibrationsmuster überschritt
+  Garmins Hardware-Limit von 8 Vibrationsprofilen. Muster jetzt gesplittet
+  (3 + 2 Pulse); alle Vibrationsaufrufe zusätzlich abgesichert.
+- **Karte:** Eigene Zoom-Steuerung statt des unzuverlässigen System-Browse-
+  Modus — kurz START = Zoom-Modus, UP/DOWN zoomen um die Position, BACK
+  zurück zum Track-Fit.
+- **Sync-Diagnose:** Startbildschirm und Statistik-Seite zeigen den konkreten
+  Fehlergrund („Keine Server-URL", „Zugangsdaten fehlen", HTTP-Codes) statt
+  nur „Sync ausstehend".
+- Statistik-Seite zeigt nur noch die Einsätze des Tages (Alarmierungs-Zähler
+  entfernt); Zahl deutlich größer.
+- Jeder Neustart des 2:00-Zyklus (Rhythmuskontrolle, manuell, Rea-Start)
+  bestätigt mit 2× Vibration.
+
 
 ## [1.2] — 2026-07-18
 

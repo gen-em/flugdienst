@@ -76,7 +76,7 @@ function edbak_build(int $userId): string {
     };
 
     $missions = [];
-    foreach ($q('SELECT * FROM missions WHERE user_id = ? ORDER BY started_at', [$userId]) as $m) {
+    foreach ($q('SELECT * FROM missions WHERE user_id = ? AND deleted_at IS NULL ORDER BY started_at', [$userId]) as $m) {
         $mid = (int)$m['id'];
         foreach (['id', 'user_id', 'device_id'] as $drop) { unset($m[$drop]); }
         $m['phases'] = array_map(
@@ -99,7 +99,7 @@ function edbak_build(int $userId): string {
     }
 
     $rests = [];
-    foreach ($q('SELECT * FROM rest_segments WHERE user_id = ? ORDER BY started_at', [$userId]) as $r) {
+    foreach ($q('SELECT * FROM rest_segments WHERE user_id = ? AND deleted_at IS NULL ORDER BY started_at', [$userId]) as $r) {
         $rid = (int)$r['id'];
         foreach (['id', 'user_id', 'device_id'] as $drop) { unset($r[$drop]); }
         $r['track'] = $tracks('rest', $rid);
@@ -112,7 +112,7 @@ function edbak_build(int $userId): string {
                  FROM days d
                  LEFT JOIN aircraft a ON a.id = d.aircraft_id
                  LEFT JOIN bases b ON b.id = d.base_id
-                 WHERE d.user_id = ? ORDER BY d.day', [$userId]) as $d) {
+                 WHERE d.user_id = ? AND d.deleted_at IS NULL ORDER BY d.day', [$userId]) as $d) {
         foreach (['id', 'user_id', 'aircraft_id', 'base_id'] as $drop) { unset($d[$drop]); }
         $days[] = $d;
     }

@@ -63,6 +63,8 @@ CREATE TABLE missions (
   pat_blob   TEXT NULL,                              -- E2E-verschluesselt: Diagnose, Alter, Einsatzort (Server: nur Chiffretext)
   notes      TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at       DATETIME NULL,
+  deleted_with_day TINYINT(1) NOT NULL DEFAULT 0,
   UNIQUE KEY uq_dev_ref (device_id, client_ref),
   INDEX (user_id, day),
   FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE CASCADE,
@@ -105,6 +107,8 @@ CREATE TABLE rest_segments (
   started_at DATETIME NOT NULL,
   ended_at   DATETIME NULL,
   final      TINYINT(1) NOT NULL DEFAULT 0,
+  deleted_at       DATETIME NULL,
+  deleted_with_day TINYINT(1) NOT NULL DEFAULT 0,
   UNIQUE KEY uq_dev_ref (device_id, client_ref),
   INDEX (user_id, day),
   FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE CASCADE,
@@ -170,6 +174,7 @@ CREATE TABLE days (
   base     VARCHAR(64) NULL,        -- Alt
   crew     VARCHAR(190) NULL,       -- Alt
   notes    TEXT NULL,
+  deleted_at       DATETIME NULL,
   UNIQUE KEY uq_user_day (user_id, day),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (aircraft_id) REFERENCES aircraft(id) ON DELETE SET NULL,
@@ -245,4 +250,5 @@ INSERT IGNORE INTO schema_migrations (id, status) VALUES
   ('2026_07_20_kopplung', 'skipped'),
   ('2026_07_20_patientinnendaten', 'skipped'),
   ('2026_07_21_pflicht_e2e', 'skipped'),
-  ('2026_07_22_tag_zuordnung', 'skipped');
+  ('2026_07_22_tag_zuordnung', 'skipped'),
+  ('2026_07_22_papierkorb', 'skipped');

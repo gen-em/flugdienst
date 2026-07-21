@@ -314,3 +314,22 @@ h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
 
 /* Einsatzformular: Seitenrahmen wie überall, Eingaben in lesbarer Spalte */
 .formcol{max-width:760px}
+
+/* Papierkorb */
+.daydelete{margin:1.4rem 0 0}
+.btn-link.danger{color:#D63338}
+.trash{margin-top:2.2rem;border-top:1px solid #E4E0D8;padding-top:1rem}
+.trash h2{font-size:1.05rem;margin:0 0 .2rem}
+.trash h3{font-size:.92rem;margin:1rem 0 .3rem;color:#5B5F66}
+.trashtable{width:100%;border-collapse:collapse;font-size:.88rem}
+.trashtable th{text-align:left;font-weight:600;color:#5B5F66;padding:.25rem .5rem}
+.trashtable td{padding:.25rem .5rem;border-top:1px solid #EFECE6}
+.trashactions{display:flex;gap:.9rem;justify-content:flex-end}
+.trashactions form{display:inline}
+.trashactions .btn-link{background:none;border:0;padding:0;font:inherit;cursor:pointer;text-decoration:underline}
+
+/* W2/W9: Platzhalter und Spaltentitel */
+#missions td.dash,#missions .dash{text-align:center;color:#9AA0A6}
+.data th{text-align:center}
+.data th:first-child{text-align:left}
+.data td{vertical-align:middle}

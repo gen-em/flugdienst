@@ -22,7 +22,7 @@ function local_to_utc(string $day, string $hhmm, int $addDays = 0): ?string {
 /* ---- Bestehenden Einsatz laden (nur eigene!) ------------------------------ */
 $mission = null; $phases = [];
 if ($editing) {
-    $st = db()->prepare('SELECT * FROM missions WHERE id = ? AND user_id = ?');
+    $st = db()->prepare('SELECT * FROM missions WHERE id = ? AND user_id = ? AND deleted_at IS NULL');
     $st->execute([$id, $userId]);
     $mission = $st->fetch();
     if (!$mission) { http_response_code(404); exit('Einsatz nicht gefunden.'); }

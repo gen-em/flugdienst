@@ -5,7 +5,7 @@ require_once __DIR__ . '/auth_guard.php';
 // Einsatz-ID einlesen und Eigentum pruefen (liefert auch den Tag fuer die
 // Einsatztage-Leiste). Ohne Treffer: sauberes 404.
 $mid = (int)($_GET['id'] ?? 0);
-$mq = db()->prepare('SELECT day FROM missions WHERE id = ? AND user_id = ?');
+$mq = db()->prepare('SELECT day FROM missions WHERE id = ? AND user_id = ? AND deleted_at IS NULL');
 $mq->execute([$mid, $userId]);
 $missionDay = $mq->fetchColumn();
 if ($missionDay === false) { http_response_code(404); exit('Einsatz nicht gefunden.'); }
@@ -29,11 +29,7 @@ if ($missionDay === false) { http_response_code(404); exit('Einsatz nicht gefund
   <p id="meta" class="muted"></p>
   <div class="actionbar">
     <a class="btn-edit" href="einsatz_form.php?id=<?= $mid ?>">Bearbeiten</a>
-    <form method="post" action="einsatz_loeschen.php"
-          onsubmit="return confirm('Diesen Einsatz endgültig löschen? Phasen, Reanimationen und Track werden mit entfernt.')">
-      <?= csrf_field() ?><input type="hidden" name="id" value="<?= $mid ?>">
-      <button class="btn-red">Löschen</button>
-    </form>
+    <a class="btn-red" href="einsatz_loeschen.php?id=<?= $mid ?>">Löschen</a>
   </div>
 
   <dl class="fieldlist" id="fieldlist" hidden></dl>

@@ -339,6 +339,18 @@ $MIGRATIONS = [
             }
         },
     ],
+    [
+        'id'    => '2026_07_22_papierkorb',
+        'label' => 'Papierkorb: Einsätze, Ruhesegmente und Flugtage werden erst als gelöscht markiert',
+        'sql'   => [
+            "ALTER TABLE missions ADD COLUMN deleted_at DATETIME NULL",
+            "ALTER TABLE missions ADD COLUMN deleted_with_day TINYINT(1) NOT NULL DEFAULT 0",
+            "ALTER TABLE missions ADD INDEX idx_missions_deleted (user_id, deleted_at)",
+            "ALTER TABLE rest_segments ADD COLUMN deleted_at DATETIME NULL",
+            "ALTER TABLE rest_segments ADD COLUMN deleted_with_day TINYINT(1) NOT NULL DEFAULT 0",
+            "ALTER TABLE days ADD COLUMN deleted_at DATETIME NULL",
+        ],
+    ],
     // Naechste Migration hier anhaengen.
 ];
 
