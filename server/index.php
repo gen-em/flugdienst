@@ -97,12 +97,12 @@ if ($selDay === null) {
         <th class="sortable c-mid"  data-key="start">Beginn</th>
         <th class="sortable c-mid"  data-key="dur">Dauer</th>
         <th class="sortable"        data-key="site">Einsatzort</th>
-        <th class="sortable c-slim" data-key="age">Alter</th>
+        <th class="sortable c-mid"   data-key="age">Alter</th>
         <th class="sortable"        data-key="dx">Diagnose</th>
-        <th class="sortable c-slim" data-key="winch">Winde</th>
-        <th class="sortable c-slim" data-key="bw">Berg&shy;wacht</th>
-        <th class="sortable c-slim" data-key="sec">Sekun&shy;där<br>trans&shy;port</th>
-        <th class="sortable c-mid"  data-key="km">Flugkilometer</th>
+        <th class="sortable c-winde" data-key="winch">Winde</th>
+        <th class="sortable c-bw"    data-key="bw">Bergwacht</th>
+        <th class="sortable c-sek"   data-key="sec">Sekundär<br>Transport</th>
+        <th class="sortable c-km"    data-key="km">Flug&nbsp;km</th>
       </tr></thead>
       <tbody></tbody>
     </table>
@@ -194,12 +194,12 @@ function renderMissionTable(){
       <td class="mono c-mid">${m.start_hhmm}</td>
       <td class="c-mid">${fmtDur(m.duration_s)}</td>
       <td${m._ort ? '' : ' class="dash"'}>${m._ort ? esc(m._ort) : '–'}</td>
-      <td class="mono c-slim${m._age != null ? '' : ' dash'}">${m._age != null ? m._age : '–'}</td>
+      <td class="mono c-mid${m._age != null ? '' : ' dash'}">${m._age != null ? m._age : '–'}</td>
       <td${m._dx ? '' : ' class="dash"'}>${m._dx ? esc(m._dx) : '–'}</td>
-      <td class="checkcol c-slim">${m.winch ? '✓' : ''}</td>
-      <td class="checkcol c-slim">${m.bergwacht ? '✓' : ''}</td>
-      <td class="checkcol c-slim">${m.secondary ? '✓' : ''}</td>
-      <td class="mono c-mid">${fmtKm(m.distance_m)}</td>`;
+      <td class="checkcol c-winde">${m.winch ? '✓' : ''}</td>
+      <td class="checkcol c-bw">${m.bergwacht ? '✓' : ''}</td>
+      <td class="checkcol c-sek">${m.secondary ? '✓' : ''}</td>
+      <td class="mono c-km">${fmtKm(m.distance_m)}</td>`;
     tr.addEventListener('click', () => location.href = 'einsatz.php?id=' + m.id);
     tbody.appendChild(tr);
   });

@@ -54,7 +54,7 @@ body{margin:0;background:var(--rauch);color:var(--ink);
   .daylist{border-right:0;border-bottom:1px solid var(--line)}
   .daylist ul{display:flex;flex-wrap:wrap;gap:.3rem}}
 
-.page{padding:1.2rem 1.6rem;max-width:1240px}
+.page{padding:1.2rem 1.6rem;max-width:1150px}
 h1{font-family:var(--head);font-weight:600;font-size:1.7rem;
   letter-spacing:.01em;margin:.2rem 0 1rem;color:var(--navy)}
 h2{font-family:var(--head);font-weight:600;font-size:1rem;letter-spacing:.08em;
@@ -354,12 +354,6 @@ h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
 .dayactions a{flex:0 0 auto;white-space:nowrap}
 
 /* Vier Breitenstufen (über Klassen, damit neue Spalten nichts verschieben) */
-#missions th.c-swatch,#missions td.c-swatch{width:1.9rem}
-#missions th.c-no,#missions td.c-no{width:2.4rem}
-#missions th.c-slim,#missions td.c-slim{width:4.2rem}
-#missions th.c-mid,#missions td.c-mid{width:5.6rem;text-align:center}
-#missions td.c-no,#missions td.c-slim{text-align:center}
-#missions th.c-slim{line-height:1.15}
 
 /* Papierkorb-Symbol unten in der Einsatztage-Spalte */
 .trashlink{display:flex;justify-content:center;margin:1.6rem 0 .6rem;
@@ -385,26 +379,47 @@ h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
 a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none}
 
 
-/* --- Nachjustierung Block H --- */
-/* Tabelle: feste Aufteilung, damit die Breiten wirklich greifen */
+/* --- Tagesübersicht: feste Spaltenaufteilung --- */
 #missions{table-layout:fixed;width:100%}
-#missions th{white-space:normal;font-size:.74rem;line-height:1.1;padding:.3rem .35rem}
-#missions td{padding:.35rem}
-#missions th.c-swatch,#missions td.c-swatch{width:1.6rem;padding-left:.2rem}
-#missions th.c-no,#missions td.c-no{width:2.2rem}
-#missions th.c-slim,#missions td.c-slim{width:3.6rem}
-#missions th.c-mid,#missions td.c-mid{width:5.2rem}
-#missions td{overflow:hidden;text-overflow:ellipsis}
+#missions th{white-space:nowrap;hyphens:none;-webkit-hyphens:none;
+  font-size:.74rem;line-height:1.15;padding:.3rem .3rem}
+#missions td{padding:.35rem .3rem;overflow:hidden;text-overflow:ellipsis}
 
-/* Karte und Flugtag-Kasten laufen auf dieselbe Breite wie die Tabelle */
+#missions th.c-swatch,#missions td.c-swatch{width:1.6rem;padding-left:.2rem}
+#missions th.c-no,   #missions td.c-no    {width:2.4rem}
+#missions th.c-mid,  #missions td.c-mid   {width:4.8rem}   /* Beginn, Dauer, Alter */
+#missions th.c-winde,#missions td.c-winde {width:3.8rem}
+#missions th.c-bw,   #missions td.c-bw    {width:5.4rem}
+#missions th.c-sek,  #missions td.c-sek   {width:5.4rem;white-space:normal}
+#missions th.c-km,   #missions td.c-km    {width:4.6rem}
+#missions td.c-no,#missions td.c-mid,#missions td.c-winde,
+#missions td.c-bw,#missions td.c-sek,#missions td.c-km{text-align:center}
+
+/* Karte, Flugtag-Kasten und Tabelle laufen gleich breit */
 .daymeta,.map,#missions{width:100%;box-sizing:border-box}
 .daymeta{margin-bottom:.9rem}
 
-/* Papierkorb-Symbol am unteren Rand der Einsatztage-Spalte */
-.daylist{display:flex;flex-direction:column;min-height:calc(100vh - 3.4rem)}
-.daylist ul{flex:1 1 auto}
-.trashlink{margin-top:auto;padding:1rem 0 1.4rem}
+/* Aktionsleiste: Knöpfe behalten ihre Eigenbreite */
+.dayactions{display:flex;justify-content:space-between;align-items:center;
+  gap:1rem;margin:1.4rem 0 .2rem}
+.dayactions .btn-primary,.dayactions .btn-red{display:inline-flex;align-items:center;
+  flex:0 0 auto;width:auto;white-space:nowrap;padding:.5rem 1.1rem;text-decoration:none}
+
+/* --- Menüspalte: volle Fensterhöhe, Tage scrollen intern,
+       Papierkorb bleibt unten immer sichtbar --- */
+.daylist{position:sticky;top:50px;align-self:start;
+  height:calc(100vh - 50px);display:flex;flex-direction:column;
+  box-sizing:border-box;overflow:hidden}
+.daylist h2{flex:0 0 auto}
+.daylist ul{flex:1 1 auto;overflow-y:auto;min-height:0;
+  scrollbar-width:thin}
+.trashlink{flex:0 0 auto;display:flex;justify-content:center;
+  padding:.7rem 0 .2rem;margin-top:.5rem;
+  border-top:1px solid var(--line);color:#8A8378;text-decoration:none}
 .trashlink svg{width:26px;height:26px}
+.trashlink:hover{color:var(--accent)}
+.trashlink.leer{color:#CFCABF}
+.trashlink.leer:hover{color:#CFCABF}
 
 /* Papierkorb-Aktionen: gleich groß, gleiche Grundlinie */
 .trashtable .rowactions{display:flex;gap:.6rem;justify-content:flex-end;align-items:stretch}
@@ -413,6 +428,6 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
 .trashtable .rowactions .btn-red{display:inline-flex;align-items:center;justify-content:center;
   min-width:10.5rem;padding:.42rem .9rem;font-size:.85rem;line-height:1.2;
   border-radius:5px;text-decoration:none;box-sizing:border-box}
-/* Aktionsleiste: Knöpfe behalten ihre Eigenbreite */
-.dayactions .btn-primary,.dayactions .btn-red{display:inline-flex;align-items:center;
-  flex:0 0 auto;width:auto;white-space:nowrap;padding:.5rem 1.1rem;text-decoration:none}
+
+/* Schaltflächen, die Links sind, nie unterstreichen */
+a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none}
