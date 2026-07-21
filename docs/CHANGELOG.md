@@ -273,7 +273,12 @@ jedem Änderungspaket oben dazu.
   wird jetzt aus `schema.sql` gelesen und bleibt automatisch vollständig.
 - Neue Migration „Papierkorb" (`deleted_at`, `deleted_with_day`).
 
-### Uhr (v1.2.0 – v1.3.3)
+### Uhr (v1.2.0 – v1.3.4)
+- **Neues Launcher-Icon (v1.3.4):** Hubschrauber-Bildmarke in 40x40, aus der
+  hellen Fassung erzeugt — auf dem schwarzen App-Menü der Fenix bleibt damit
+  die ganze Silhouette sichtbar (die farbige Fassung ist zur Hälfte dunkel und
+  wäre dort halb verschwunden). Motiv mittig auf transparenter Fläche, also
+  ohne Verzerrung.
 - **Tastensperre öffnet nicht mehr das Schnellmenü (v1.3.3):** Kommt während
   des langen START-Drucks eine beliebige weitere Taste dazu, wertet die App das
   als Sperr-Kombination der Uhr — das Menü bleibt zu, und auch die Seitenwahl
