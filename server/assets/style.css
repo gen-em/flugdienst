@@ -32,7 +32,7 @@ body{margin:0;background:var(--rauch);color:var(--ink);
   background:var(--navy);color:#fff;padding:.5rem 1.2rem}
 .brand{display:flex;align-items:center;gap:.55rem;text-decoration:none;color:#fff;
   font-family:var(--head);font-size:1rem;font-weight:600;letter-spacing:.02em;min-width:0}
-.brand img{height:30px;display:block;flex:none}
+.brand img{height:34px;width:auto;display:block;flex:none}
 .brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:560px){.brand span{font-size:.85rem}}
 .topbar nav a{color:#C6CEDB;text-decoration:none;margin-left:1.1rem;
@@ -125,7 +125,7 @@ button{font:inherit;font-family:var(--head);font-weight:600;border:0;
 .login-card{background:var(--schnee);border-radius:10px;padding:2rem 2.2rem;
   width:min(94vw,400px)}
 .login-card h1{font-size:1.4rem;text-align:center;margin-top:.4rem}
-.login-logo{display:block;max-width:75%;height:auto;margin:0 auto .4rem}
+.login-logo{display:block;width:200px;max-width:70%;height:auto;margin:0 auto .6rem}
 .login-aux{text-align:center;font-size:.9rem;margin-top:1rem}
 .login-aux a{color:var(--accent-dark)}
 section{margin-bottom:1.8rem}
