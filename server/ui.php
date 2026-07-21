@@ -97,13 +97,19 @@ function ui_days_sidebar(?string $currentDay): void {
   <h2>Einsatztage</h2>
   <div class="dayyears">
     <?php if (!$baum): ?><p class="muted daylist-empty">noch keine</p><?php endif; ?>
-    <?php foreach ($baum as $jahr => $monate): ?>
-      <details class="yearblock" <?= $jahr === $offenesJahr ? 'open' : '' ?>>
-        <summary><?= e($jahr) ?></summary>
-        <?php foreach ($monate as $monat => $tage): ?>
+    <?php foreach ($baum as $jahr => $monate):
+        // Achtung: PHP macht aus numerischen Array-Schluesseln Integer
+        // ("2026" -> 2026, "12" -> 12, "07" bleibt String). Deshalb ueberall
+        // ausdruecklich nach String wandeln — sonst bricht e() unter
+        // strict_types ab und Monatsvergleiche schlagen ab Oktober fehl.
+        $jahrS = (string)$jahr; ?>
+      <details class="yearblock" <?= $jahrS === $offenesJahr ? 'open' : '' ?>>
+        <summary><?= e($jahrS) ?></summary>
+        <?php foreach ($monate as $monat => $tage):
+            $monatS = str_pad((string)$monat, 2, '0', STR_PAD_LEFT); ?>
           <details class="monthblock"
-                    <?= ($jahr === $offenesJahr && $monat === $offenerMonat) ? 'open' : '' ?>>
-            <summary><?= e($monatsnamen[(int)$monat]) ?></summary>
+                    <?= ($jahrS === $offenesJahr && $monatS === $offenerMonat) ? 'open' : '' ?>>
+            <summary><?= e($monatsnamen[(int)$monatS]) ?></summary>
             <ul>
               <?php foreach ($tage as $d):
                   $dt = DateTime::createFromFormat('Y-m-d', $d); ?>
