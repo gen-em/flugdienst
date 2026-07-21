@@ -58,28 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if ($action === 'backup_import') {
-        require_once __DIR__ . '/backup_lib.php';
-        $pw = (string)($_POST['ipw'] ?? '');
-        $f = $_FILES['bfile'] ?? null;
-        if (!$f || $f['error'] !== UPLOAD_ERR_OK) {
-            $error = 'Bitte eine Backup-Datei (.edbak) auswählen.';
-        } elseif ($f['size'] > 100 * 1024 * 1024) {
-            $error = 'Datei zu groß (max. 100 MB).';
-        } else {
-            try {
-                $data = edbak_open((string)file_get_contents($f['tmp_name']), $pw);
-                $r = edbak_restore($userId, $data);
-                $notice = 'Import abgeschlossen: '
-                    . $r['missions'] . ' Einsätze übernommen (' . $r['missions_skipped'] . ' bereits vorhanden), '
-                    . $r['rests'] . ' Ruhesegmente (' . $r['rests_skipped'] . ' vorhanden), '
-                    . $r['days'] . ' Flugtage, ' . $r['stammdaten'] . ' Stammdaten-Einträge; '
-                    . 'PatientInnendaten-Schlüssel: ' . $r['pat_module'] . '.';
-            } catch (Throwable $ex) {
-                $error = 'Import fehlgeschlagen: ' . $ex->getMessage();
-            }
-        }
-    }
     /* ---- Geräte (Selbstverwaltung) ------------------------------------- */
     if ($action === 'add') {
         $label = trim($_POST['label'] ?? '');
@@ -541,16 +519,14 @@ if ($tab === 'geraete') {
        vorhandene Einsätze, Tage und Stammdaten bleiben unangetastet (Erkennung über
        interne Referenzen) — der Import ergänzt nur Fehlendes und ist gefahrlos
        wiederholbar.</p>
-    <form method="post" action="einstellungen.php?t=backup" enctype="multipart/form-data"
-          class="settings-form" id="impform">
-      <?= csrf_field() ?><input type="hidden" name="action" value="backup_import">
+    <div class="settings-form" id="impform">
       <label>Backup-Datei (.edbak)
         <input type="file" name="bfile" id="bfile" accept=".edbak" required></label>
       <label>Backup-Passwort
-        <input type="password" name="ipw" id="ipw" required autocomplete="off"></label>
-      <button class="btn-primary">Backup importieren</button>
+        <input type="password" id="ipw" autocomplete="off"></label>
+      <button class="btn-primary" id="impbtn">Backup importieren</button>
       <p class="muted" id="impstate" style="min-height:1.3em"></p>
-    </form>
+    </div>
 
     <script src="assets/crypto.js"></script>
     <script>
@@ -607,28 +583,24 @@ if ($tab === 'geraete') {
       }
     });
 
-    // ---- Import: Version erkennen; Format 2 im Browser, Format 1 am Server ----
-    document.getElementById('impform').addEventListener('submit', async ev => {
-      // WICHTIG: synchron abbrechen, bevor irgendetwas awaited wird — sonst
-      // schickt der Browser das Formular parallel zum Browser-Import ab.
-      ev.preventDefault();
-      const form = ev.target;
+    // ---- Import: läuft vollständig im Browser ----
+    document.getElementById('impbtn').addEventListener('click', async () => {
       const f = document.getElementById('bfile').files[0];
-      if (!f) return;
-      const bytes = new Uint8Array(await f.arrayBuffer());
-      const ver = EdCrypto.backupVersion(bytes);
-      if (ver !== 2) {
-        // Altformat: dem Server überlassen (loest kein submit-Event aus)
-        impState.textContent = 'Älteres Backup — wird auf dem Server verarbeitet…';
-        form.submit();
-        return;
-      }
+      if (!f) { impState.textContent = 'Bitte eine Backup-Datei auswählen.'; return; }
+      const pw = document.getElementById('ipw').value;
+      if (!pw) { impState.textContent = 'Bitte das Backup-Passwort eingeben.'; return; }
 
       const key = await ck();
       if (!key) { impState.textContent = 'Entschlüsselung gesperrt — siehe Hinweis oben.'; return; }
       try {
+        impState.textContent = 'Datei wird gelesen…';
+        const bytes = new Uint8Array(await f.arrayBuffer());
+        if (!EdCrypto.isBackupFile(bytes)) {
+          impState.textContent = 'Das ist keine Backup-Datei dieses Programms.';
+          return;
+        }
         impState.textContent = 'Datei wird geöffnet…';
-        const data = await EdCrypto.openBackup(document.getElementById('ipw').value, bytes);
+        const data = await EdCrypto.openBackup(pw, bytes);
 
         impState.textContent = 'Angaben werden für dieses Konto verschlüsselt…';
         for (const m of (data.missions || [])) {

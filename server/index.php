@@ -105,11 +105,10 @@ if ($selDay === null) {
       <tbody></tbody>
     </table>
     <p id="empty" class="muted" hidden>Für diesen Tag sind keine Einsätze dokumentiert.</p>
-    <p><a href="einsatz_form.php" id="addmission" class="add-link">+ Einsatz nachtragen</a></p>
-
-    <p id="daydelete" class="daydelete" hidden>
-      <a class="btn-link danger" id="daydellink" href="#">Diesen Flugtag löschen …</a>
-    </p>
+    <div class="dayactions">
+      <a href="einsatz_form.php" id="addmission" class="btn-primary">+ Einsatz nachtragen</a>
+      <a class="btn-red" id="daydellink" href="#" hidden>Flugtag löschen</a>
+    </div>
 
     <?php
       require_once __DIR__ . '/trash_lib.php';
@@ -293,9 +292,9 @@ async function loadDay(day){
   const d = await res.json();
   currentDay = d.day;
   document.getElementById('daytitle').textContent = 'Flugtag ' + fmtDay(d.day);
-  const dd = document.getElementById('daydelete');
-  document.getElementById('daydellink').href = 'flugtag_loeschen.php?day=' + encodeURIComponent(d.day);
-  dd.hidden = false;
+  const ddl = document.getElementById('daydellink');
+  ddl.href = 'flugtag_loeschen.php?day=' + encodeURIComponent(d.day);
+  ddl.hidden = false;
 
   // Flugtag-Felder befuellen
   const f = document.getElementById('dayform');

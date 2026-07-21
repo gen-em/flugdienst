@@ -7,57 +7,10 @@ declare(strict_types=1);
  * Seit Format 2 versiegelt und oeffnet der BROWSER die Datei (crypto.js):
  * Er entschluesselt die geschuetzten Angaben vor dem Export und verschluesselt
  * sie beim Import mit dem Schluessel des Zielkontos neu — dadurch laesst sich
- * ein Backup in jedes Konto einspielen. Die Funktionen edbak_seal()/edbak_open()
- * bleiben fuer den Import alter Dateien (Format 1) erhalten.
- *
- * Container v1 (binaer):
- *   Bytes 0-7   Magie "EDBAK1" + 0x00 + Version 0x01
- *   Bytes 8-23  Salt (16 Bytes, zufaellig)
- *   Bytes 24-35 IV (12 Bytes, zufaellig)
- *   Bytes 36-51 GCM-Auth-Tag (16 Bytes)
- *   ab Byte 52  AES-256-GCM-Chiffretext von gzip(JSON)
- * Schluessel: PBKDF2-SHA256(Passwort, Salt, 200 000 Runden, 32 Bytes)
- * Die Magie ist als "additional authenticated data" gebunden — jede
- * Manipulation an Kopf oder Inhalt laesst die Entschluesselung scheitern.
+ * ein Backup in jedes Konto einspielen. Der Container ist in
+ * docs/Backup-Format.md beschrieben; diese Datei serialisiert nur noch die
+ * Daten (edbak_build) und spielt sie zurueck (edbak_restore).
  */
-
-const EDBAK_MAGIC = "EDBAK1\x00\x01";
-const EDBAK_ITER  = 200000;
-
-/* ======================= Container ======================= */
-
-function edbak_seal(string $json, string $password): string {
-    $salt = random_bytes(16);
-    $iv   = random_bytes(12);
-    $key  = hash_pbkdf2('sha256', $password, $salt, EDBAK_ITER, 32, true);
-    $tag  = '';
-    $ct = openssl_encrypt(gzencode($json, 6), 'aes-256-gcm', $key,
-                          OPENSSL_RAW_DATA, $iv, $tag, EDBAK_MAGIC, 16);
-    if ($ct === false) { throw new RuntimeException('Verschlüsselung fehlgeschlagen.'); }
-    return EDBAK_MAGIC . $salt . $iv . $tag . $ct;
-}
-
-/** @return array dekodiertes JSON; wirft bei falschem Passwort/defekter Datei */
-function edbak_open(string $blob, string $password): array {
-    if (strlen($blob) < 53 || substr($blob, 0, 8) !== EDBAK_MAGIC) {
-        throw new RuntimeException('Keine gültige Backup-Datei (.edbak).');
-    }
-    $salt = substr($blob, 8, 16);
-    $iv   = substr($blob, 24, 12);
-    $tag  = substr($blob, 36, 16);
-    $key  = hash_pbkdf2('sha256', $password, $salt, EDBAK_ITER, 32, true);
-    $gz = openssl_decrypt(substr($blob, 52), 'aes-256-gcm', $key,
-                          OPENSSL_RAW_DATA, $iv, $tag, EDBAK_MAGIC);
-    if ($gz === false) { throw new RuntimeException('Passwort falsch oder Datei beschädigt.'); }
-    $json = gzdecode($gz);
-    $data = $json !== false ? json_decode($json, true) : null;
-    if (!is_array($data) || ($data['format'] ?? '') !== 'einsatzdoku-backup') {
-        throw new RuntimeException('Backup-Inhalt unlesbar.');
-    }
-    return $data;
-}
-
-/* ======================= Export ======================= */
 
 function edbak_build(int $userId): string {
     $pdo = db();

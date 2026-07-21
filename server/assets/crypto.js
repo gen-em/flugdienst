@@ -166,19 +166,15 @@ const EdCrypto = (() => {
     return JSON.parse(td.decode(body));
   }
 
-  /** Version des Containers erkennen: 1 (serverseitig) oder 2 (portabel) */
-  function backupVersion(bytes) {
-    const v1 = [69, 68, 66, 65, 75, 49];      // "EDBAK1"
-    let is1 = true, is2 = true;
-    for (let i = 0; i < 6; i++) {
-      if (bytes[i] !== v1[i]) is1 = false;
-      if (bytes[i] !== MAGIC2[i]) is2 = false;
-    }
-    return is1 ? 1 : (is2 ? 2 : 0);
+  /** Ist das eine Backup-Datei dieses Programms? */
+  function isBackupFile(bytes) {
+    if (!bytes || bytes.length < 40) return false;
+    for (let i = 0; i < 8; i++) { if (bytes[i] !== MAGIC2[i]) return false; }
+    return true;
   }
 
   return { deriveKeys, encrypt, decrypt, randomHex,
            newRecoveryCode, recoveryKeyHex,
            setDataKey, getDataKey, getContentKey, clearSession,
-           sealBackup, openBackup, backupVersion };
+           sealBackup, openBackup, isBackupFile };
 })();

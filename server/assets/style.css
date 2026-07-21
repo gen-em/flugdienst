@@ -341,3 +341,9 @@ h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
 .confirmtext{margin:0 0 1.1rem;font-size:1rem;line-height:1.45}
 .confirmbtns{display:flex;gap:.7rem;justify-content:flex-end}
 .confirmbtns button{padding:.42rem 1rem;border-radius:6px;cursor:pointer;font:inherit}
+
+/* Aktionsleiste unter der Tagestabelle */
+.dayactions{display:flex;justify-content:space-between;align-items:center;
+  gap:1rem;margin:1.4rem 0 .2rem}
+.dayactions .btn-primary,.dayactions .btn-red{display:inline-block;text-decoration:none;
+  padding:.45rem 1rem;border-radius:6px}

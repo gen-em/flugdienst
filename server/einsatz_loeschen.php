@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['confirm'] ?? '') === 'ja')
 }
 
 $title = 'Einsatz löschen';
-require __DIR__ . '/ui.php';
+require_once __DIR__ . '/ui.php';   // auth_guard.php laedt sie bereits
 ?>
 <!doctype html>
 <html lang="de">
