@@ -45,6 +45,7 @@ if ($selDay === null) {
 
   <main class="page">
     <h1 id="daytitle">–</h1>
+    <div id="loaderror" class="alert" hidden></div>
     <details class="daymeta" id="daymeta">
       <summary>Flugtag-Daten <span id="metahint" class="muted"></span>
         <span id="metanotes" class="metanotes"></span></summary>
@@ -99,8 +100,8 @@ if ($selDay === null) {
         <th class="sortable c-slim" data-key="age">Alter</th>
         <th class="sortable"        data-key="dx">Diagnose</th>
         <th class="sortable c-slim" data-key="winch">Winde</th>
-        <th class="sortable c-slim" data-key="bw">Bergwacht</th>
-        <th class="sortable c-slim" data-key="sec">Sekundär&shy;transport</th>
+        <th class="sortable c-slim" data-key="bw">Berg&shy;wacht</th>
+        <th class="sortable c-slim" data-key="sec">Sekun&shy;där<br>trans&shy;port</th>
         <th class="sortable c-mid"  data-key="km">Flugkilometer</th>
       </tr></thead>
       <tbody></tbody>
@@ -108,7 +109,9 @@ if ($selDay === null) {
     <p id="empty" class="muted" hidden>Für diesen Tag sind keine Einsätze dokumentiert.</p>
     <div class="dayactions">
       <a href="einsatz_form.php" id="addmission" class="btn-primary">+ Einsatz nachtragen</a>
-      <a class="btn-red" id="daydellink" href="#" hidden>Tag löschen</a>
+      <a class="btn-red" id="daydellink"
+         href="flugtag_loeschen.php?day=<?= e((string)$selDay) ?>"
+         <?= $selDay ? '' : 'hidden' ?>>Tag löschen</a>
     </div>
 
     <?php ui_footer(); ?>
@@ -225,9 +228,27 @@ function fmtDur(s){ if(s==null) return 'kein Ende'; const h=Math.floor(s/3600),m
   return h? `${h} h ${String(m).padStart(2,'0')} min` : `${m} min`; }
 function fmtKm(m){ return m==null ? '<span class="dash">–</span>' : (m/1000).toFixed(1).replace('.',',')+' km'; }
 
+function showLoadError(msg){
+  const box = document.getElementById('loaderror');
+  box.textContent = 'Die Tagesdaten konnten nicht geladen werden: ' + msg;
+  box.hidden = false;
+}
+
 async function loadDay(day){
-  const res = await fetch('api/day.php?day='+encodeURIComponent(day));
-  const d = await res.json();
+  let d;
+  try {
+    const res = await fetch('api/day.php?day='+encodeURIComponent(day));
+    const txt = await res.text();
+    try { d = JSON.parse(txt); }
+    catch (e) {
+      // Kein JSON: meist ein Server-/SQL-Fehler. Anfang der Antwort zeigen,
+      // damit die Ursache sofort sichtbar ist statt einer leeren Seite.
+      showLoadError(txt.replace(/<[^>]*>/g, ' ').trim().slice(0, 300) || ('HTTP ' + res.status));
+      return;
+    }
+    if (d.error) { showLoadError(d.error + (d.meldung ? ': ' + d.meldung : '')); return; }
+  } catch (e) { showLoadError(e.message); return; }
+  document.getElementById('loaderror').hidden = true;
   currentDay = d.day;
   document.getElementById('daytitle').textContent = 'Flugtag ' + fmtDay(d.day);
   const ddl = document.getElementById('daydellink');

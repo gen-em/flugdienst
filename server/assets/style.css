@@ -54,7 +54,7 @@ body{margin:0;background:var(--rauch);color:var(--ink);
   .daylist{border-right:0;border-bottom:1px solid var(--line)}
   .daylist ul{display:flex;flex-wrap:wrap;gap:.3rem}}
 
-.page{padding:1.2rem 1.6rem;max-width:1050px}
+.page{padding:1.2rem 1.6rem;max-width:1240px}
 h1{font-family:var(--head);font-weight:600;font-size:1.7rem;
   letter-spacing:.01em;margin:.2rem 0 1rem;color:var(--navy)}
 h2{font-family:var(--head);font-weight:600;font-size:1rem;letter-spacing:.08em;
@@ -383,3 +383,36 @@ h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
 
 /* Schaltflächen, die Links sind, nie unterstreichen */
 a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none}
+
+
+/* --- Nachjustierung Block H --- */
+/* Tabelle: feste Aufteilung, damit die Breiten wirklich greifen */
+#missions{table-layout:fixed;width:100%}
+#missions th{white-space:normal;font-size:.74rem;line-height:1.1;padding:.3rem .35rem}
+#missions td{padding:.35rem}
+#missions th.c-swatch,#missions td.c-swatch{width:1.6rem;padding-left:.2rem}
+#missions th.c-no,#missions td.c-no{width:2.2rem}
+#missions th.c-slim,#missions td.c-slim{width:3.6rem}
+#missions th.c-mid,#missions td.c-mid{width:5.2rem}
+#missions td{overflow:hidden;text-overflow:ellipsis}
+
+/* Karte und Flugtag-Kasten laufen auf dieselbe Breite wie die Tabelle */
+.daymeta,.map,#missions{width:100%;box-sizing:border-box}
+.daymeta{margin-bottom:.9rem}
+
+/* Papierkorb-Symbol am unteren Rand der Einsatztage-Spalte */
+.daylist{display:flex;flex-direction:column;min-height:calc(100vh - 3.4rem)}
+.daylist ul{flex:1 1 auto}
+.trashlink{margin-top:auto;padding:1rem 0 1.4rem}
+.trashlink svg{width:26px;height:26px}
+
+/* Papierkorb-Aktionen: gleich groß, gleiche Grundlinie */
+.trashtable .rowactions{display:flex;gap:.6rem;justify-content:flex-end;align-items:stretch}
+.trashtable .rowactions form{display:flex}
+.trashtable .rowactions .btn-primary,
+.trashtable .rowactions .btn-red{display:inline-flex;align-items:center;justify-content:center;
+  min-width:10.5rem;padding:.42rem .9rem;font-size:.85rem;line-height:1.2;
+  border-radius:5px;text-decoration:none;box-sizing:border-box}
+/* Aktionsleiste: Knöpfe behalten ihre Eigenbreite */
+.dayactions .btn-primary,.dayactions .btn-red{display:inline-flex;align-items:center;
+  flex:0 0 auto;width:auto;white-space:nowrap;padding:.5rem 1.1rem;text-decoration:none}

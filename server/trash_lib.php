@@ -17,7 +17,7 @@ declare(strict_types=1);
  * gemeinsam zurueck.
  */
 
-const TRASH_DAYS = 30;
+const TRASH_DAYS = 90;
 
 /* ---- Umfang ermitteln (fuer die Sicherheitsabfragen) ------------------- */
 
