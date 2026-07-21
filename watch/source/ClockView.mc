@@ -73,6 +73,7 @@ class ClockDelegate extends WatchUi.BehaviorDelegate {
     var _timer as Timer.Timer or Null = null;
     var _holding as Lang.Boolean = false;
     var _longFired as Lang.Boolean = false;
+    var _combo as Lang.Boolean = false;        // zweite Taste waehrend START gedrueckt
 
     function initialize() { BehaviorDelegate.initialize(); }
 
@@ -80,8 +81,18 @@ class ClockDelegate extends WatchUi.BehaviorDelegate {
         if (evt.getKey() == WatchUi.KEY_ENTER) {
             _holding = true;
             _longFired = false;
+            _combo = false;
             if (_timer == null) { _timer = new Timer.Timer(); }
             _timer.start(method(:onHoldTimeout), Const.LONG_PRESS_MS, false);
+            return true;
+        }
+        // Andere Taste, waehrend START gehalten wird: Das ist die
+        // Tastensperre der Uhr (START + beliebige Taste) und kein Menuewunsch.
+        // Schnellmenue unterdruecken und das Ereignis schlucken, damit auch
+        // die Seitenwahl nicht anspringt.
+        if (_holding) {
+            _combo = true;
+            if (_timer != null) { _timer.stop(); }
             return true;
         }
         return false;
@@ -89,16 +100,20 @@ class ClockDelegate extends WatchUi.BehaviorDelegate {
 
     // Nach 1 s Halten: Schnellmenue oeffnet sofort (nicht erst beim Loslassen)
     function onHoldTimeout() as Void {
-        if (!_holding) { return; }
+        if (!_holding || _combo) { return; }
         _longFired = true;
         _pushQuickMenu();
     }
 
     function onKeyReleased(evt as WatchUi.KeyEvent) as Lang.Boolean {
-        if (evt.getKey() != WatchUi.KEY_ENTER) { return false; }
+        if (evt.getKey() != WatchUi.KEY_ENTER) {
+            // Loslassen der Zweittaste: Kombination bleibt bis START losgelassen wird
+            return _holding;
+        }
         if (!_holding) { return false; }
         _holding = false;
         if (_timer != null) { _timer.stop(); }
+        if (_combo) { _combo = false; return true; }           // Tastensperre: nichts tun
         if (_longFired) { _longFired = false; return true; }   // lang: schon offen
         if (Model.missionActive() && Model.phase >= 9) {
             pushFinishConfirm();               // Haltezustand: Abschluss bestaetigen

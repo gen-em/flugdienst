@@ -88,14 +88,23 @@ class CprDelegate extends WatchUi.BehaviorDelegate {
     var _timer as Timer.Timer or Null = null;
     var _heldKey = null;                       // gerade gehaltene Taste
     var _longFired as Lang.Boolean = false;    // lange Aktion schon ausgeloest?
+    var _combo as Lang.Boolean = false;        // zweite Taste dazugekommen (Tastensperre)
 
     function initialize() { BehaviorDelegate.initialize(); }
 
     function onKeyPressed(evt as WatchUi.KeyEvent) as Lang.Boolean {
         var k = evt.getKey();
+        // Zweite Taste, waehrend schon eine gehalten wird: Tastensperre der
+        // Uhr — lange Aktion verwerfen (siehe ClockDelegate).
+        if (_heldKey != null && k != _heldKey) {
+            _combo = true;
+            if (_timer != null) { _timer.stop(); }
+            return true;
+        }
         if (k == WatchUi.KEY_UP || k == WatchUi.KEY_DOWN || k == WatchUi.KEY_ENTER) {
             _heldKey = k;
             _longFired = false;
+            _combo = false;
             if (_timer == null) { _timer = new Timer.Timer(); }
             _timer.start(method(:onHoldTimeout), Const.LONG_PRESS_MS, false);
             return true;
@@ -105,6 +114,7 @@ class CprDelegate extends WatchUi.BehaviorDelegate {
 
     // Feuert nach 1 s Halten — waehrend die Taste noch gedrueckt ist
     function onHoldTimeout() as Void {
+        if (_combo) { return; }
         _longFired = true;
         if (_heldKey == WatchUi.KEY_UP)         { Cpr.markAdrenalin(); }
         else if (_heldKey == WatchUi.KEY_DOWN)  { Cpr.markRhythmus(); }
@@ -114,9 +124,10 @@ class CprDelegate extends WatchUi.BehaviorDelegate {
 
     function onKeyReleased(evt as WatchUi.KeyEvent) as Lang.Boolean {
         var k = evt.getKey();
-        if (k != _heldKey) { return false; }
+        if (k != _heldKey) { return _heldKey != null; }
         if (_timer != null) { _timer.stop(); }
         _heldKey = null;
+        if (_combo) { _combo = false; return true; }           // Tastensperre: nichts tun
         if (_longFired) { _longFired = false; return true; }   // lang: schon erledigt
         // kurz:
         if (k == WatchUi.KEY_UP)        { Nav.go(-1); }

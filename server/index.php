@@ -225,7 +225,8 @@ function extractOrt(addr){
 function esc(t){ const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
 function fmtDur(s){ if(s==null) return 'kein Ende'; const h=Math.floor(s/3600),m=Math.round(s%3600/60);
-  return h? `${h} h ${String(m).padStart(2,'0')} min` : `${m} min`; }
+  // kompakt ohne Leerzeichen vor der Einheit, damit die Spalte einzeilig bleibt
+  return h? `${h}h ${String(m).padStart(2,'0')}min` : `${m}min`; }
 function fmtKm(m){ return m==null ? '<span class="dash">–</span>' : (m/1000).toFixed(1).replace('.',',')+' km'; }
 
 function showLoadError(msg){
