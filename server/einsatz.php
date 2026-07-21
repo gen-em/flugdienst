@@ -182,7 +182,13 @@ async function init(){
       .addTo(map).bindPopup('Ende');
     m.track.forEach(p => bounds.push(p));
   }
-  if (bounds.length) { map.fitBounds(bounds, { padding: [30, 30] }); }
+  if (bounds.length) {
+    // Rand proportional zur Kartengröße, wie auf der Tagesübersicht — und
+    // eine Zoom-Obergrenze, damit ein sehr kurzer Track (oder ein einzelner
+    // Punkt) nicht bis auf Gebäude-Ebene heranzoomt.
+    const px = map.getSize();
+    map.fitBounds(bounds, { padding: [px.y * 0.125, px.x * 0.125], maxZoom: 15 });
+  }
   else { map.setView([47.7, 10.3], 9); document.getElementById('map').classList.add('map-empty'); }
 
   // Phasen-Tabelle mit Hover-/Tipp-Kopplung zur Karte

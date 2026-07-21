@@ -67,19 +67,55 @@ function ui_days_sidebar(?string $currentDay): void {
             SELECT day FROM missions WHERE user_id = ? AND deleted_at IS NULL
             UNION SELECT day FROM rest_segments WHERE user_id = ? AND deleted_at IS NULL
             UNION SELECT day FROM days WHERE user_id = ? AND deleted_at IS NULL
-         ) t ORDER BY day DESC LIMIT 90');
+         ) t ORDER BY day DESC LIMIT 500');
     $st->execute([$userId, $userId, $userId]);
-    $days = $st->fetchAll(PDO::FETCH_COLUMN); ?>
+    $days = $st->fetchAll(PDO::FETCH_COLUMN);
+
+    // Nach Jahr -> Monat gruppieren (je Y => M => [Tage]), Reihenfolge bleibt
+    // absteigend, da $days bereits absteigend sortiert aus der DB kommt.
+    $monatsnamen = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+        'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+    $baum = [];
+    foreach ($days as $d) {
+        $y = substr($d, 0, 4);
+        $m = substr($d, 5, 2);
+        $baum[$y][$m][] = $d;
+    }
+
+    // Welches Jahr/Monat soll offen sein? Der aktuell gewaehlte Tag hat
+    // Vorrang, sonst der juengste vorhandene Tag (oberstes Jahr/oberster Monat).
+    $offenesJahr = null; $offenerMonat = null;
+    if ($currentDay !== null && isset($baum[substr($currentDay, 0, 4)][substr($currentDay, 5, 2)])) {
+        $offenesJahr  = substr($currentDay, 0, 4);
+        $offenerMonat = substr($currentDay, 5, 2);
+    } elseif ($days) {
+        $offenesJahr  = substr($days[0], 0, 4);
+        $offenerMonat = substr($days[0], 5, 2);
+    }
+    ?>
 <aside class="daylist">
   <h2>Einsatztage</h2>
-  <ul>
-    <?php if (!$days): ?><li class="muted">noch keine</li><?php endif; ?>
-    <?php foreach ($days as $d):
-        $dt = DateTime::createFromFormat('Y-m-d', $d); ?>
-      <li><a href="index.php?day=<?= e($d) ?>"
-             <?= $d === $currentDay ? 'class="active"' : '' ?>><?= $dt ? $dt->format('d.m.Y') : e($d) ?></a></li>
+  <div class="dayyears">
+    <?php if (!$baum): ?><p class="muted daylist-empty">noch keine</p><?php endif; ?>
+    <?php foreach ($baum as $jahr => $monate): ?>
+      <details class="yearblock" <?= $jahr === $offenesJahr ? 'open' : '' ?>>
+        <summary><?= e($jahr) ?></summary>
+        <?php foreach ($monate as $monat => $tage): ?>
+          <details class="monthblock"
+                    <?= ($jahr === $offenesJahr && $monat === $offenerMonat) ? 'open' : '' ?>>
+            <summary><?= e($monatsnamen[(int)$monat]) ?></summary>
+            <ul>
+              <?php foreach ($tage as $d):
+                  $dt = DateTime::createFromFormat('Y-m-d', $d); ?>
+                <li><a href="index.php?day=<?= e($d) ?>"
+                       <?= $d === $currentDay ? 'class="active"' : '' ?>><?= $dt ? $dt->format('d.m.Y') : e($d) ?></a></li>
+              <?php endforeach; ?>
+            </ul>
+          </details>
+        <?php endforeach; ?>
+      </details>
     <?php endforeach; ?>
-  </ul>
+  </div>
     <?php
       require_once __DIR__ . '/trash_lib.php';
       $trashLeer = !trash_list_days($userId) && !trash_list_missions($userId);
@@ -102,6 +138,7 @@ function ui_days_sidebar(?string $currentDay): void {
 /** Fusszeile: im Dokumentfluss, rechtsbündig unter dem Inhalt */
 function ui_footer(): void { ?>
   <script src="assets/confirm.js"></script>
+  <script src="assets/daylist.js"></script>
 <footer class="sitefooter">© Gen-EM – OpenSource Software –
   <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE"
      target="_blank" rel="noopener">AGPL-3.0</a></footer>

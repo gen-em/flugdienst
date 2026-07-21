@@ -46,11 +46,6 @@ body{margin:0;background:var(--rauch);color:var(--ink);
 .daylist{border-right:1px solid var(--line);padding:1rem;background:var(--schnee)}
 .daylist h2{font-family:var(--head);font-size:.85rem;letter-spacing:.1em;
   text-transform:uppercase;color:var(--muted);margin:.2rem 0 .7rem}
-.daylist ul{list-style:none;margin:0;padding:0}
-.daylist a{display:block;padding:.35rem .5rem;color:var(--ink);text-decoration:none;
-  border-radius:4px;font-variant-numeric:tabular-nums}
-.daylist a.active{background:var(--navy);color:#fff}
-.daylist a:hover:not(.active){background:var(--accent-light)}
 @media (max-width:720px){.layout{grid-template-columns:1fr}
   .daylist{border-right:0;border-bottom:1px solid var(--line)}
   .daylist ul{display:flex;flex-wrap:wrap;gap:.3rem}}
@@ -100,7 +95,7 @@ label{display:block;margin:.7rem 0 .2rem;font-size:.92rem}
 input,select{width:100%;padding:.5rem .6rem;border:1px solid var(--line);
   border-radius:5px;font:inherit;background:var(--schnee)}
 input:focus,select:focus,textarea:focus,button:focus,a:focus,summary:focus{
-  outline:2px solid var(--accent);outline-offset:1px}
+  outline:2px solid var(--blau);outline-offset:1px}
 button{font:inherit;font-family:var(--head);font-weight:600;border:0;
   border-radius:5px;padding:.5rem .9rem;cursor:pointer}
 .btn-primary{background:var(--accent);color:#fff;width:100%;margin-top:.9rem}
@@ -246,7 +241,7 @@ a.btn-danger{text-decoration:none;display:inline-block}
 /* Sortierbare Tabellenspalten */
 th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
 th.sortable:hover{color:var(--navy)}
-th.sortable .arrow{color:var(--accent-dark)}
+th.sortable .arrow{color:var(--blau)}
 .checkcol{text-align:center;color:var(--navy);font-weight:700}
 
 /* Einheitliche Aktions-Buttons (Stammdaten & Co.) */
@@ -344,25 +339,12 @@ h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
 .confirmbtns button{padding:.42rem 1rem;border-radius:6px;cursor:pointer;font:inherit}
 
 /* Aktionsleiste unter der Tagestabelle */
-.dayactions{display:flex;justify-content:space-between;align-items:center;
-  gap:1rem;margin:1.4rem 0 .2rem}
-.dayactions .btn-primary,.dayactions .btn-red{display:inline-block;text-decoration:none;
-  padding:.45rem 1rem;border-radius:6px}
 
 /* --- Block H: Aktionsleiste, Spaltenbreiten, Papierkorb --- */
-.dayactions{display:flex;justify-content:space-between;align-items:center;
-  gap:1rem;margin:1.4rem 0 .2rem}
-.dayactions a{flex:0 0 auto;white-space:nowrap}
 
 /* Vier Breitenstufen (über Klassen, damit neue Spalten nichts verschieben) */
 
 /* Papierkorb-Symbol unten in der Einsatztage-Spalte */
-.trashlink{display:flex;justify-content:center;margin:1.6rem 0 .6rem;
-  color:#8A8378;text-decoration:none}
-.trashlink svg{width:22px;height:22px}
-.trashlink:hover{color:var(--accent)}
-.trashlink.leer{color:#CFCABF;pointer-events:auto}
-.trashlink.leer:hover{color:#CFCABF}
 .trashtable .rowactions{display:flex;gap:.6rem;justify-content:flex-end}
 .trashtable .rowactions form{display:inline}
 
@@ -402,10 +384,6 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
 .daymeta{margin-bottom:.9rem}
 
 /* Aktionsleiste: Knöpfe behalten ihre Eigenbreite */
-.dayactions{display:flex;justify-content:space-between;align-items:center;
-  gap:1rem;margin:1.4rem 0 .2rem}
-.dayactions .btn-primary,.dayactions .btn-red{display:inline-flex;align-items:center;
-  flex:0 0 auto;width:auto;white-space:nowrap;padding:.5rem 1.1rem;text-decoration:none}
 
 /* --- Menüspalte: volle Fensterhöhe, Tage scrollen intern,
        Papierkorb bleibt unten immer sichtbar --- */
@@ -413,15 +391,8 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
   height:calc(100vh - 50px);display:flex;flex-direction:column;
   box-sizing:border-box;overflow:hidden}
 .daylist h2{flex:0 0 auto}
-.daylist ul{flex:1 1 auto;overflow-y:auto;min-height:0;
+.dayyears{flex:1 1 auto;overflow-y:auto;min-height:0;
   scrollbar-width:thin}
-.trashlink{flex:0 0 auto;display:flex;justify-content:center;
-  padding:.7rem 0 .2rem;margin-top:.5rem;
-  border-top:1px solid var(--line);color:#8A8378;text-decoration:none}
-.trashlink svg{width:26px;height:26px}
-.trashlink:hover{color:var(--accent)}
-.trashlink.leer{color:#CFCABF}
-.trashlink.leer:hover{color:#CFCABF}
 
 /* Papierkorb-Aktionen: gleich groß, gleiche Grundlinie */
 .trashtable .rowactions{display:flex;gap:.6rem;justify-content:flex-end;align-items:stretch}
@@ -442,12 +413,8 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
 
 
 /* --- Papierkorb mit Beschriftung --- */
-.trashlink{gap:.5rem;align-items:center;font-size:.82rem}
-.trashlink span{white-space:nowrap}
 
 /* --- Aktionsleiste: beide Knöpfe gleich hoch und gleich gesetzt --- */
-.dayactions .btn-primary,.dayactions .btn-red{font-size:.9rem;line-height:1.2;
-  padding:.55rem 1.2rem;min-height:2.4rem;align-items:center;box-sizing:border-box}
 
 /* --- Standortdaten: aufklappbare Abschnitte --- */
 .stammblock{border:1px solid var(--line);border-radius:8px;background:var(--schnee);
@@ -478,6 +445,70 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
 .rmneu{color:#5B5F66;font-style:italic;border-top:1px solid var(--line)}
 
 /* Flugtag von Hand anlegen — über dem Papierkorb */
-.dayadd{flex:0 0 auto;display:block;text-align:center;font-size:.82rem;
-  padding:.5rem 0 .2rem;color:var(--navy);text-decoration:none}
-.dayadd:hover{color:var(--accent)}
+
+/* ===================== Aktionsleiste unter der Tagestabelle ===================== *
+ * "+ Einsatz nachtragen" und "Tag löschen": exakt gleiche Höhe, Schriftgröße
+ * und Grundlinie. Beide Klassen teilen sich hier bewusst einen Selektor,
+ * damit künftige Änderungen nicht wieder auseinanderlaufen. */
+.dayactions{display:flex;justify-content:space-between;align-items:center;
+  gap:1rem;margin:1.4rem 0 .2rem}
+.dayactions .btn-primary,.dayactions .btn-red{
+  display:inline-flex;align-items:center;justify-content:center;
+  flex:0 0 auto;box-sizing:border-box;
+  font-family:var(--head);font-weight:600;font-size:.9rem;line-height:1.2;
+  padding:.55rem 1.2rem;min-height:2.4rem;
+  border-radius:6px;text-decoration:none;white-space:nowrap}
+
+/* ===================== Papierkorb + "Flugtag anlegen" ===================== *
+ * Beide sitzen unten in der Einsatztage-Spalte, horizontal zentriert und mit
+ * Symbol/Text auf gemeinsamer vertikaler Mitte. */
+.dayadd,.trashlink{display:flex;align-items:center;justify-content:center;
+  gap:.5rem;text-align:center;text-decoration:none;font-size:.82rem;
+  padding:.55rem 0;color:var(--navy)}
+.trashlink{border-top:1px solid var(--line);margin-top:.4rem;color:#8A8378}
+.trashlink svg{width:24px;height:24px;flex:0 0 auto}
+.trashlink span{white-space:nowrap;line-height:24px}
+.trashlink:hover{color:var(--accent)}
+.trashlink.leer{color:#CFCABF}
+.trashlink.leer:hover{color:#CFCABF}
+
+
+/* --- Max Blau (Markenfarbe) etwas praesenter einsetzen --- *
+ * Bisher stand die Markenfarbe fast nur in der Legende der Markenrichtlinie.
+ * Sie uebernimmt jetzt Fokusringe und die Sortierpfeile (siehe oben) sowie
+ * Kontrollkaestchen und den "Flugtag anlegen"-Link — als ruhiger Gegenpart
+ * zu Orange (Haupt-Aktionen) und Rot (Loeschen), ohne deren Bedeutung zu
+ * verwaessern. */
+input[type=checkbox]{accent-color:var(--blau)}
+.dayadd{color:var(--blau)}
+.dayadd:hover{color:var(--navy)}
+
+/* ===================== Einsatztage: Jahr/Monat-Akkordeon ===================== */
+.dayyears{display:flex;flex-direction:column;gap:.15rem}
+.daylist-empty{color:#8A8378;padding:.3rem .5rem}
+
+.yearblock,.monthblock{border:0}
+.yearblock > summary,.monthblock > summary{
+  cursor:pointer;list-style:none;user-select:none;
+  display:flex;align-items:center;gap:.4rem;
+  padding:.35rem .5rem;border-radius:5px}
+.yearblock > summary::-webkit-details-marker,
+.monthblock > summary::-webkit-details-marker{display:none}
+.yearblock > summary::before,.monthblock > summary::before{
+  content:'▸';display:inline-block;width:.9em;color:var(--blau);
+  transition:transform .12s;flex:0 0 auto}
+.yearblock[open] > summary::before,.monthblock[open] > summary::before{transform:rotate(90deg)}
+
+.yearblock > summary{font-family:var(--head);font-weight:600;font-size:.95rem;color:var(--navy)}
+.yearblock > summary:hover{background:var(--accent-light)}
+.yearblock{margin-bottom:.15rem}
+.yearblock > .monthblock{margin-left:.55rem}
+
+.monthblock > summary{font-size:.82rem;color:#5B5F66}
+.monthblock > summary:hover{background:var(--accent-light)}
+.monthblock ul{list-style:none;margin:0;padding:0 0 .2rem 1.3rem}
+
+.daylist a{display:block;padding:.3rem .5rem;color:var(--ink);text-decoration:none;
+  border-radius:5px;font-size:.86rem;font-variant-numeric:tabular-nums}
+.daylist a.active{background:var(--navy);color:#fff}
+.daylist a:hover:not(.active){background:var(--accent-light)}

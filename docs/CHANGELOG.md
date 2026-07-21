@@ -7,6 +7,28 @@ jedem Änderungspaket oben dazu.
 ## [Unveröffentlicht]
 
 ### Web
+- **Einsatztage-Leiste nach Jahr und Monat gruppiert:** Es ist immer genau
+  ein Jahr geöffnet (echtes Akkordeon — ein anderes Jahr anklicken schließt
+  das vorherige automatisch), darin genau ein Monat, standardmäßig der
+  jüngste mit Einträgen. Springt man auf einen Tag in einem anderen
+  Jahr/Monat (z. B. über den Papierkorb oder eine alte Verlinkung), klappt
+  die Leiste automatisch dorthin auf.
+
+- **Aktionsleiste und Papierkorb aufgeräumt:** Über mehrere Runden hatten
+  sich für `.dayactions` und `.trashlink` mehrere, teils widersprüchliche
+  Regeln im Stylesheet angesammelt. Zu einem einzigen Block zusammengeführt —
+  „+ Einsatz nachtragen" und „Tag löschen" haben dadurch garantiert dieselbe
+  Höhe, Schrift und Grundlinie; Papierkorb-Symbol und -Text sind horizontal
+  zentriert und zueinander vertikal mittig ausgerichtet.
+- **Kartenzoom vereinheitlicht:** Tagesübersicht und Einsatzansicht zoomen
+  jetzt nach derselben Regel automatisch auf die Tracks (Rand proportional zur
+  Kartengröße statt fester Pixelwert) und mit einer gemeinsamen Obergrenze —
+  ein einzelner kurzer Track zoomt nicht mehr bis auf Gebäude-Ebene heran.
+- **Max Blau** (Markenfarbe) sichtbarer eingesetzt: Fokusringe, Sortierpfeile
+  in der Tagesübersicht, Kontrollkästchen und der „Flugtag anlegen"-Link
+  nutzen jetzt Blau statt Orange — als ruhiger Gegenpart zu den
+  Haupt-Aktionen (Orange) und Löschen (Rot).
+
 - **Andere Rettungsmittel:** neue Vorbelegungsliste in den Standortdaten und
   Eingabe mit Vorschlägen im Einsatzformular (Suche ab zwei Zeichen, Klick
   übernimmt, freie Eingaben möglich). Jedes Rettungsmittel wird als eigener

@@ -343,7 +343,7 @@ async function loadDay(day){
         } catch (e) { }
       }
       if (changed) renderMissionTable();
-      if (pinBounds.length && !mapHasBounds) { map.fitBounds(pinBounds, { padding: [30, 30] }); }
+      if (pinBounds.length && !mapHasBounds) { map.fitBounds(pinBounds, { padding: [30, 30], maxZoom: 15 }); }
     })();
   }
 
@@ -355,7 +355,7 @@ async function loadDay(day){
     mapHasBounds = true;
     const px = map.getSize();
     map.fitBounds(L.latLngBounds(bounds),
-      { padding: [px.y * 0.125, px.x * 0.125] });
+      { padding: [px.y * 0.125, px.x * 0.125], maxZoom: 15 });
   }
 }
 

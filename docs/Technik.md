@@ -115,6 +115,13 @@ unterdrücken, was die Rückfrage wirkungslos machen würde. Eingebunden über
 `ui_footer()`. Sicherheitskritische Löschungen hängen ohnehin nicht daran,
 sondern an den serverseitigen Zwischenseiten.
 
+**Einsatztage-Leiste:** `ui_days_sidebar()` gruppiert die Tage serverseitig
+nach Jahr und Monat (`<details>`-Verschachtelung); welches Jahr/welcher Monat
+offen ist, bestimmt PHP anhand von `$currentDay` bzw. des jüngsten Tages —
+kein JavaScript nötig, da jede Navigation ohnehin einen Seitenaufruf auslöst.
+`assets/daylist.js` erzwingt nur das Akkordeon-Verhalten (ein offenes Element
+je Ebene) für Klicks ohne Seitenwechsel.
+
 **Papierkorb (Soft-Delete):** Einsätze, Ruhesegmente und Flugtage tragen
 `deleted_at`; alle Lesepfade (Übersicht, Tages-/Einsatz-API, Tagesliste,
 Backup) filtern darauf. `trash_lib.php` bündelt Umfangsermittlung, weiches
