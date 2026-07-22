@@ -58,6 +58,7 @@ if ($missionDay === false) { http_response_code(404); exit('Einsatz nicht gefund
 </div>
 
 <script src="assets/crypto.js"></script>
+<script src="assets/patient.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const MID = <?= $mid ?>;
@@ -233,11 +234,21 @@ async function init(){
     if (ck) {
       try {
         const o = JSON.parse(await EdCrypto.decrypt(ck, m.pat_blob)) || {};
+        const pname = EdPat.name(o);
+        if (pname !== '') {
+          dl.insertAdjacentHTML('beforeend', `<dt>Name 🔒</dt><dd>${esc(pname)}</dd>`);
+        }
+        if (o.dob != null) {
+          dl.insertAdjacentHTML('beforeend',
+            `<dt>Geburtsdatum 🔒</dt><dd>${esc(EdPat.datumDe(o.dob))}</dd>`);
+        }
+        const alter = EdPat.alterAnzeige(o, m.day);
+        if (alter != null) {
+          const zusatz = (o.dob != null) ? ' <span class="muted small">(bei Einsatz)</span>' : '';
+          dl.insertAdjacentHTML('beforeend', `<dt>Alter 🔒</dt><dd>${esc(String(alter))}${zusatz}</dd>`);
+        }
         if (o.dx != null) {
           dl.insertAdjacentHTML('beforeend', `<dt>Diagnose 🔒</dt><dd>${esc(String(o.dx))}</dd>`);
-        }
-        if (o.age != null) {
-          dl.insertAdjacentHTML('beforeend', `<dt>Alter 🔒</dt><dd>${esc(String(o.age))}</dd>`);
         }
         if (o.loc && o.loc.addr) {
           dl.insertAdjacentHTML('beforeend', `<dt>Einsatzort 🔒</dt><dd>${esc(o.loc.addr)}</dd>`);

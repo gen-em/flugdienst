@@ -245,8 +245,16 @@ function fieldValue(string $col) {
     <div id="patlocked" class="alert" hidden>Entschlüsselung nicht möglich —
       bitte einmal ab- und neu anmelden. Vorhandene verschlüsselte Angaben bleiben unverändert.</div>
     <div id="patfields">
+      <div class="patname">
+        <label>Nachname <input type="text" id="pat_last" maxlength="120" autocomplete="off"></label>
+        <label>Vorname <input type="text" id="pat_first" maxlength="120" autocomplete="off"></label>
+      </div>
+      <label>Geburtsdatum
+        <input type="date" id="pat_dob" max="<?= e(date('Y-m-d')) ?>"></label>
+      <label>Alter
+        <input type="number" id="pat_age" min="0" max="120" step="1">
+        <span class="muted small" id="agehint"></span></label>
       <label>Diagnose <input type="text" id="pat_dx" maxlength="190"></label>
-      <label>Alter <input type="number" id="pat_age" min="0" max="120" step="1"></label>
       <div class="loc-widget">
         <label>Adresse Einsatzort
           <input type="text" id="locaddr" maxlength="255" autocomplete="off"
@@ -334,6 +342,7 @@ function fieldValue(string $col) {
 </div>
 
 <script src="assets/crypto.js"></script>
+<script src="assets/patient.js"></script>
 <script>
 const PHASE_LABELS = <?= json_encode(PHASE_LABELS) ?>;
 const START_ROWS = <?= json_encode($prefillRows) ?>;
@@ -362,6 +371,8 @@ function addRow(no, time) {
 // ---- PatientInnendaten & Einsatzort: lokale Ver-/Entschluesselung ------
 const PAT_WRAP = <?= json_encode($patWrapPw) ?>;
 const PAT_PREV = <?= json_encode($mission['pat_blob'] ?? null) ?>;
+// Bezugstag fuer die Altersberechnung: der Einsatztag, nicht heute
+const MISSION_DAY = <?= json_encode($mission['day'] ?? date('Y-m-d')) ?>;
 let PAT_CK = null;
 
 (async () => {
@@ -374,8 +385,12 @@ let PAT_CK = null;
   if (PAT_PREV) {
     let o = {};
     try { o = JSON.parse(await EdCrypto.decrypt(PAT_CK, PAT_PREV)) || {}; } catch (e) { }
+    if (o.last != null) document.getElementById('pat_last').value = o.last;
+    if (o.first != null) document.getElementById('pat_first').value = o.first;
+    if (o.dob != null) document.getElementById('pat_dob').value = o.dob;
     if (o.dx != null) document.getElementById('pat_dx').value = o.dx;
     if (o.age != null) document.getElementById('pat_age').value = o.age;
+    zeigeAlter();
     if (o.loc) {
       document.getElementById('locaddr').value = o.loc.addr || '';
       if (o.loc.lat != null) {
@@ -387,15 +402,43 @@ let PAT_CK = null;
   locSetState();
 })();
 
+// Alter aus dem Geburtsdatum: Feld fuellen und sperren, solange ein
+// Geburtsdatum gesetzt ist. Ohne Geburtsdatum (unbekannte Person) bleibt es
+// von Hand eintragbar.
+function zeigeAlter(){
+  const dob = document.getElementById('pat_dob').value.trim();
+  const feld = document.getElementById('pat_age');
+  const hint = document.getElementById('agehint');
+  const berechnet = EdPat.alterAm(dob, MISSION_DAY);
+  if (berechnet !== null) {
+    feld.value = berechnet;
+    feld.readOnly = true;
+    hint.textContent = 'aus Geburtsdatum';
+  } else {
+    feld.readOnly = false;
+    hint.textContent = dob !== '' ? 'Geburtsdatum unvollständig' : '';
+  }
+}
+document.getElementById('pat_dob').addEventListener('input', zeigeAlter);
+zeigeAlter();
+
 document.getElementById('missionform').addEventListener('submit', async ev => {
   const f = ev.target;
   if (f.dataset.patDone === '1' || !PAT_CK) return;   // gesperrt: Blob bleibt
   ev.preventDefault();
   const o = {};
-  const dx = document.getElementById('pat_dx').value.trim();
-  const age = document.getElementById('pat_age').value.trim();
-  if (dx !== '') o.dx = dx;
-  if (age !== '') o.age = parseInt(age, 10);
+  const last  = document.getElementById('pat_last').value.trim();
+  const first = document.getElementById('pat_first').value.trim();
+  const dob   = document.getElementById('pat_dob').value.trim();
+  const dx    = document.getElementById('pat_dx').value.trim();
+  const age   = document.getElementById('pat_age').value.trim();
+  if (last !== '')  o.last  = last;
+  if (first !== '') o.first = first;
+  if (dob !== '')   o.dob   = dob;
+  if (dx !== '')    o.dx    = dx;
+  // Alter nur speichern, wenn es NICHT aus dem Geburtsdatum folgt — sonst
+  // muesste es bei jeder Korrektur des Geburtsdatums nachgezogen werden.
+  if (age !== '' && EdPat.alterAm(dob, MISSION_DAY) === null) o.age = parseInt(age, 10);
   const addr = document.getElementById('locaddr').value.trim();
   if (addr !== '') {
     o.loc = { addr };

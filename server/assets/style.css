@@ -481,7 +481,10 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
   padding:.55rem 0;color:var(--navy)}
 .trashlink{border-top:1px solid var(--line);margin-top:.4rem;color:#8A8378}
 .trashlink svg{width:24px;height:24px;flex:0 0 auto}
-.trashlink span{white-space:nowrap;line-height:24px}
+/* line-height:1 statt fester Pixelhoehe: Nur so ist die Textbox genauso hoch
+   wie der Text selbst und wird von align-items:center exakt auf die Mitte des
+   Symbols gesetzt — bei fester Zeilenhoehe sass der Text ueber der Grundlinie. */
+.trashlink span{white-space:nowrap;line-height:1}
 .trashlink:hover{color:var(--accent)}
 .trashlink.leer{color:#CFCABF}
 .trashlink.leer:hover{color:#CFCABF}
@@ -553,3 +556,9 @@ input[type=checkbox]{accent-color:var(--blau)}
 /* Jahr/Monat in der Leiste: Beschriftung ist ein Link, Dreieck bleibt Umschalter */
 .zeitlink{color:inherit;text-decoration:none;flex:1 1 auto}
 .zeitlink:hover{text-decoration:underline}
+
+/* Geschützte PatientInnendaten: Name nebeneinander, Alter mit Hinweis */
+.patname{display:flex;gap:.8rem;flex-wrap:wrap}
+.patname label{flex:1 1 12rem;min-width:0}
+#pat_age[readonly]{background:var(--rauch);color:#5B5F66;cursor:not-allowed}
+#agehint{margin-left:.5rem}

@@ -7,6 +7,19 @@ jedem Änderungspaket oben dazu.
 ## [Unveröffentlicht]
 
 ### Web
+- **Neue geschützte Felder:** Nachname, Vorname und Geburtsdatum — wie
+  Diagnose und Einsatzort Ende-zu-Ende-verschlüsselt im selben Container, also
+  ohne Datenbankänderung und automatisch im Backup enthalten. Sie erscheinen
+  nur in der Einsatzansicht, nicht in den Tabellenübersichten.
+- **Alter wird aus dem Geburtsdatum berechnet** — bezogen auf den Einsatztag,
+  nicht auf heute, und bei jeder Anzeige neu (kein Nachziehen bei Korrekturen).
+  Ohne Geburtsdatum bleibt das Feld wie bisher von Hand eintragbar; die Spalte
+  „Alter" in den Übersichten bleibt erhalten. Gemeinsame Berechnung in
+  `assets/patient.js`, genutzt von Formular, Einsatzansicht, Tages- und
+  Zeitraumübersicht.
+- Papierkorb-Symbol und Beschriftung sind vertikal exakt mittig zueinander
+  ausgerichtet (feste Zeilenhöhe hatte den Text nach oben versetzt).
+
 - **Jahres- und Monatsübersicht:** Klick auf Jahreszahl oder Monatsnamen in der
   Einsatztage-Leiste öffnet `zeitraum.php` mit allen Einsätzen des Zeitraums als
   Tabelle (Datum statt Nummer, keine Karte, sortierbar, Zeile führt zum Einsatz)

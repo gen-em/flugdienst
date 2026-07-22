@@ -247,6 +247,22 @@ Der Aufbau der Datei ist in `docs/Backup-Format.md` vollständig beschrieben —
 sie lässt sich damit auch ohne dieses Programm entschlüsseln.
 
 
+### 3.7b Geschützte PatientInnendaten
+
+Im Einsatzformular stehen unter **PatientInnendaten & Einsatzort** die
+Ende-zu-Ende-verschlüsselten Angaben: **Nachname, Vorname, Geburtsdatum,
+Alter, Diagnose** und die **Adresse des Einsatzorts**. Sie verlassen den
+Browser ausschließlich verschlüsselt — der Server sieht sie nie im Klartext.
+
+Das **Alter** rechnet die Anwendung aus dem Geburtsdatum, und zwar bezogen auf
+den **Einsatztag**, nicht auf heute. Das Feld ist dann gesperrt und mit
+„aus Geburtsdatum" gekennzeichnet. Ist kein Geburtsdatum bekannt — bei
+unbekannten Personen der Regelfall — bleibt das Alter von Hand eintragbar und
+wird unverändert gespeichert.
+
+**Name und Geburtsdatum erscheinen bewusst nicht** in der Tagesübersicht oder
+der Jahres-/Monatsübersicht, sondern ausschließlich in der Einsatzansicht.
+
 ### 3.8a Jahres- und Monatsübersicht
 
 In der Einsatztage-Leiste öffnet ein Klick auf die **Jahreszahl** oder den

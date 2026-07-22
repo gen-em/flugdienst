@@ -65,6 +65,7 @@ $titel = $monat !== ''
 </div>
 
 <script src="assets/crypto.js"></script>
+<script src="assets/patient.js"></script>
 <script>
 const JAHR  = <?= json_encode($jahr) ?>;
 const MONAT = <?= json_encode($monat) ?>;
@@ -180,8 +181,9 @@ function zeigeFehler(msg){
       if (!m.pat_blob) continue;
       try {
         const o = JSON.parse(await EdCrypto.decrypt(ck, m.pat_blob)) || {};
-        if (o.dx != null)  { m._dx = o.dx; geaendert = true; }
-        if (o.age != null) { m._age = o.age; geaendert = true; }
+        if (o.dx != null) { m._dx = o.dx; geaendert = true; }
+        const alter = EdPat.alterAnzeige(o, m.day);   // Alter zum jeweiligen Einsatztag
+        if (alter != null) { m._age = alter; geaendert = true; }
         if (o.loc && o.loc.addr) { m._ort = extractOrt(o.loc.addr); geaendert = true; }
       } catch (e) { /* einzelner Datensatz nicht lesbar: Rest trotzdem zeigen */ }
     }

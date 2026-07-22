@@ -119,6 +119,7 @@ if ($selDay === null) {
 </div>
 
 <script src="assets/crypto.js"></script>
+<script src="assets/patient.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const CSRF = '<?= e($_SESSION['csrf']) ?>';
@@ -329,7 +330,10 @@ async function loadDay(day){
         try {
           const o = JSON.parse(await EdCrypto.decrypt(ck, m.pat_blob)) || {};
           if (o.dx != null) { m._dx = o.dx; changed = true; }
-          if (o.age != null) { m._age = o.age; changed = true; }
+          // Alter: aus dem Geburtsdatum zum Einsatztag, sonst der eingetragene
+          // Wert. Name und Geburtsdatum bleiben bewusst aus der Uebersicht.
+          const alter = EdPat.alterAnzeige(o, currentDay);
+          if (alter != null) { m._age = alter; changed = true; }
           if (o.loc && o.loc.addr) {
             m._ort = extractOrt(o.loc.addr);
             changed = true;
