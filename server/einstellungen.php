@@ -274,7 +274,7 @@ if ($tab === 'geraete') {
 <html lang="de">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Einstellungen — Einsatzdoku</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
 <link rel="icon" type="image/png" href="assets/favicon.png"></head>
 <body>
 <?php ui_topbar('einstellungen'); ?>
@@ -311,7 +311,7 @@ if ($tab === 'geraete') {
       <button class="btn-primary">Passwort ändern</button>
       <span class="muted" id="pwstate"></span>
     </form>
-    <script src="assets/crypto.js"></script>
+    <script src="<?= asset('assets/crypto.js') ?>"></script>
     <script>
     const KDF_SALT = <?= json_encode($kdfSalt) ?>;
     const KDF_VER = <?= (int)$kdfVer ?>;
@@ -625,7 +625,7 @@ if ($tab === 'geraete') {
       <p class="muted" id="impstate" style="min-height:1.3em"></p>
     </div>
 
-    <script src="assets/crypto.js"></script>
+    <script src="<?= asset('assets/crypto.js') ?>"></script>
     <script>
     const PAT_WRAP = <?= json_encode($patWrapPw) ?>;
     const CSRF = <?= json_encode($_SESSION['csrf'] ?? '') ?>;

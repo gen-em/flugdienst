@@ -15,7 +15,7 @@ if ($missionDay === false) { http_response_code(404); exit('Einsatz nicht gefund
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Einsatz — Einsatzdoku</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
@@ -57,8 +57,8 @@ if ($missionDay === false) { http_response_code(404); exit('Einsatz nicht gefund
   </main>
 </div>
 
-<script src="assets/crypto.js"></script>
-<script src="assets/patient.js"></script>
+<script src="<?= asset('assets/crypto.js') ?>"></script>
+<script src="<?= asset('assets/patient.js') ?>"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const MID = <?= $mid ?>;

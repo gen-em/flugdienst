@@ -188,6 +188,12 @@ Sende-Ansicht läuft verzögert (Modul `EndDay`), weil ein direkter
 `switchToView()` aus `ConfirmationDelegate.onResponse()` von der sich
 schließenden Bestätigung wieder entfernt würde.
 
+**Versionen:** Weboberfläche und Uhr zählen getrennt
+(`server/version.php` bzw. `watch/source/Const.mc`). `asset()` in `db.php`
+hängt `?v=<Version>` an jede Stylesheet- und Skript-Adresse; nach dem Erhöhen
+der Nummer lädt der Browser die Dateien von selbst neu. Beim Ausliefern also
+**immer die Version erhöhen** — sonst greift die Zwischenspeicher-Umgehung nicht.
+
 ## 6. Deployment
 
 Push auf `main` mit Änderungen unter `server/` → GitHub Action

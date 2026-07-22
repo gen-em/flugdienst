@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/version.php';
+
 $CFG = require __DIR__ . '/config.php';
 
 function db(): PDO {
@@ -14,6 +16,15 @@ function db(): PDO {
         ]);
     }
     return $pdo;
+}
+
+/**
+ * Adresse einer statischen Datei mit angehaengter Version.
+ * Nach einem Update aendert sich dadurch die Adresse, und der Browser laedt
+ * Stylesheet bzw. Skript neu — ohne dass jemand den Zwischenspeicher leeren muss.
+ */
+function asset(string $pfad): string {
+    return $pfad . '?v=' . WEB_VERSION;
 }
 
 /** UTC-DATETIME (aus DB) -> Anzeige in App-Zeitzone */

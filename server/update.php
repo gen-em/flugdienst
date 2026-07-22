@@ -448,7 +448,7 @@ foreach ($MIGRATIONS as $m) {
 <html lang="de">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Datenbank-Update — Einsatzdoku</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
 <link rel="icon" type="image/png" href="assets/favicon.png"></head>
 <body>
 <?php ui_topbar(''); ?>

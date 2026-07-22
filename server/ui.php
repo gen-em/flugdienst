@@ -144,9 +144,10 @@ function ui_days_sidebar(?string $currentDay): void {
 
 /** Fusszeile: im Dokumentfluss, rechtsbündig unter dem Inhalt */
 function ui_footer(): void { ?>
-  <script src="assets/confirm.js"></script>
-  <script src="assets/daylist.js"></script>
+  <script src="<?= asset('assets/confirm.js') ?>"></script>
+  <script src="<?= asset('assets/daylist.js') ?>"></script>
 <footer class="sitefooter">© Gen-EM – OpenSource Software –
   <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE"
-     target="_blank" rel="noopener">AGPL-3.0</a></footer>
+     target="_blank" rel="noopener">AGPL-3.0</a>
+  <span class="ver">v<?= e(WEB_VERSION) ?></span></footer>
 <?php }

@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Anmelden — Einsatzdoku</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body class="login-body">
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <p class="login-aux"><a href="reset_request.php">Passwort vergessen oder erstmalig setzen</a></p>
   <p class="muted" id="loginstate" style="min-height:1.2em"></p>
 </main>
-<script src="assets/crypto.js"></script>
+<script src="<?= asset('assets/crypto.js') ?>"></script>
 <script>
 // Der Browser leitet aus dem Passwort zwei Schluessel ab: das Auth-Token
 // (geht zum Server) und den Daten-Schluessel (bleibt hier, entsperrt das

@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Flugtag anlegen · Einsatzdoku</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
   <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
@@ -62,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a class="btn-plain" href="index.php">Abbrechen</a>
       </form>
     </div>
+    <?php ui_footer(); ?>
   </main>
 </div>
-<?php ui_footer(); ?>
 </body>
 </html>

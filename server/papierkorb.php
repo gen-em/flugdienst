@@ -66,7 +66,7 @@ require_once __DIR__ . '/ui.php';   // auth_guard.php laedt sie bereits
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= $zeigeListe ? 'Papierkorb' : 'Endgültig löschen' ?> · Einsatzdoku</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
   <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
@@ -160,8 +160,8 @@ require_once __DIR__ . '/ui.php';   // auth_guard.php laedt sie bereits
       <a class="btn-plain" href="papierkorb.php">Abbrechen</a>
     </form>
   <?php endif; ?>
+    <?php ui_footer(); ?>
   </main>
 </div>
-<?php ui_footer(); ?>
 </body>
 </html>

@@ -208,7 +208,7 @@ function fieldValue(string $col) {
 <html lang="de">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title><?= $editing ? 'Einsatz bearbeiten' : 'Einsatz nachtragen' ?> — Einsatzdoku</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
 <link rel="icon" type="image/png" href="assets/favicon.png"></head>
 <body>
 <?php ui_topbar('uebersicht'); ?>
@@ -341,8 +341,8 @@ function fieldValue(string $col) {
 </main>
 </div>
 
-<script src="assets/crypto.js"></script>
-<script src="assets/patient.js"></script>
+<script src="<?= asset('assets/crypto.js') ?>"></script>
+<script src="<?= asset('assets/patient.js') ?>"></script>
 <script>
 const PHASE_LABELS = <?= json_encode(PHASE_LABELS) ?>;
 const START_ROWS = <?= json_encode($prefillRows) ?>;

@@ -51,7 +51,7 @@ if ($patReady) {
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Verschlüsselung einrichten — Einsatzdoku</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body class="login-body">
@@ -104,7 +104,7 @@ if ($patReady) {
   <a href="https://github.com/gen-em/einsatzdoku-luftrettung/blob/main/LICENSE"
      target="_blank" rel="noopener">AGPL-3.0</a></footer>
 </div>
-<script src="assets/crypto.js"></script>
+<script src="<?= asset('assets/crypto.js') ?>"></script>
 <script>
 const WRAP_RC = <?= json_encode($wrapRc) ?>;
 const SETUP = <?= $patReady ? 'false' : 'true' ?>;

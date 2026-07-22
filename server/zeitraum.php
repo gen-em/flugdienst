@@ -27,7 +27,7 @@ $titel = $monat !== ''
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($titel) ?> · Einsatzdoku</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
   <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
@@ -61,11 +61,12 @@ $titel = $monat !== ''
       <tbody id="rangebody"></tbody>
     </table>
     <p id="leer" class="muted" hidden>In diesem Zeitraum sind keine Einsätze erfasst.</p>
+    <?php ui_footer(); ?>
   </main>
 </div>
 
-<script src="assets/crypto.js"></script>
-<script src="assets/patient.js"></script>
+<script src="<?= asset('assets/crypto.js') ?>"></script>
+<script src="<?= asset('assets/patient.js') ?>"></script>
 <script>
 const JAHR  = <?= json_encode($jahr) ?>;
 const MONAT = <?= json_encode($monat) ?>;
@@ -191,6 +192,5 @@ function zeigeFehler(msg){
   }
 })();
 </script>
-<?php ui_footer(); ?>
 </body>
 </html>

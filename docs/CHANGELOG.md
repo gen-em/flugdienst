@@ -1,10 +1,26 @@
 # Changelog — Einsatzdoku
 
-Format nach [Keep a Changelog](https://keepachangelog.com/de/); Versionen
-entsprechen den ehemaligen Spezifikations-Ständen. Neue Einträge kommen bei
-jedem Änderungspaket oben dazu.
+Format nach [Keep a Changelog](https://keepachangelog.com/de/).
 
-## [Unveröffentlicht]
+**Weboberfläche** und **Uhr-App** werden getrennt gezählt, weil sie unabhängig
+voneinander ausgeliefert werden: `server/version.php` bzw.
+`watch/source/Const.mc`. Die Web-Version steht in der Fußzeile jeder Seite und
+hängt an allen Stylesheet- und Skript-Adressen — nach einem Update lädt der
+Browser sie dadurch von selbst neu. Die Uhr-Version steht auf der Sync-Seite.
+Die Stände 1.0 bis 1.2 unten sind die frühen Spezifikations-Stände des
+Gesamtprojekts, vor der getrennten Zählung.
+
+## [Web 2.0.0] — 2026-07-22
+
+### Versionierung eingeführt
+- Die Weboberfläche hat jetzt eine eigene Version (`server/version.php`). Sie
+  erscheint in der Fußzeile und hängt an allen Stylesheet- und Skript-Adressen,
+  wodurch der Browser nach einem Update automatisch die neuen Dateien lädt —
+  das manuelle Leeren des Zwischenspeichers entfällt.
+- **Behoben:** Auf `zeitraum.php`, `papierkorb.php`, `flugtag_neu.php`,
+  `einsatz_loeschen.php` und `flugtag_loeschen.php` stand die Fußzeile
+  außerhalb des Inhaltsbereichs und war dadurch nicht sichtbar — Copyright und
+  Lizenzhinweis fehlten auf diesen Seiten.
 
 ### Web
 - **Neue geschützte Felder:** Nachname, Vorname und Geburtsdatum — wie
@@ -341,7 +357,9 @@ jedem Änderungspaket oben dazu.
   wird jetzt aus `schema.sql` gelesen und bleibt automatisch vollständig.
 - Neue Migration „Papierkorb" (`deleted_at`, `deleted_with_day`).
 
-### Uhr (v1.2.0 – v1.3.6)
+
+## [Uhr 1.3.6] — 2026-07-22
+
 - **Einrichtung in der richtigen Reihenfolge (v1.3.6):** Fehlt die
   Server-Adresse, weist die Uhr jetzt darauf hin, sie in Garmin Connect
   einzutragen — vorher kam zuerst „Nicht gekoppelt", und der Kopplungsversuch
