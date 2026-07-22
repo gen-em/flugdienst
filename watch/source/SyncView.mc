@@ -111,6 +111,10 @@ class SyncView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
                 "REA läuft", Graphics.TEXT_JUSTIFY_CENTER);
+        } else if (!Uploader.hasServer()) {
+            dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
+                "Erst Server-Adresse setzen", Graphics.TEXT_JUSTIFY_CENTER);
         } else if (!Uploader.hasCredentials()) {
             dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,

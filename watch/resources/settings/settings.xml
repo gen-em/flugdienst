@@ -1,11 +1,14 @@
 <settings>
-    <setting propertyKey="@Properties.serverUrl" title="Server (Domain genügt, z. B. luftrettung.net)">
+    <setting propertyKey="@Properties.serverUrl"
+             title="Server-Adresse der eigenen Einsatzdoku (Domain genügt, z. B. einsatz.beispiel.de)">
         <settingConfig type="alphaNumeric"/>
     </setting>
-    <setting propertyKey="@Properties.deviceId" title="Geräte-ID">
+    <setting propertyKey="@Properties.deviceId"
+             title="Geräte-ID (wird beim Koppeln automatisch gesetzt)">
         <settingConfig type="alphaNumeric"/>
     </setting>
-    <setting propertyKey="@Properties.apiKey" title="API-Schlüssel">
+    <setting propertyKey="@Properties.apiKey"
+             title="API-Schlüssel (wird beim Koppeln automatisch gesetzt)">
         <settingConfig type="alphaNumeric"/>
     </setting>
 </settings>

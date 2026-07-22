@@ -1,10 +1,10 @@
-// Einsatzdoku — Pager zwischen den drei Oberflaechen (Anforderungen 1.2-1.4)
+// Einsatzdoku — Pager zwischen den Oberflaechen (Anforderungen 1.2-1.4)
 using Toybox.WatchUi;
 using Toybox.Lang;
 
 module Nav {
 
-    const PAGES = [:clock, :map, :speed, :stats, :sync, :cpr];
+    const PAGES = [:clock, :speed, :stats, :sync, :cpr];
     var index as Lang.Number = 0;
 
     function go(delta as Lang.Number) as Void {
@@ -22,7 +22,6 @@ module Nav {
     }
 
     function build(page as Lang.Symbol) as Lang.Array {
-        if (page == :map)   { var mv = new MapPageView(); return [mv, new MapPageDelegate(mv)]; }
         if (page == :speed) { return [new SpeedView(), new SpeedDelegate()]; }
         if (page == :stats) { return [new StatsView(), new StatsDelegate()]; }
         if (page == :sync)  { return [new SyncView(false), new SyncDelegate(false)]; }

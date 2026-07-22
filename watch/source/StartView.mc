@@ -43,8 +43,15 @@ class StartView extends WatchUi.View {
         dc.drawText(cx, cy + 40, Graphics.FONT_TINY, "START drücken",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Noch nicht gekoppelt? Einrichtung liegt auf der Sync-Seite (DOWN)
-        if (!Uploader.hasCredentials()) {
+        // Einrichtung in der richtigen Reihenfolge anzeigen: erst die
+        // Server-Adresse (App-Einstellungen in Garmin Connect), dann koppeln.
+        if (!Uploader.hasServer()) {
+            dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
+                "Server in Garmin Connect", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, dc.getHeight() - 38, Graphics.FONT_XTINY,
+                "eintragen", Graphics.TEXT_JUSTIFY_CENTER);
+        } else if (!Uploader.hasCredentials()) {
             dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, dc.getHeight() - 52, Graphics.FONT_XTINY,
                 "Nicht gekoppelt — DOWN drücken", Graphics.TEXT_JUSTIFY_CENTER);

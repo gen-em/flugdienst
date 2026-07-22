@@ -165,7 +165,7 @@ gesperrt, Referrer-Policy `strict-origin-when-cross-origin` (OSM-Kacheln).
 | `Cpr.mc` | Rea-Timer app-weit (1-s-Tick), 2:00-Zyklus, Ereignisse, **persistenter Zustand** (übersteht Neustart) |
 | `Uploader.mc` | Job-Queue (fertige Einsätze → Segmente → aktive), Chunking ≤ 500, `next_seq`-Bestätigung, Purge inkl. Marken |
 | `Nav.mc` | Pager Uhr → Karte → Tempo → Statistik → Sync → Rea |
-| `StartView/ClockView/MapPage/SpeedView/StatsView/CprView.mc` | Oberflächen + Delegates; lange Tastendrücke manuell via `onKeyPressed/Released` (800 ms, `Const.LONG_PRESS_MS`) |
+| `StartView/ClockView/SpeedView/StatsView/SyncView/CprView.mc` | Oberflächen + Delegates; lange Tastendrücke manuell via `onKeyPressed/Released` (800 ms, `Const.LONG_PRESS_MS`) |
 | `SyncView.mc` | Sync-Status (Backlog = nur abgeschlossene Pakete), App-Version, Kopplung per START-Halten |
 | `Pair.mc` | Kopplungscode-Eingabe → tauscht Code gegen Geräte-Zugang (`Storage 'cred'`) |
 | `Const.mc` / `Util.mc` | Labels, Tuning-Werte; ISO-UTC, lokale Anzeige, Vibration |

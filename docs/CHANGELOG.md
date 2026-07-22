@@ -7,6 +7,39 @@ jedem Änderungspaket oben dazu.
 ## [Unveröffentlicht]
 
 ### Web
+- **Jahres- und Monatsübersicht:** Klick auf Jahreszahl oder Monatsnamen in der
+  Einsatztage-Leiste öffnet `zeitraum.php` mit allen Einsätzen des Zeitraums als
+  Tabelle (Datum statt Nummer, keine Karte, sortierbar, Zeile führt zum Einsatz)
+  samt Kennzahlen. Das Dreieck klappt weiterhin nur auf und zu.
+  Neuer Endpunkt `api/range.php` — bewusst ohne Trackpunkte, da bei einem
+  ganzen Jahr sonst hunderttausende Koordinaten übertragen würden.
+- **Standortdaten:** Nach dem Speichern wird jetzt gezielt zum jeweiligen
+  Abschnitt umgeleitet — er klappt dadurch wieder auf, die Seite springt an die
+  richtige Stelle, und ein Neuladen sendet das Formular nicht erneut ab.
+- **Behoben:** „+ Einsatz nachtragen" lief weiterhin über die volle Breite. Der
+  Knopf erbt aus dem Formular-Stil `width:100%`; in der Aktionsleiste fehlte das
+  ausdrückliche `width:auto`, weshalb frühere Anläufe (Ausrichtung, Höhe) nichts
+  bewirkten.
+
+- **Kein Rahmen mehr an Aufklapp-Überschriften:** Der blaue Fokusrahmen passte
+  nicht zur übrigen Form und umschloss bei geöffnetem Abschnitt den gesamten
+  Inhalt. Ersetzt durch dieselbe dezente Färbung wie beim Überfahren mit der
+  Maus — für Tastaturbedienung weiterhin erkennbar, ohne aufzufallen.
+- **Fokusring bleibt nicht mehr nach Mausklicks stehen:** Er erscheint jetzt
+  nur noch bei Tastaturbedienung (`:focus-visible`). Bei aufklappbaren
+  Abschnitten umschloss er zuvor den gesamten geöffneten Bereich statt nur der
+  Kopfzeile — dadurch wirkte die Umrandung von Jahr und Monat unterbrochen und
+  überlagerte die Markierung des ausgewählten Tages. Bei Tastaturbedienung
+  liegt der Ring nun innerhalb der Zeile.
+
+- **Behoben: Übersicht blieb komplett leer.** Beim Gruppieren der Einsatztage
+  wandelt PHP numerische Array-Schlüssel automatisch in Integer um („2026" →
+  2026). Unter `strict_types` brach `e()` damit mit einem TypeError ab —
+  mitten im Rendern der Leiste, sodass weder Tage noch Karte oder Tabelle
+  erschienen. Zusätzlich schlug der Monatsvergleich ab Oktober fehl („12"
+  wird zu 12, „07" bleibt Text), wodurch dort nie ein Monat aufgeklappt wäre.
+  Beide Stellen wandeln jetzt ausdrücklich nach String.
+
 - **Einsatztage-Leiste nach Jahr und Monat gruppiert:** Es ist immer genau
   ein Jahr geöffnet (echtes Akkordeon — ein anderes Jahr anklicken schließt
   das vorherige automatisch), darin genau ein Monat, standardmäßig der
@@ -295,7 +328,20 @@ jedem Änderungspaket oben dazu.
   wird jetzt aus `schema.sql` gelesen und bleibt automatisch vollständig.
 - Neue Migration „Papierkorb" (`deleted_at`, `deleted_with_day`).
 
-### Uhr (v1.2.0 – v1.3.4)
+### Uhr (v1.2.0 – v1.3.6)
+- **Einrichtung in der richtigen Reihenfolge (v1.3.6):** Fehlt die
+  Server-Adresse, weist die Uhr jetzt darauf hin, sie in Garmin Connect
+  einzutragen — vorher kam zuerst „Nicht gekoppelt", und der Kopplungsversuch
+  scheiterte anschließend mit „Erst Server-Domain setzen". Neue Prüfung
+  `Uploader.hasServer()`.
+- Einstellungstexte neutral gefasst (Beispiel `einsatz.beispiel.de` statt der
+  eigenen Domain) und der Hinweis ergänzt, dass Geräte-ID und API-Schlüssel
+  beim Koppeln automatisch gesetzt werden.
+- **Kartenseite entfernt (v1.3.5):** Sie funktionierte auf dem Gerät nicht
+  zuverlässig und wurde vollständig aus dem Code genommen (`MapPage.mc`
+  gelöscht, kein Rest im Pager). Der Pager läuft jetzt Uhr → Tempo →
+  Statistik → Sync → Rea. Eine spätere Kartenansicht wird neu aufgebaut; die
+  alte Fassung steckt bei Bedarf in der Git-Historie.
 - **Neues Launcher-Icon (v1.3.4):** Hubschrauber-Bildmarke in 40x40, aus der
   hellen Fassung erzeugt — auf dem schwarzen App-Menü der Fenix bleibt damit
   die ganze Silhouette sichtbar (die farbige Fassung ist zur Hälfte dunkel und

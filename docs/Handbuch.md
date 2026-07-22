@@ -29,7 +29,7 @@ Track und eine laufende Reanimation werden nahtlos fortgesetzt.
 
 ### 2.2 Die Oberflächen
 
-Mit **kurz UP/DOWN** blätterst du im Kreis durch: **Uhr → Karte → Tempo →
+Mit **kurz UP/DOWN** blätterst du im Kreis durch: **Uhr → Tempo →
 Statistik → Sync → Reanimation**.
 
 **Uhr (Hauptanzeige):** groß die Uhrzeit, darunter klein das Datum, darunter
@@ -59,9 +59,6 @@ gedrückt halten** startest du hier die Geräte-Kopplung.
   „Einsatztag beenden".
 - **BACK** fragt nach, bevor die App verlassen wird.
 
-**Karte:** aktuelle Position und der GPS-Track des laufenden Einsatzes.
-Zwischen Einsätzen wird im Hintergrund ein Ruhe-Track aufgezeichnet (auf der
-Uhr nicht sichtbar, im Web schwarz dargestellt).
 
 **Tempo:** aktuelle Geschwindigkeit (km/h) groß, darunter die im Einsatz
 zurückgelegten Kilometer.
@@ -249,6 +246,15 @@ Einsätze, Ruhesegmente und Flugtage.
 Der Aufbau der Datei ist in `docs/Backup-Format.md` vollständig beschrieben —
 sie lässt sich damit auch ohne dieses Programm entschlüsseln.
 
+
+### 3.8a Jahres- und Monatsübersicht
+
+In der Einsatztage-Leiste öffnet ein Klick auf die **Jahreszahl** oder den
+**Monatsnamen** eine Tabelle aller Einsätze dieses Zeitraums — mit Datum statt
+Tagesnummer, ohne Karte. Die Kopfzeile nennt Anzahl der Einsätze, Flugtage und
+Gesamtkilometer; jede Zeile lässt sich anklicken und führt zum Einsatz. Ein
+Klick auf das **Dreieck** davor klappt dagegen nur die Unterpunkte auf oder zu,
+ohne die Übersicht zu öffnen.
 
 ### 3.8b Andere Rettungsmittel
 

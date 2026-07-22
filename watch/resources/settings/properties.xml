@@ -1,7 +1,10 @@
 <properties>
-    <!-- Domain genuegt (z. B. "luftrettung.net") — Schema und /ingest.php
-         ergaenzt die App automatisch. Vollstaendige URLs bleiben gueltig. -->
+    <!-- Adresse der EIGENEN Installation. Die Domain genuegt
+         (z. B. "einsatz.beispiel.de") — Schema und /ingest.php ergaenzt die
+         App selbst. Vollstaendige URLs bleiben ebenfalls gueltig.
+         Bewusst ohne Vorgabewert: Jede Installation hat ihren eigenen Server. -->
     <property id="serverUrl" type="string"></property>
+    <!-- Werden beim Koppeln automatisch gefuellt — normalerweise nichts eintragen. -->
     <property id="deviceId"  type="string"></property>
     <property id="apiKey"    type="string"></property>
 </properties>

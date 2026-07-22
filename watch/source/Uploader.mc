@@ -172,6 +172,12 @@ module Uploader {
         return credentials() != null;
     }
 
+    // Ist in den App-Einstellungen (Garmin Connect) eine Server-Adresse
+    // hinterlegt? Ohne sie kann weder gekoppelt noch gesendet werden.
+    function hasServer() as Lang.Boolean {
+        return _serverUrl().length() > 0;
+    }
+
     // Server-Basis (https://domain/…/) fuer beliebige Endpunkte (pair.php)
     function serverBase() as Lang.String {
         var u = _serverUrl();
