@@ -19,6 +19,19 @@
   const root = document.querySelector('.dayyears');
   if (!root) { return; }
 
+  // Klick auf die Beschriftung oeffnet die Zeitraum-Uebersicht, Klick auf das
+  // Dreieck klappt nur auf/zu. Ohne diese Trennung wuerde der Browser beim
+  // Anklicken des Links zusaetzlich das <details> umschalten.
+  root.querySelectorAll('summary').forEach(sum => {
+    sum.addEventListener('click', ev => {
+      const link = ev.target.closest('a.zeitlink');
+      if (link) {
+        ev.preventDefault();          // kein Auf-/Zuklappen
+        window.location.href = link.href;
+      }
+    });
+  });
+
   // Jahre: direkte Kinder von .dayyears
   verkoppeln(Array.from(root.children).filter(el => el.classList.contains('yearblock')));
 

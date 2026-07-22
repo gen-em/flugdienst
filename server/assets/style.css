@@ -466,6 +466,9 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
 .dayactions .btn-primary,.dayactions .btn-red{
   display:inline-flex;align-items:center;justify-content:center;
   flex:0 0 auto;box-sizing:border-box;
+  /* .btn-primary hat global width:100% (fuer Formulare) — hier ausdruecklich
+     zuruecknehmen, sonst zieht sich der Knopf ueber die volle Breite. */
+  width:auto;margin-top:0;
   font-family:var(--head);font-weight:600;font-size:.9rem;line-height:1.2;
   padding:.55rem 1.2rem;min-height:2.4rem;
   border-radius:6px;text-decoration:none;white-space:nowrap}
@@ -531,3 +534,22 @@ input[type=checkbox]{accent-color:var(--blau)}
 
 /* Aktiver Tag: eigene Ebene und etwas Abstand, damit die Markierung frei steht */
 .monthblock li{margin:.05rem 0}
+
+/* Zeitraum-Übersicht (Jahr/Monat): Datumsspalte, sonst wie die Tagestabelle */
+#rangetable{table-layout:fixed;width:100%}
+#rangetable th{white-space:nowrap;hyphens:none;font-size:.74rem;line-height:1.15;
+  padding:.3rem .3rem;text-align:center}
+#rangetable td{padding:.35rem .3rem;overflow:hidden;text-overflow:ellipsis;text-align:center}
+#rangetable th.c-date,#rangetable td.c-date{width:6rem}
+#rangetable th.c-mid,#rangetable td.c-mid{width:5.2rem}
+#rangetable th.c-winde,#rangetable td.c-winde{width:4.4rem}
+#rangetable th.c-bw,#rangetable td.c-bw{width:6.2rem}
+#rangetable th.c-sek,#rangetable td.c-sek{width:6.4rem;white-space:normal}
+#rangetable tbody tr{cursor:pointer}
+#rangetable tbody tr:nth-child(odd){background:var(--schnee)}
+#rangetable tbody tr:nth-child(even){background:var(--rauch)}
+#rangetable tbody tr:hover{background:var(--accent-light)}
+
+/* Jahr/Monat in der Leiste: Beschriftung ist ein Link, Dreieck bleibt Umschalter */
+.zeitlink{color:inherit;text-decoration:none;flex:1 1 auto}
+.zeitlink:hover{text-decoration:underline}

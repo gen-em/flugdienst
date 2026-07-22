@@ -233,6 +233,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->execute([(int)($_POST['id'] ?? 0), $userId]);
         $notice = 'Bereitschaft gelöscht.';
     }
+
+    // Nach dem Speichern zurueck zum passenden Abschnitt umleiten. Das oeffnet
+    // ihn dank des Ankers automatisch wieder und verhindert nebenbei das
+    // erneute Absenden beim Neuladen der Seite.
+    $abschnitt = [
+        'base_save' => 'standorte',   'base_del' => 'standorte',
+        'ac_save'   => 'hubschrauber','ac_del'   => 'hubschrauber',
+        'crew_save' => 'besatzung',   'crew_del' => 'besatzung',
+        'res_save'  => 'rettungsmittel', 'res_del' => 'rettungsmittel',
+        'bw_save'   => 'bergwacht',   'bw_del'   => 'bergwacht',
+    ][$action] ?? null;
+    if ($abschnitt !== null && $notice !== null) {
+        $_SESSION['flash_notice'] = $notice;
+        header('Location: einstellungen.php?t=stammdaten#' . $abschnitt);
+        exit;
+    }
+}
+
+// Meldung aus der Umleitung uebernehmen
+if (!empty($_SESSION['flash_notice'])) {
+    $notice = $_SESSION['flash_notice'];
+    unset($_SESSION['flash_notice']);
 }
 
 $ROLE_LABELS = ['p1' => 'Pilot 1', 'p2' => 'Pilot 2', 'hems' => 'HEMS',

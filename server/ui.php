@@ -104,12 +104,13 @@ function ui_days_sidebar(?string $currentDay): void {
         // strict_types ab und Monatsvergleiche schlagen ab Oktober fehl.
         $jahrS = (string)$jahr; ?>
       <details class="yearblock" <?= $jahrS === $offenesJahr ? 'open' : '' ?>>
-        <summary><?= e($jahrS) ?></summary>
+        <summary><a class="zeitlink" href="zeitraum.php?y=<?= e($jahrS) ?>"><?= e($jahrS) ?></a></summary>
         <?php foreach ($monate as $monat => $tage):
             $monatS = str_pad((string)$monat, 2, '0', STR_PAD_LEFT); ?>
           <details class="monthblock"
                     <?= ($jahrS === $offenesJahr && $monatS === $offenerMonat) ? 'open' : '' ?>>
-            <summary><?= e($monatsnamen[(int)$monatS]) ?></summary>
+            <summary><a class="zeitlink"
+                        href="zeitraum.php?y=<?= e($jahrS) ?>&amp;m=<?= e($monatS) ?>"><?= e($monatsnamen[(int)$monatS]) ?></a></summary>
             <ul>
               <?php foreach ($tage as $d):
                   $dt = DateTime::createFromFormat('Y-m-d', $d); ?>
