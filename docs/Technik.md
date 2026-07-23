@@ -44,7 +44,8 @@ hems/
 │   ├── auth_guard.php     Session/CSRF/Rollen, erzwungene E2E-Einrichtung · smtp.php SMTPS
 │   ├── api/day.php        Tage + Tagesdaten (GET), Flugtag-Meta (POST)
 │   ├── api/mission.php    Einzeleinsatz inkl. Feldern/Rea-Sitzungen
-│   ├── assets/            style.css, crypto.js (WebCrypto-Helfer), Logos, Favicon
+│   ├── assets/            style.css, crypto.js (WebCrypto-Helfer), confirm/daylist/patient.js
+│   │   └── images/        Logo als SVG (farbig + weiss), favicon.png
 │   ├── migrations/        (nur Doku; produktiv zählt update.php)
 │   └── schema.sql         Voll-Schema für Neuinstallationen
 ├── watch/                 Connect-IQ-Projekt (Monkey C)

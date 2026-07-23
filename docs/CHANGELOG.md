@@ -10,6 +10,80 @@ Browser sie dadurch von selbst neu. Die Uhr-Version steht auf der Sync-Seite.
 Die Stände 1.0 bis 1.2 unten sind die frühen Spezifikations-Stände des
 Gesamtprojekts, vor der getrennten Zählung.
 
+## [Web 2.2.3] — 2026-07-23
+
+### Geändert — Favicon robuster eingebunden
+- Der Verweis ist jetzt **wurzelbezogen** (`/assets/images/favicon.png`) statt
+  relativ, damit die Auflösung unabhängig von der aufgerufenen Adresse ist.
+  Der Pfad wird aus `SCRIPT_NAME` abgeleitet und funktioniert daher auch in
+  einem Unterordner.
+- `sizes="any"` an der `.ico` entfernt: Diese Angabe steht für skalierbare
+  Symbole; manche Browser hätten die `.ico` dadurch bevorzugt und bei ihrem
+  Fehlen gar kein Symbol angezeigt. Das PNG steht jetzt an erster Stelle,
+  ergänzt um `apple-touch-icon` für iOS.
+
+## [Web 2.2.2] — 2026-07-23
+
+### Behoben
+- **Papierkorb: Symbol und Text standen untereinander.** Ursache war ein
+  Spezifitäts-Konflikt — `.daylist a` setzt `display:block`, steht weiter unten
+  im Stylesheet und hat mehr Gewicht als `.trashlink`. Das beabsichtigte
+  `display:flex` hat deshalb **nie** gegriffen; die frühere „leichte
+  Verschiebung" war in Wahrheit reine Grundlinien-Ausrichtung. Die Regeln
+  lauten jetzt `.daylist a.trashlink` und stehen nach `.daylist a`.
+- Das Papierkorb-Symbol ist rund 30 % höher als die Schrift. Die `viewBox` im
+  Markup ist dafür auf die Zeichnung zugeschnitten (vorher rundum Leerraum),
+  sodass die Höhenangabe im Stylesheet der sichtbaren Größe entspricht.
+
+### Geändert — Favicon
+- Zusätzlich `favicon.ico` im Wurzelverzeichnis. Browser fragen diese Adresse
+  von sich aus ab, unabhängig vom Verweis im Seitenkopf — damit erscheint das
+  Symbol auch dann, wenn der Kopf-Verweis einmal ins Leere läuft oder der
+  Browser ein früheres Fehlen zwischengespeichert hat.
+- Die Verweise stehen jetzt zentral in `favicon_tags()` (in `db.php`) statt
+  einzeln in 16 Dateien.
+
+## [Web 2.2.1] — 2026-07-23
+
+### Behoben
+- **Kein Logo auf der Anmeldeseite.** Die in 2.2.0 neu ausgewertete Einstellung
+  `logo_path` steht in bestehenden Installationen noch auf dem alten Wert
+  `assets/logo.svg` — eine Datei, die es nie gab. Der Rückfallwert griff nicht,
+  weil der Eintrag ja vorhanden war. Neue Hilfsfunktion `logo_src()` prüft jetzt,
+  ob die angegebene Datei wirklich existiert, und nimmt sonst die mitgelieferte
+  Bildmarke. Das stille Ausblenden bei Ladefehlern (`onerror`) ist entfallen,
+  da es genau solche Fehler verdeckt.
+- **Aufzählungspunkte im Einstellungsmenü.** Beim Umbau der Einsatztage-Leiste
+  auf das Jahr/Monat-Akkordeon war die Regel `.daylist ul` entfallen, die auch
+  das Einstellungsmenü entpunktet hatte.
+- **„Abmelden" und „Abbrechen" im Bestätigungsdialog unterschiedlich groß.**
+  `.btn-primary` trägt global `width:100%` und einen oberen Abstand für
+  Formulare; im Dialog wurde beides nicht zurückgenommen. Dieselbe Ursache wie
+  zuvor bei „+ Einsatz nachtragen" — die übrigen Knopf-Kontexte sind jetzt
+  durchgesehen und abgesichert.
+- **Papierkorb-Symbol und Beschriftung** sind jetzt an dieselbe Schriftgröße
+  gekoppelt (1,4 em). Zuvor war das Symbol mit 24 px fast doppelt so hoch wie
+  die 13-px-Schrift und wirkte dadurch versetzt, obwohl beide Kästen mittig
+  zueinander standen.
+
+## [Web 2.2.0] — 2026-07-23
+
+### Geändert — Logos als Vektorgrafik
+- Die Bildmarke liegt jetzt als **SVG** unter `assets/images/` (farbige und
+  weisse Fassung, Originale der Gestaltung). Sie ist damit in jeder Größe und
+  auf hochauflösenden Bildschirmen scharf — die bisherige Bildmarke in der
+  Kopfleiste hatte mit 96×61 Pixeln zu wenig Reserve und wirkte dort leicht
+  unscharf. Nebenbei sinkt die Datenmenge von rund 184 KB auf 11 KB.
+- Favicon bleibt PNG (breiteste Unterstützung, Schärfe bei 64×64 belanglos)
+  und liegt ebenfalls unter `assets/images/`.
+- Alle Einbindungen laufen über `asset()`, tragen also die Version — nach
+  einem Logo-Wechsel lädt der Browser es von selbst neu. Das ist gerade beim
+  Favicon nützlich, den Browser sonst sehr hartnäckig zwischenspeichern.
+- **Nebenbefund behoben:** Die Einstellung `logo_path` war seit jeher wirkungslos
+  — Anmelde- und Einrichtungsseite banden das Logo fest ein, und der
+  Vorgabewert zeigte auf eine nie existierende Datei (`assets/logo.svg`). Beide
+  Seiten werten die Einstellung jetzt aus, mit dem neuen SVG als Rückfallwert.
+
 ## [Web 2.1.0] — 2026-07-22
 
 ### Behoben — Passwort zurücksetzen
