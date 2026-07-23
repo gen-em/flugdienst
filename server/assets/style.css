@@ -485,25 +485,6 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
   padding:.55rem 1.2rem;min-height:2.4rem;
   border-radius:6px;text-decoration:none;white-space:nowrap}
 
-/* ===================== Papierkorb + "Flugtag anlegen" ===================== *
- * Beide sitzen unten in der Einsatztage-Spalte, horizontal zentriert und mit
- * Symbol/Text auf gemeinsamer vertikaler Mitte. */
-.dayadd,.trashlink{display:flex;align-items:center;justify-content:center;
-  gap:.5rem;text-align:center;text-decoration:none;font-size:.82rem;
-  padding:.55rem 0;color:var(--navy)}
-.trashlink{border-top:1px solid var(--line);margin-top:.4rem;color:#8A8378}
-/* Symbol und Text an dieselbe Schriftgroesse gekoppelt: beide Kaesten sind
-   damit exakt gleich hoch, und align-items:center setzt sie zwangslaeufig auf
-   eine gemeinsame Mitte. Zuvor war das Symbol mit 24px fast doppelt so hoch
-   wie die 13px-Schrift und wirkte dadurch versetzt. */
-.trashlink svg{width:1.4em;height:1.4em;flex:0 0 auto;display:block}
-/* line-height:1 statt fester Pixelhoehe: Nur so ist die Textbox genauso hoch
-   wie der Text selbst und wird von align-items:center exakt auf die Mitte des
-   Symbols gesetzt — bei fester Zeilenhoehe sass der Text ueber der Grundlinie. */
-.trashlink span{white-space:nowrap;line-height:1.4;display:block}
-.trashlink:hover{color:var(--accent)}
-.trashlink.leer{color:#CFCABF}
-.trashlink.leer:hover{color:#CFCABF}
 
 
 /* --- Max Blau (Markenfarbe) etwas praesenter einsetzen --- *
@@ -581,3 +562,25 @@ input[type=checkbox]{accent-color:var(--blau)}
 
 /* Versionsangabe in der Fußzeile */
 .sitefooter .ver{margin-left:.6rem;color:#9AA0A6;font-variant-numeric:tabular-nums}
+
+/* ===================== Papierkorb + "Flugtag anlegen" ===================== *
+ * ACHTUNG Spezifitaet: `.daylist a` (0-1-1) steht weiter oben und setzt
+ * display:block. Die Selektoren hier muessen daher `.daylist a.<klasse>`
+ * lauten (0-2-1) und NACH `.daylist a` stehen — sonst greift display:flex
+ * nicht, und Symbol und Text stehen untereinander statt nebeneinander. */
+.daylist a.dayadd,
+.daylist a.trashlink{display:flex;align-items:center;justify-content:center;
+  gap:.45rem;text-decoration:none;font-size:.82rem;
+  padding:.55rem .5rem;border-radius:0;color:var(--blau)}
+.daylist a.dayadd:hover{color:var(--navy);background:none}
+.daylist a.trashlink{border-top:1px solid var(--line);margin-top:.4rem;color:#8A8378}
+.daylist a.trashlink:hover{color:var(--accent);background:none}
+.daylist a.trashlink.leer,
+.daylist a.trashlink.leer:hover{color:#CFCABF}
+
+/* Symbol rund 30 % hoeher als die Schrift. Die viewBox im Markup ist auf die
+   Zeichnung zugeschnitten (kein Leerraum), daher entspricht die Hoehe hier
+   direkt der sichtbaren Groesse. Textbox und Symbol sind gleich hoch, wodurch
+   align-items:center beide zwangslaeufig auf eine gemeinsame Mitte setzt. */
+.daylist a.trashlink svg{height:1.3em;width:1.156em;flex:0 0 auto;display:block}
+.daylist a.trashlink span{white-space:nowrap;line-height:1.3;display:block}

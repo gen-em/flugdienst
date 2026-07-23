@@ -28,6 +28,20 @@ function asset(string $pfad): string {
 }
 
 /**
+ * Verweise auf das Browser-Symbol (Favicon), zentral an einer Stelle.
+ *
+ * Zwei Angebote, weil Browser sich unterschiedlich verhalten: das PNG mit
+ * Versionsnummer (laedt nach einem Wechsel automatisch neu) und die .ico im
+ * Wurzelverzeichnis. Letztere fragen Browser zusaetzlich von sich aus unter
+ * /favicon.ico ab — sie greift also selbst dann, wenn der Verweis im
+ * Seitenkopf einmal ins Leere laufen sollte.
+ */
+function favicon_tags(): string {
+    return '<link rel="icon" href="favicon.ico" sizes="any">' . "\n"
+         . '<link rel="icon" type="image/png" href="' . e(asset('assets/images/favicon.png')) . '">';
+}
+
+/**
  * Pfad zum Logo fuer Anmelde- und Einrichtungsseite.
  * Die Einstellung 'logo_path' darf auf eine eigene Datei zeigen; existiert
  * sie nicht, wird die mitgelieferte Bildmarke genommen. Ohne diese Pruefung
