@@ -52,12 +52,13 @@ if ($patReady) {
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Verschlüsselung einrichten — Einsatzdoku</title>
 <link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
-<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="icon" type="image/png" href="<?= asset('assets/images/favicon.png') ?>">
 </head>
 <body class="login-body">
 <div class="login-wrap">
 <div class="login-card setup-card">
-  <img src="assets/logo.png" alt="Einsatzdoku" class="login-logo">
+  <img src="<?= e(asset((string)($CFG['app']['logo_path'] ?? 'assets/images/gen-em_logo_helicopter.svg'))) ?>"
+       alt="Einsatzdoku" class="login-logo" onerror="this.style.display='none'">
   <?php if ($error): ?><p class="alert"><?= e($error) ?></p><?php endif; ?>
 
   <?php if (!$patReady): ?>

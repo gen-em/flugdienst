@@ -15,7 +15,7 @@ function ui_topbar(string $active): void {
     global $userRole; ?>
 <header class="topbar">
   <a class="brand" href="index.php">
-    <img src="assets/icon-weiss.png" alt="">
+    <img src="<?= asset('assets/images/gen-em_logo_helicopter_weiss.svg') ?>" alt="">
     <span>Einsatzdokumentation Luftrettung – <?= e(ui_user_label()) ?></span>
   </a>
   <nav class="mainnav">

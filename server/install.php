@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $adminEmail = $in('admin_email'); $adminPw = (string)($_POST['admin_pass'] ?? '');
     $baseUrl = rtrim($in('base_url'), '/');
     $timezone = $in('timezone') ?: 'Europe/Berlin';
-    $logoPath = $in('logo_path') ?: 'assets/logo.svg';
+    $logoPath = $in('logo_path') ?: 'assets/images/gen-em_logo_helicopter.svg';
     $dropExisting = !empty($_POST['drop_existing']);
 
     $smtp = [
@@ -205,7 +205,7 @@ function render_form(array $v, array $errors): void {
         <label>Zeitzone (Anzeige)
           <input name="timezone" value="<?= $val('timezone', 'Europe/Berlin') ?>"></label>
         <label>Logo-Pfad
-          <input name="logo_path" value="<?= $val('logo_path', 'assets/logo.svg') ?>"></label>
+          <input name="logo_path" value="<?= $val('logo_path', 'assets/images/gen-em_logo_helicopter.svg') ?>"></label>
       </fieldset>
 
       <fieldset>

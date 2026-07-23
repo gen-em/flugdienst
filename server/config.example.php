@@ -9,7 +9,7 @@ return [
     'app' => [
         'base_url'  => 'https://einsatz.example.de',  // ohne Slash am Ende
         'timezone'  => 'Europe/Berlin',               // Anzeige; Speicherung ist UTC
-        'logo_path' => 'assets/logo.svg',             // Login-Logo (optional ersetzen)
+        'logo_path' => 'assets/images/gen-em_logo_helicopter.svg',  // Logo auf Login- und Einrichtungsseite
         'max_body_bytes' => 524288,                   // 512 KB Ingest-Limit
     ],
     'smtp' => [                                       // z. B. eigener Stalwart-Server

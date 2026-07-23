@@ -43,12 +43,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Anmelden — Einsatzdoku</title>
 <link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
-<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="icon" type="image/png" href="<?= asset('assets/images/favicon.png') ?>">
 </head>
 <body class="login-body">
 <main class="login-card">
-  <img src="assets/logo.png" alt="GenEM" class="login-logo"
-       onerror="this.style.display='none'">
+  <img src="<?= e(asset((string)($CFG['app']['logo_path'] ?? 'assets/images/gen-em_logo_helicopter.svg'))) ?>"
+       alt="GenEM" class="login-logo" onerror="this.style.display='none'">
   <h1>Einsatzdoku</h1>
   <?php if ($error): ?><p class="alert"><?= e($error) ?></p><?php endif; ?>
   <form method="post" autocomplete="on" id="loginform">
