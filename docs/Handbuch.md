@@ -111,7 +111,10 @@ Inhaltsseiten — auch Einsatzansicht und Formular; ein Tagesklick führt zur
 
 Anmeldung mit E-Mail-Adresse und Passwort. Über **„Passwort vergessen oder
 erstmalig setzen"** kommt ein Link per E-Mail (1 Stunde gültig) — derselbe Weg
-dient auch der Erst-Einrichtung nach dem Anlegen durch den Admin.
+dient auch der Erst-Einrichtung nach dem Anlegen durch den Admin. Beim
+Zurücksetzen wird zusätzlich der Wiederherstellungsschlüssel abgefragt (siehe
+Abschnitt zur Verschlüsselung); bei der Erst-Einrichtung entfällt das, weil
+noch keine verschlüsselten Daten vorliegen.
 
 ### 3.2 Tagesübersicht
 
@@ -212,10 +215,13 @@ Haken bestätigen.
 **Unbedingt wissen:**
 - Normales Passwort-Ändern (mit altem Passwort) ist völlig unkritisch — die
   Daten bleiben ohne Zutun lesbar.
-- Nach „Passwort vergessen" sind die verschlüsselten Angaben gesperrt, bis du
-  sie auf der Einrichtungsseite mit dem Wiederherstellungsschlüssel
-  entsperrst. **Ohne ihn sind sie unwiederbringlich verloren** — auch Admins
-  können nicht helfen (deshalb gibt es keine Admin-Passwortvergabe).
+- Bei „Passwort vergessen" verlangt die Seite mit dem neuen Passwort
+  zugleich den **Wiederherstellungsschlüssel**. Damit übernimmt der Browser die
+  verschlüsselten Angaben auf das neue Passwort, sodass nach dem Zurücksetzen
+  sofort alles lesbar ist. Passt der Schlüssel nicht, wird **nichts** geändert
+  — das alte Passwort gilt weiter. **Ohne den Schlüssel sind die Angaben
+  unwiederbringlich verloren**, auch Admins können nicht helfen (deshalb gibt
+  es keine Admin-Passwortvergabe).
 - Verschlüsselte Felder sind serverseitig nicht durchsuchbar; der Schutz
   wirkt gegen Datenbank-Diebstahl und Mitleser, prinzipbedingt nicht gegen
   einen vollständig übernommenen Server.

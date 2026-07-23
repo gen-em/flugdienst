@@ -10,6 +10,30 @@ Browser sie dadurch von selbst neu. Die Uhr-Version steht auf der Sync-Seite.
 Die Stände 1.0 bis 1.2 unten sind die frühen Spezifikations-Stände des
 Gesamtprojekts, vor der getrennten Zählung.
 
+## [Web 2.1.0] — 2026-07-22
+
+### Behoben — Passwort zurücksetzen
+- **Ein Reset machte das Konto unbrauchbar.** `reset_confirm.php` speicherte
+  den Hash des rohen Passworts, während die Anmeldung den Hash des im Browser
+  abgeleiteten Tokens erwartet — eine Anmeldung war danach unmöglich. Zusätzlich
+  wurde der Inhaltsschlüssel nicht neu verpackt, sodass auch alle
+  verschlüsselten Angaben unlesbar geworden wären.
+- Der Reset verlangt jetzt den **Wiederherstellungsschlüssel**: Der Browser
+  entpackt damit den Inhaltsschlüssel, leitet aus dem neuen Passwort Salz und
+  Token ab und verpackt den Schlüssel neu. Server speichert alles in einer
+  Transaktion — passt der Wiederherstellungsschlüssel nicht, bleibt das Konto
+  unverändert.
+- Kein Datenleck: Wer nur Zugriff auf das Postfach hat, kommt weiterhin nicht
+  an die verschlüsselten Angaben.
+
+### Entfernt — Unterstützung unverschlüsselter Konten
+- Anmeldung, Salt-Endpunkt, Passwortwechsel und Zugriffsschutz kannten je einen
+  Sonderweg für Konten ohne Browser-Schlüsselableitung (`kdf_ver = 0`). Da alle
+  Konten umgestellt sind, sind diese Pfade entfallen — inklusive der Stelle, an
+  der das Passwort einmalig im Klartext zum Server ging.
+- Browser ohne Web-Krypto erhalten jetzt eine klare Meldung statt eines stillen
+  Rückfalls auf den alten Weg.
+
 ## [Web 2.0.0] — 2026-07-22
 
 ### Versionierung eingeführt

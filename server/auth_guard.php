@@ -55,12 +55,11 @@ $userName  = ($row && isset($row['name'])) ? $row['name'] : null;
 $patWrapPw = ($row && isset($row['pat_wrap_pw'])) ? $row['pat_wrap_pw'] : null;
 $patReady  = $patWrapPw !== null;
 $kdfSalt   = ($row && isset($row['kdf_salt'])) ? $row['kdf_salt'] : null;
-$kdfVer    = ($row && isset($row['kdf_ver'])) ? (int)$row['kdf_ver'] : 0;
 
 // Erzwungene Ersteinrichtung: Konto ist auf Browser-Schluessel umgestellt,
 // hat aber noch keinen Inhaltsschluessel -> zuerst einrichtung.php.
 // Ausgenommen: die Einrichtung selbst, Abmelden, Wartung und die JSON-APIs.
-if ($kdfVer === 1 && !$patReady) {
+if (!$patReady) {
     $script = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
     $isApi = strpos((string)($_SERVER['SCRIPT_NAME'] ?? ''), '/api/') !== false;
     if (!$isApi && !in_array($script, ['einrichtung.php', 'logout.php', 'update.php'], true)) {

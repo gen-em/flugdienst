@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /**
  * Liefert das Schluesselableitungs-Salt zu einer E-Mail (fuer den Login).
- * POST JSON {"email": "..."} -> {"salt": hex, "v": 0|1}
+ * POST JSON {"email": "..."} -> {"salt": hex}
  *
  * Unbekannte Adressen bekommen ein DETERMINISTISCHES Pseudo-Salt (HMAC mit
  * Server-Geheimnis) — Antworten sind damit nicht von echten unterscheidbar
@@ -18,12 +18,12 @@ if ($email === '' || strlen($email) > 190) {
 }
 
 $pdo = db();
-$st = $pdo->prepare('SELECT kdf_salt, kdf_ver FROM users WHERE email = ?');
+$st = $pdo->prepare('SELECT kdf_salt FROM users WHERE email = ?');
 $st->execute([$email]);
 $u = $st->fetch();
 
 if ($u && $u['kdf_salt'] !== null) {
-    echo json_encode(['salt' => $u['kdf_salt'], 'v' => (int)$u['kdf_ver']]);
+    echo json_encode(['salt' => $u['kdf_salt']]);
     exit;
 }
 
@@ -35,6 +35,7 @@ if ($sec === false) {
         ->execute([$sec]);
 }
 
-// Nutzer existiert, ist aber noch nicht migriert -> v=0 (Browser sendet
-// einmalig das Passwort mit); unbekannte Adresse -> gleiche Form, Pseudo-Salt.
-echo json_encode(['salt' => hash_hmac('sha256', $email, (string)$sec), 'v' => 0]);
+// Unbekannte Adresse: Pseudo-Salt in derselben Form — die Antwort ist damit
+// nicht von einer echten unterscheidbar. Die Anmeldung scheitert anschliessend
+// am Token, ohne zu verraten, ob die Adresse existiert.
+echo json_encode(['salt' => hash_hmac('sha256', $email, (string)$sec)]);

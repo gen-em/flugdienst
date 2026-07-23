@@ -14,39 +14,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($fails >= 5 && time() - (int)($_SESSION['login_last'] ?? 0) < 30) {
         $error = 'Zu viele Versuche — bitte kurz warten.';
     } else {
-        // Migrationstolerant: Vor dem Lauf von update.php fehlen die
-        // kdf-Spalten noch — dann klassisch per Passwort anmelden.
-        try {
-            $st = db()->prepare('SELECT id, password_hash, role, kdf_ver FROM users WHERE email = ?');
-            $st->execute([trim($_POST['email'] ?? '')]);
-            $u = $st->fetch();
-        } catch (PDOException $ex) {
-            $st = db()->prepare('SELECT id, password_hash, role FROM users WHERE email = ?');
-            $st->execute([trim($_POST['email'] ?? '')]);
-            $u = $st->fetch();
-            if ($u) { $u['kdf_ver'] = 0; }
-        }
+        // Der Browser sendet nie das Passwort, sondern das daraus
+        // abgeleitete Token (siehe assets/crypto.js).
+        $st = db()->prepare('SELECT id, password_hash, role FROM users WHERE email = ?');
+        $st->execute([trim($_POST['email'] ?? '')]);
+        $u = $st->fetch();
+
         $ok = false;
         if ($u && $u['password_hash'] !== null) {
             $token = (string)($_POST['token'] ?? '');
-            if ((int)$u['kdf_ver'] === 1) {
-                // Neuer Weg: Browser sendet abgeleitetes Token statt Passwort
-                $ok = $token !== '' && password_verify($token, $u['password_hash']);
-            } else {
-                // Alt-Konto: einmal Passwort pruefen, dabei transparent auf
-                // die Browser-Schluesselableitung umstellen
-                $ok = password_verify($_POST['password'] ?? '', $u['password_hash']);
-                if ($ok && $token !== ''
-                    && preg_match('/^[0-9a-f]{64}$/', $token)
-                    && preg_match('/^[0-9a-f]{32}$/', (string)($_POST['new_salt'] ?? ''))) {
-                    try {
-                        db()->prepare('UPDATE users SET password_hash = ?, kdf_salt = ?, kdf_ver = 1
-                                       WHERE id = ?')
-                            ->execute([password_hash($token, PASSWORD_DEFAULT),
-                                       $_POST['new_salt'], (int)$u['id']]);
-                    } catch (PDOException $ex) { /* Migration fehlt noch — Alt-Login bleibt */ }
-                }
-            }
+            $ok = $token !== '' && password_verify($token, $u['password_hash']);
         }
         if ($ok) {
             session_regenerate_id(true);
@@ -76,7 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php if ($error): ?><p class="alert"><?= e($error) ?></p><?php endif; ?>
   <form method="post" autocomplete="on" id="loginform">
     <input type="hidden" name="token" id="tok">
-    <input type="hidden" name="new_salt" id="nsalt">
     <label>E-Mail
       <input type="email" name="email" required autofocus autocomplete="username">
     </label>
@@ -108,24 +84,17 @@ document.getElementById('loginform').addEventListener('submit', async ev => {
       body: JSON.stringify({ email })
     });
     const d = await r.json();
-    let salt = d.salt, v = d.v;
-    if (v === 0) {
-      // Alt-Konto (oder unbekannt): frisches Salt erzeugen; Passwort geht
-      // dieses eine Mal mit, der Server stellt bei Erfolg um.
-      salt = EdCrypto.randomHex(16);
-      document.getElementById('nsalt').value = salt;
-    }
-    const k = await EdCrypto.deriveKeys(pw, salt);
+    const k = await EdCrypto.deriveKeys(pw, d.salt);
     document.getElementById('tok').value = k.authToken;
     EdCrypto.setDataKey(k.dataKeyHex);               // fuer diese Sitzung
-    if (v === 1) { f.elements['password'].value = ''; }  // Server braucht es nicht
+    f.elements['password'].value = '';               // verlaesst den Browser nie
     f.dataset.ready = '1';
     state.textContent = '';
     f.submit();
   } catch (e2) {
-    // Ohne Krypto (sehr alte Browser): normal absenden — Alt-Weg
-    f.dataset.ready = '1';
-    f.submit();
+    // Ohne Web-Krypto ist keine Anmeldung moeglich: Das Passwort duerfte den
+    // Browser nicht verlassen, und ohne abgeleitetes Token gibt es keinen Weg.
+    state.textContent = 'Dieser Browser unterstützt die nötige Verschlüsselung nicht.';
   }
 });
 </script>

@@ -34,12 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Browser-Krypto: alt wird per Token (oder Alt-Passwort) belegt,
         // neu kommt als Token+Salt; bei aktivem Modul zusaetzlich der neu
         // verpackte Inhaltsschluessel (Server sieht weiterhin nichts).
-        $st = db()->prepare('SELECT password_hash, kdf_ver FROM users WHERE id = ?');
+        $st = db()->prepare('SELECT password_hash FROM users WHERE id = ?');
         $st->execute([$userId]);
         $u = $st->fetch();
-        $oldOk = ((int)$u['kdf_ver'] === 1)
-            ? password_verify((string)($_POST['old_token'] ?? ''), (string)$u['password_hash'])
-            : password_verify((string)($_POST['old'] ?? ''), (string)$u['password_hash']);
+        $oldOk = password_verify((string)($_POST['old_token'] ?? ''),
+                                 (string)$u['password_hash']);
         $newTok = (string)($_POST['new_token'] ?? '');
         $newSalt = (string)($_POST['new_salt'] ?? '');
         if (!$oldOk) {
@@ -314,7 +313,6 @@ if ($tab === 'geraete') {
     <script src="<?= asset('assets/crypto.js') ?>"></script>
     <script>
     const KDF_SALT = <?= json_encode($kdfSalt) ?>;
-    const KDF_VER = <?= (int)$kdfVer ?>;
     const WRAP_PW = <?= json_encode($patWrapPw) ?>;
     document.getElementById('pwform').addEventListener('submit', async ev => {
       const f = ev.target;
@@ -326,11 +324,10 @@ if ($tab === 'geraete') {
       st.textContent = 'Schlüssel werden neu abgeleitet…';
       try {
         let oldDataKey = null;
-        if (KDF_VER === 1 && KDF_SALT) {
-          const ok = await EdCrypto.deriveKeys(oldPw, KDF_SALT);
-          document.getElementById('pw_oldtok').value = ok.authToken;
-          oldDataKey = ok.dataKeyHex;
-        }
+        // Aktuelles Passwort pruefen: der Server bekommt nur das Token
+        const ok = await EdCrypto.deriveKeys(oldPw, KDF_SALT);
+        document.getElementById('pw_oldtok').value = ok.authToken;
+        oldDataKey = ok.dataKeyHex;
         const salt = EdCrypto.randomHex(16);
         const nk = await EdCrypto.deriveKeys(n1, salt);
         document.getElementById('pw_newtok').value = nk.authToken;
