@@ -19,4 +19,4 @@ declare(strict_types=1);
  * die Praefixe "Web" und "Uhr". Der Sprung auf 2.0.0 grenzt die eigenstaendige
  * Zaehlung von den fruehen Spezifikations-Staenden 1.0-1.2 ab.
  */
-const WEB_VERSION = '2.2.1';
+const WEB_VERSION = '2.2.3';

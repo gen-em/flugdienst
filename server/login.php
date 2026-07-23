@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Anmelden — Einsatzdoku</title>
 <link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
-<link rel="icon" type="image/png" href="<?= asset('assets/images/favicon.png') ?>">
+<?= favicon_tags() ?>
 </head>
 <body class="login-body">
 <main class="login-card">

@@ -65,7 +65,7 @@ if ($row && $_SERVER['REQUEST_METHOD'] === 'POST') {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Neues Passwort — Einsatzdoku</title>
 <link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
-<link rel="icon" type="image/png" href="assets/favicon.png"></head>
+<?= favicon_tags() ?></head>
 <body class="login-body">
 <main class="login-card">
   <h1>Neues Passwort</h1>

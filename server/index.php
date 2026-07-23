@@ -35,7 +35,7 @@ if ($selDay === null) {
 <title>Tagesübersicht — Einsatzdoku</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
-<link rel="icon" type="image/png" href="assets/favicon.png">
+<?= favicon_tags() ?>
 </head>
 <body>
 <?php ui_topbar('uebersicht'); ?>

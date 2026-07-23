@@ -209,7 +209,7 @@ function fieldValue(string $col) {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title><?= $editing ? 'Einsatz bearbeiten' : 'Einsatz nachtragen' ?> — Einsatzdoku</title>
 <link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
-<link rel="icon" type="image/png" href="assets/favicon.png"></head>
+<?= favicon_tags() ?></head>
 <body>
 <?php ui_topbar('uebersicht'); ?>
 

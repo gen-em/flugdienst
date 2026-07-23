@@ -37,8 +37,16 @@ function asset(string $pfad): string {
  * Seitenkopf einmal ins Leere laufen sollte.
  */
 function favicon_tags(): string {
-    return '<link rel="icon" href="favicon.ico" sizes="any">' . "\n"
-         . '<link rel="icon" type="image/png" href="' . e(asset('assets/images/favicon.png')) . '">';
+    // Wurzelbezogener Pfad statt eines relativen: So spielt es keine Rolle,
+    // unter welcher Adresse die Seite gerade aufgerufen wird.
+    $basis = rtrim(str_replace('\\', '/', dirname((string)($_SERVER['SCRIPT_NAME'] ?? '/'))), '/');
+
+    // PNG zuerst: Es ist die Fassung, die wir sicher ausliefern. Die .ico ohne
+    // sizes-Angabe hinterher — mit sizes="any" wuerden manche Browser sie
+    // bevorzugen und bei ihrem Fehlen gar kein Symbol zeigen.
+    return '<link rel="icon" type="image/png" href="' . e($basis . '/' . asset('assets/images/favicon.png')) . '">' . "\n"
+         . '<link rel="icon" href="' . e($basis . '/favicon.ico') . '">'
+         . '<link rel="apple-touch-icon" href="' . e($basis . '/' . asset('assets/images/favicon.png')) . '">';
 }
 
 /**

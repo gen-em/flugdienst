@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Flugtag anlegen · Einsatzdoku</title>
   <link rel="stylesheet" href="<?= asset('assets/style.css') ?>">
-  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <?= favicon_tags() ?>
 </head>
 <body>
 <?php ui_topbar('uebersicht'); ?>
