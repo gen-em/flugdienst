@@ -27,6 +27,22 @@ function asset(string $pfad): string {
     return $pfad . '?v=' . WEB_VERSION;
 }
 
+/**
+ * Pfad zum Logo fuer Anmelde- und Einrichtungsseite.
+ * Die Einstellung 'logo_path' darf auf eine eigene Datei zeigen; existiert
+ * sie nicht, wird die mitgelieferte Bildmarke genommen. Ohne diese Pruefung
+ * bliebe die Seite bei einem veralteten Eintrag in der config.php ohne Logo.
+ */
+function logo_src(): string {
+    global $CFG;
+    $standard = 'assets/images/gen-em_logo_helicopter.svg';
+    $pfad = (string)($CFG['app']['logo_path'] ?? '');
+    if ($pfad !== '' && is_file(__DIR__ . '/' . ltrim($pfad, '/'))) {
+        return asset($pfad);
+    }
+    return asset($standard);
+}
+
 /** UTC-DATETIME (aus DB) -> Anzeige in App-Zeitzone */
 function fmt_local(?string $utc, string $format = 'H:i'): string {
     global $CFG;

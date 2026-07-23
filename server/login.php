@@ -47,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="login-body">
 <main class="login-card">
-  <img src="<?= e(asset((string)($CFG['app']['logo_path'] ?? 'assets/images/gen-em_logo_helicopter.svg'))) ?>"
-       alt="GenEM" class="login-logo" onerror="this.style.display='none'">
+  <img src="<?= e(logo_src()) ?>"
+       alt="GenEM" class="login-logo">
   <h1>Einsatzdoku</h1>
   <?php if ($error): ?><p class="alert"><?= e($error) ?></p><?php endif; ?>
   <form method="post" autocomplete="on" id="loginform">

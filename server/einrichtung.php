@@ -57,8 +57,8 @@ if ($patReady) {
 <body class="login-body">
 <div class="login-wrap">
 <div class="login-card setup-card">
-  <img src="<?= e(asset((string)($CFG['app']['logo_path'] ?? 'assets/images/gen-em_logo_helicopter.svg'))) ?>"
-       alt="Einsatzdoku" class="login-logo" onerror="this.style.display='none'">
+  <img src="<?= e(logo_src()) ?>"
+       alt="Einsatzdoku" class="login-logo">
   <?php if ($error): ?><p class="alert"><?= e($error) ?></p><?php endif; ?>
 
   <?php if (!$patReady): ?>

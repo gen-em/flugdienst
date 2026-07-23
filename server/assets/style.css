@@ -46,6 +46,10 @@ body{margin:0;background:var(--rauch);color:var(--ink);
 .daylist{border-right:1px solid var(--line);padding:1rem;background:var(--schnee)}
 .daylist h2{font-family:var(--head);font-size:.85rem;letter-spacing:.1em;
   text-transform:uppercase;color:var(--muted);margin:.2rem 0 .7rem}
+/* Gilt fuer Einsatztage- UND Einstellungsmenue: keine Aufzaehlungspunkte.
+   (Beim Umbau der Tagesleiste auf das Akkordeon war diese Regel entfallen,
+   wodurch im Einstellungsmenue Punkte auftauchten.) */
+.daylist ul{list-style:none;margin:0;padding:0}
 @media (max-width:720px){.layout{grid-template-columns:1fr}
   .daylist{border-right:0;border-bottom:1px solid var(--line)}
   .daylist ul{display:flex;flex-wrap:wrap;gap:.3rem}}
@@ -346,7 +350,14 @@ h3.rolehead:first-of-type{margin-top:.6rem;padding-top:0;border-top:0}
 .confirmbox::backdrop{background:rgba(26,46,77,.45)}
 .confirmtext{margin:0 0 1.1rem;font-size:1rem;line-height:1.45}
 .confirmbtns{display:flex;gap:.7rem;justify-content:flex-end}
-.confirmbtns button{padding:.42rem 1rem;border-radius:6px;cursor:pointer;font:inherit}
+/* Beide Knoepfe exakt gleich gross. Wichtig: .btn-primary traegt global
+   width:100% und margin-top (fuer Formulare) — im Dialog beides ausdruecklich
+   zuruecknehmen, sonst wird "Abmelden" breiter und sitzt tiefer als
+   "Abbrechen". Gleiche Falle wie bei der Aktionsleiste des Flugtags. */
+.confirmbtns button{display:inline-flex;align-items:center;justify-content:center;
+  width:auto;margin:0;min-height:2.3rem;padding:.42rem 1.2rem;
+  border-radius:6px;cursor:pointer;font:inherit;line-height:1.2;
+  box-sizing:border-box}
 
 /* Aktionsleiste unter der Tagestabelle */
 
@@ -409,6 +420,7 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
 .trashtable .rowactions form{display:flex}
 .trashtable .rowactions .btn-primary,
 .trashtable .rowactions .btn-red{display:inline-flex;align-items:center;justify-content:center;
+  width:auto;margin:0;                      /* globales width:100% zuruecknehmen */
   min-width:10.5rem;padding:.42rem .9rem;font-size:.85rem;line-height:1.2;
   border-radius:5px;text-decoration:none;box-sizing:border-box}
 
@@ -480,11 +492,15 @@ a.btn-red,a.btn-edit,a.btn-primary,a.btn-plain,a.btn-yellow{text-decoration:none
   gap:.5rem;text-align:center;text-decoration:none;font-size:.82rem;
   padding:.55rem 0;color:var(--navy)}
 .trashlink{border-top:1px solid var(--line);margin-top:.4rem;color:#8A8378}
-.trashlink svg{width:24px;height:24px;flex:0 0 auto}
+/* Symbol und Text an dieselbe Schriftgroesse gekoppelt: beide Kaesten sind
+   damit exakt gleich hoch, und align-items:center setzt sie zwangslaeufig auf
+   eine gemeinsame Mitte. Zuvor war das Symbol mit 24px fast doppelt so hoch
+   wie die 13px-Schrift und wirkte dadurch versetzt. */
+.trashlink svg{width:1.4em;height:1.4em;flex:0 0 auto;display:block}
 /* line-height:1 statt fester Pixelhoehe: Nur so ist die Textbox genauso hoch
    wie der Text selbst und wird von align-items:center exakt auf die Mitte des
    Symbols gesetzt — bei fester Zeilenhoehe sass der Text ueber der Grundlinie. */
-.trashlink span{white-space:nowrap;line-height:1}
+.trashlink span{white-space:nowrap;line-height:1.4;display:block}
 .trashlink:hover{color:var(--accent)}
 .trashlink.leer{color:#CFCABF}
 .trashlink.leer:hover{color:#CFCABF}
